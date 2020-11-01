@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="game\ai\ai.h" />
+    <ClInclude Include="game\ai\aicmds.h" />
+    <ClInclude Include="game\ai\aiitem.h" />
+    <ClInclude Include="game\ai\aimain.h" />
+    <ClInclude Include="game\ai\aispawn.h" />
+    <ClInclude Include="game\ai\aiweapons.h" />
+    <ClInclude Include="game\ai\astar.h" />
+    <ClInclude Include="game\ai\links.h" />
+    <ClInclude Include="game\ai\movement.h" />
+    <ClInclude Include="game\ai\navigation.h" />
+    <ClInclude Include="game\ai\nodes.h" />
+    <ClInclude Include="game\chase.h" />
+    <ClInclude Include="game\cmds.h" />
+    <ClInclude Include="game\combat.h" />
+    <ClInclude Include="game\config.h" />
+    <ClInclude Include="game\func.h" />
+    <ClInclude Include="game\game.h" />
+    <ClInclude Include="game\gclient.h" />
+    <ClInclude Include="game\gentity.h" />
+    <ClInclude Include="game\grapple.h" />
+    <ClInclude Include="game\gweapon.h" />
+    <ClInclude Include="game\hud.h" />
+    <ClInclude Include="game\itemlist.h" />
+    <ClInclude Include="game\itemref.h" />
+    <ClInclude Include="game\items.h" />
+    <ClInclude Include="game\misc.h" />
+    <ClInclude Include="game\m_player.h" />
+    <ClInclude Include="game\phys.h" />
+    <ClInclude Include="game\player.h" />
+    <ClInclude Include="game\pweapon.h" />
+    <ClInclude Include="game\spawn.h" />
+    <ClInclude Include="game\spawn_flag.h" />
+    <ClInclude Include="game\svcmds.h" />
+    <ClInclude Include="game\target.h" />
+    <ClInclude Include="game\trigger.h" />
+    <ClInclude Include="game\util.h" />
+    <ClInclude Include="game\view.h" />
+    <ClInclude Include="lib\allocator.h" />
+    <ClInclude Include="lib\box_edicts_area.h" />
+    <ClInclude Include="lib\client.h" />
+    <ClInclude Include="lib\config_string.h" />
+    <ClInclude Include="lib\cvar.h" />
+    <ClInclude Include="lib\dynarray.h" />
+    <ClInclude Include="lib\entity.h" />
+    <ClInclude Include="lib\entityref.h" />
+    <ClInclude Include="lib\entity_effects.h" />
+    <ClInclude Include="lib\gi.h" />
+    <ClInclude Include="lib\info.h" />
+    <ClInclude Include="lib\map.h" />
+    <ClInclude Include="lib\math.h" />
+    <ClInclude Include="lib\multicast_destination.h" />
+    <ClInclude Include="lib\pmove_state.h" />
+    <ClInclude Include="lib\print_level.h" />
+    <ClInclude Include="lib\random.h" />
+    <ClInclude Include="lib\set.h" />
+    <ClInclude Include="lib\sound_attn.h" />
+    <ClInclude Include="lib\sound_channel.h" />
+    <ClInclude Include="lib\string.h" />
+    <ClInclude Include="lib\surface.h" />
+    <ClInclude Include="lib\surface_flags.h" />
+    <ClInclude Include="lib\trace.h" />
+    <ClInclude Include="lib\types.h" />
+    <ClInclude Include="lib\usercmd.h" />
+    <ClInclude Include="lib\vector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="game\ai\ai.cpp" />
+    <ClCompile Include="game\ai\aicmds.cpp" />
+    <ClCompile Include="game\ai\aimain.cpp" />
+    <ClCompile Include="game\ai\aispawn.cpp" />
+    <ClCompile Include="game\ai\aiweapons.cpp" />
+    <ClCompile Include="game\ai\astar.cpp" />
+    <ClCompile Include="game\ai\aiitem.cpp" />
+    <ClCompile Include="game\ai\links.cpp" />
+    <ClCompile Include="game\ai\movement.cpp" />
+    <ClCompile Include="game\ai\navigation.cpp" />
+    <ClCompile Include="game\ai\nodes.cpp" />
+    <ClCompile Include="game\chase.cpp" />
+    <ClCompile Include="game\cmds.cpp" />
+    <ClCompile Include="game\combat.cpp" />
+    <ClCompile Include="game\func.cpp" />
+    <ClCompile Include="game\game.cpp" />
+    <ClCompile Include="game\grapple.cpp" />
+    <ClCompile Include="game\gweapon.cpp" />
+    <ClCompile Include="game\hud.cpp" />
+    <ClCompile Include="game\itemref.cpp" />
+    <ClCompile Include="game\items.cpp" />
+    <ClCompile Include="game\misc.cpp" />
+    <ClCompile Include="game\phys.cpp" />
+    <ClCompile Include="game\player.cpp" />
+    <ClCompile Include="game\pweapon.cpp" />
+    <ClCompile Include="game\spawn.cpp" />
+    <ClCompile Include="game\svcmds.cpp" />
+    <ClCompile Include="game\target.cpp" />
+    <ClCompile Include="game\trigger.cpp" />
+    <ClCompile Include="game\util.cpp" />
+    <ClCompile Include="game\view.cpp" />
+    <ClCompile Include="lib\allocator.cpp" />
+    <ClCompile Include="lib\cvar.cpp" />
+    <ClCompile Include="lib\gi.cpp" />
+    <ClCompile Include="lib\info.cpp" />
+    <ClCompile Include="lib\pmove_state.cpp" />
+    <ClCompile Include="lib\random.cpp" />
+    <ClCompile Include="lib\string.cpp" />
+    <ClCompile Include="lib\surface.cpp" />
+    <ClCompile Include="lib\trace.cpp" />
+    <ClCompile Include="lib\usercmd.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="game.def" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{6d711520-b105-4d35-aa6e-5aa104a8816b}</ProjectGuid>
+    <RootNamespace>gamex</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\</OutDir>
+    <TargetName>$(ProjectName)x86</TargetName>
+    <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\</OutDir>
+    <TargetName>$(ProjectName)x86</TargetName>
+    <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\</OutDir>
+    <TargetName>$(ProjectName)x86_64</TargetName>
+    <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\</OutDir>
+    <TargetName>$(ProjectName)x86_64</TargetName>
+    <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;GAMEX_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>game.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>BOTS;WIN32;NDEBUG;GAMEX_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>game.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;GAMEX_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>game.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>BOTS;NDEBUG;GAMEX_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <ModuleDefinitionFile>game.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

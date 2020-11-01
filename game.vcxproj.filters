@@ -1,0 +1,337 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="lib\allocator.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\box_edicts_area.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\client.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\config_string.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\cvar.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\dynarray.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\entity.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\entity_effects.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\entityref.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\gi.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\info.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\math.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\multicast_destination.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\pmove_state.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\print_level.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\random.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\set.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sound_attn.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sound_channel.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\string.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\surface.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\surface_flags.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\trace.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\types.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\usercmd.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\vector.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="game\chase.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\cmds.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\combat.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\func.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\game.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gclient.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gentity.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\gweapon.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\hud.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\itemlist.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\itemref.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\items.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\m_player.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\misc.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\phys.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\player.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\pweapon.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\spawn.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\spawn_flag.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\svcmds.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\target.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\trigger.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\util.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\view.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\map.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\astar.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\ai.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\aiitem.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\aiweapons.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\links.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\nodes.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\navigation.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\movement.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\aimain.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\aispawn.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\ai\aicmds.h">
+      <Filter>game\ai</Filter>
+    </ClInclude>
+    <ClInclude Include="game\config.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\grapple.h">
+      <Filter>game</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="lib\allocator.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\cvar.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\gi.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\info.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\pmove_state.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\random.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\string.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\surface.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\trace.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\usercmd.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\chase.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\cmds.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\combat.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\func.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\game.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\gweapon.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\hud.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\itemref.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\misc.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\phys.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\player.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\pweapon.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\spawn.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\svcmds.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\target.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\trigger.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\util.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\view.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\astar.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\ai.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\aiitem.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\aiweapons.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\links.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\nodes.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\navigation.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\movement.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\aimain.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\aispawn.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai\aicmds.cpp">
+      <Filter>game\ai</Filter>
+    </ClCompile>
+    <ClCompile Include="game\grapple.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="game.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="lib">
+      <UniqueIdentifier>{946cdebf-9928-4a73-96dd-f62827bfa684}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game">
+      <UniqueIdentifier>{556c6885-c7c6-4af0-8c0b-6bffede326aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\ai">
+      <UniqueIdentifier>{ad6952da-893c-449f-87ce-de6db10d2b9f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
