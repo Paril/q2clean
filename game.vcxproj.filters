@@ -73,9 +73,6 @@
     <ClInclude Include="lib\types.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="lib\usercmd.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="lib\vector.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -318,6 +315,9 @@
     </ClCompile>
     <ClCompile Include="game\grapple.cpp">
       <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\usercmd.ixx">
+      <Filter>lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -407,7 +407,9 @@ enum svc_ops : int32_t
 
 #include "trace.h"
 #include "pmove_state.h"
-#include "usercmd.h"
+
+import usercmd;
+
 #include "dynarray.h"
 
 constexpr size_t MAX_TOUCH = 32;
