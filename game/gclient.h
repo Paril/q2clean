@@ -1,7 +1,6 @@
 #pragma once
 
-import usercmd;
-
+#include "../lib/usercmd.h"
 #include "items.h"
 
 // handedness values

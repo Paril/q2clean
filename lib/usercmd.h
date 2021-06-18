@@ -1,13 +1,11 @@
-module;
+#pragma once
 
 #include "types.h"
-
-export module usercmd;
 
 //
 // button bits
 //
-export enum button_bits : uint8_t
+enum button_bits : uint8_t
 {
 	BUTTON_NONE,
 	BUTTON_ATTACK	= 1,
@@ -16,10 +14,10 @@ export enum button_bits : uint8_t
 	BUTTON_ANY		= 0xFF
 };
 
-MAKE_ENUM_BITWISE_EXPORT(button_bits);
+MAKE_ENUM_BITWISE(button_bits);
 
 // usercmd_t is sent to the server each client frame
-export struct usercmd
+extern "C" struct usercmd
 {
 	uint8_t				msec;
 	button_bits			buttons;

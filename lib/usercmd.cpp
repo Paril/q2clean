@@ -1,6 +1,4 @@
-#include "types.h"
-
-import usercmd;
+#include "usercmd.h"
 
 vector usercmd::get_angles() const
 {

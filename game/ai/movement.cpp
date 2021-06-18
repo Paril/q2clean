@@ -1,5 +1,3 @@
-import usercmd;
-
 #include "../../lib/types.h"
 
 #ifdef BOTS
