@@ -39,10 +39,10 @@ vector randomv()
 
 vector randomv(const vector &max)
 {
-	return { random(max), random(max), random(max) };
+	return { random(max.x), random(max.y), random(max.z) };
 }
 
 vector randomv(const vector &min, const vector &max)
 {
-	return { random(min, max), random(min, max), random(min, max) };
+	return { random(min.x, max.x), random(min.y, max.y), random(min.z, max.z) };
 }

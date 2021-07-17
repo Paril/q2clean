@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-#include "../game/gclient.h"
 #include "pmove_state.h"
 
 // player_state_t->refdef flags
@@ -140,13 +139,10 @@ struct player_state
 };
 
 // client data, only stored in entities between 1 and maxclients inclusive
-struct client
+struct server_client
 {
 	// shared between client and server
-
 	player_state	ps;
 	int				ping;
 	int				clientNum;
-
-	gclient			g;
 };

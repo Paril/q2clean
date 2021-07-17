@@ -166,13 +166,13 @@ private:
 public:
 	constexpr sound_index() : index(0) { }
 	constexpr explicit sound_index(const int32_t &value) : index(value) { }
-	constexpr explicit operator bool() { return (bool)index; }
-	constexpr explicit operator int32_t() { return index; }
+	constexpr explicit operator bool() const { return (bool)index; }
+	constexpr explicit operator const int32_t &() const { return index; }
 	constexpr bool operator==(const sound_index &r) { return index == r.index; }
 	constexpr bool operator!=(const sound_index &r) { return index != r.index; }
 };
 
-constexpr sound_index SOUND_NONE = sound_index(0);
+constexpr sound_index SOUND_NONE(0);
 
 class model_index
 {
@@ -182,15 +182,15 @@ private:
 public:
 	constexpr model_index() : index(0) { }
 	constexpr explicit model_index(const int32_t &value) : index(value) { }
-	constexpr explicit operator bool() { return (bool)index; }
-	constexpr explicit operator int32_t() { return index; }
+	constexpr explicit operator bool() const { return (bool)index; }
+	constexpr explicit operator const int32_t &() const { return index; }
 	constexpr bool operator==(const model_index &r) { return index == r.index; }
 	constexpr bool operator!=(const model_index &r) { return index != r.index; }
 };
 
-constexpr model_index MODEL_NONE = model_index(0);
-constexpr model_index MODEL_WORLD = model_index(1);
-constexpr model_index MODEL_PLAYER = model_index(255);
+constexpr model_index MODEL_NONE(0);
+constexpr model_index MODEL_WORLD(1);
+constexpr model_index MODEL_PLAYER(255);
 
 class image_index
 {
@@ -201,11 +201,13 @@ public:
 	constexpr image_index() : index(0) { }
 	constexpr explicit image_index(const int32_t &value) : index(value) { }
 	constexpr explicit operator bool() const { return (bool)index; }
-	constexpr explicit operator int32_t() const { return index; }
+	constexpr explicit operator const int32_t &() const { return index; }
 	constexpr bool operator==(const image_index &r) { return index == r.index; }
 	constexpr bool operator!=(const image_index &r) { return index != r.index; }
 };
 
-constexpr image_index IMAGE_NONE = image_index(0);
+constexpr image_index IMAGE_NONE(0);
 
 #include "random.h"
+
+#include "savables.h"

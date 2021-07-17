@@ -2,7 +2,7 @@
 #include "../lib/types.h"
 
 // damage flags
-enum damage_flags : uint8_t
+enum damage_flags : uint16_t
 {
 	DAMAGE_NONE,
 	DAMAGE_RADIUS = 1 << 0,			// damage was indirect

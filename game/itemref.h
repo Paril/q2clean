@@ -88,7 +88,7 @@ public:
 		return _ptr;
 	}
 
-	inline operator bool()
+	inline explicit operator bool() const
 	{
 		return has_value();
 	}

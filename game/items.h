@@ -159,6 +159,7 @@ enum gitem_id : uint8_t
 	ITEM_PYRAMID_KEY,
 	ITEM_DATA_SPINNER,
 	ITEM_SECURITY_PASS,
+	ITEM_BLUE_KEY,
 	ITEM_RED_KEY,
 	ITEM_COMMANDER_HEAD,
 	ITEM_AIRSTRIKE_TARGET,
@@ -207,6 +208,8 @@ void InitItems();
 
 void DoRespawn(entity &ent);
 
+DECLARE_SAVABLE_FUNCTION(DoRespawn);
+
 entity &Drop_Item(entity &, const gitem_t &);
 
 void SetRespawn(entity &ent, float delay);
@@ -219,7 +222,11 @@ gitem_id PowerArmorType(entity &ent);
 
 void Touch_Item(entity &ent, entity &other, vector plane, const surface &surf);
 
+DECLARE_SAVABLE_FUNCTION(Touch_Item);
+
 void droptofloor(entity &ent);
+
+DECLARE_SAVABLE_FUNCTION(droptofloor);
 
 void PrecacheItem(const gitem_t &it);
 

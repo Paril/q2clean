@@ -11,7 +11,7 @@ string va(stringlit fmt, ...)
 }
 
 static char *format_buffer = nullptr;
-static size_t format_size = 0;
+static uint32_t format_size = 0;
 
 string va(stringlit fmt, va_list argptr)
 {

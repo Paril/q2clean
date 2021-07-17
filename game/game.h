@@ -20,6 +20,8 @@ enum cross_server_flags : uint8_t
 	SFL_CROSS_TRIGGER_MASK	= 0xff
 };
 
+MAKE_ENUM_BITWISE(cross_server_flags);
+
 struct game_locals
 {
 #ifdef SINGLE_PLAYER
@@ -37,10 +39,10 @@ struct game_locals
 	// can't store spawnpoint in level, because
 	// it would get overwritten by the savegame restore.
 	// needed for coop respawns
-	string	spawnpoint;
+	string		spawnpoint;
 	
 	// store latched cvars here that we want to get at often
-	uint32_t	maxclients = 0;
+	uint32_t	maxclients;
 };
 
 extern game_locals game;
@@ -194,7 +196,7 @@ struct level_locals
 	image_index	pic_health;
 
 #ifdef SINGLE_PLAYER
-	entity	sight_client;	// changed once each frame for coop games
+	entityref	sight_client;	// changed once each frame for coop games
 
 	entityref	sight_entity;
 	gtime		sight_entity_framenum;

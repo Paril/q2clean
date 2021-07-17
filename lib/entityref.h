@@ -119,7 +119,7 @@ public:
 	// porting. you will have to be explicit as to what you want to
 	// to: if you wish to see if *any* entity is being held, use e.has_value().
 	// if you wish to mimic the behavior of QC, use e.has_value() && e->is_world().
-	constexpr operator bool() = delete;
+	constexpr explicit operator bool() = delete;
 };
 
 constexpr entityref null_entity;

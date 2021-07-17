@@ -2,6 +2,7 @@
 
 #include "../lib/usercmd.h"
 #include "items.h"
+#include "itemref.h"
 
 // handedness values
 enum handedness : uint8_t
@@ -58,7 +59,7 @@ typedef enum : int
 struct client_respawn
 {
 #ifdef SINGLE_PLAYER
-	client_persistant_t	coop_respawn;   // what to set client.pers to on a respawn
+	client_persistant coop_respawn;   // what to set client.pers to on a respawn
 #endif
 
 	gtime	enterframe;		// level.framenum the client entered the game
@@ -137,7 +138,7 @@ typedef enum : int
 
 // the gclient is game-local client data, stored under every
 // client's "client" data.
-struct gclient
+struct client : public server_client
 {
 	client_persistant	pers;
 	client_respawn		resp;

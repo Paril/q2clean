@@ -35,3 +35,26 @@ entity &fire_rocket(entity &self, vector start, vector dir, int32_t damage, int3
 void fire_rail(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick);
 
 void fire_bfg(entity &self, vector start, vector dir, int32_t damage, int32_t speed, float damage_radius);
+
+
+#ifdef SINGLE_PLAYER
+/*
+=================
+check_dodge
+
+This is a support routine used when a client is firing
+a non-instant attack weapon.  It checks to see if a
+monster's dodge function should be called.
+=================
+*/
+void check_dodge(entity &self, vector start, vector dir, int32_t speed);
+
+/*
+=================
+fire_hit
+
+Used for all impact (hit/punch/slash) attacks
+=================
+*/
+bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick);
+#endif

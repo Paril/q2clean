@@ -1,36 +1,21 @@
 #include "../lib/types.h"
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/gi.h"
 #include "spawn.h"
 #include "game.h"
 #include "util.h"
 #include "itemlist.h"
 #include "player.h"
-#ifdef BOTS
-#include "ai/aimain.h"
+#ifdef SINGLE_PLAYER
+#include "trail.h"
 #endif
 
-// this doesn't use game_allocator. need to investigate if memory allocated here
-// will be safe during a crash...
-static inline std::vector<registered_entity> &get_registered_entities()
-{
-	static std::vector<registered_entity> entities;
-	return entities;
-}
+static const registered_entity *registered_entities_head;
 
-/*static*/ void spawnable_entities::register_entity(const registered_entity &ent)
+/*static*/ void spawnable_entities::register_entity(registered_entity &ent)
 {
-	get_registered_entities().push_back(ent);
-}
-
-/*static*/ const registered_entity *spawnable_entities::begin()
-{
-	return get_registered_entities().data();
-}
-
-/*static*/ const registered_entity *spawnable_entities::end()
-{
-	return get_registered_entities().data() + get_registered_entities().size();
+	ent.next = registered_entities_head;
+	registered_entities_head = &ent;
 }
 
 using spawn_deserializer = bool(*)(const string &input, void *output);
@@ -43,6 +28,44 @@ struct spawn_field
 	bool				is_temp;
 };
 
+static stringref strip_newlines(string input)
+{
+	size_t len = 0;
+
+	for (auto it = input.ptr(); *it; it++)
+	{
+		if (*it == '\\')
+			it++;
+
+		len++;
+	}
+
+	if (len == input.length())
+		return input;
+
+	string str(len);
+	char *mut = (char *) str.ptr();
+
+	for (auto it = input.ptr(); *it; it++, mut++)
+	{
+		if (*it == '\\')
+		{
+			it++;
+
+			if (*it == 'n')
+				*mut = '\n';
+			else
+				*mut = '\\';
+		}
+		else
+			*mut = *it;
+	}
+
+	*mut = 0;
+
+	return str;
+}
+
 template<typename T>
 static bool deserialize(const string &input, void *output)
 {
@@ -50,7 +73,7 @@ static bool deserialize(const string &input, void *output)
 
 	if constexpr(std::is_same_v<T, string> || std::is_same_v<T, stringref>)
 	{
-		*out = input;
+		*out = strip_newlines(input);
 		return true;
 	}
 	else if constexpr(std::is_integral_v<T> || std::is_enum_v<T>)
@@ -107,7 +130,7 @@ static bool deserialize(const string &input, void *output)
 	{ name, offsetof(entity, field), deserialize<decltype(entity::field)>, false }
 
 #define SPAWN_EFIELD(name) \
-	SPAWN_EFIELD_NAMED(#name, g.name)
+	SPAWN_EFIELD_NAMED(#name, name)
 
 #define SPAWN_TFIELD_NAMED(name, field) \
 	{ name, offsetof(spawn_temp, field), deserialize<decltype(spawn_temp::field)>, true }
@@ -133,7 +156,7 @@ constexpr spawn_field spawn_fields[] =
 	SPAWN_EFIELD(team),
 	SPAWN_EFIELD(wait),
 	SPAWN_EFIELD(delay),
-	SPAWN_EFIELD_NAMED("random", g.rand),
+	SPAWN_EFIELD_NAMED("random", rand),
 	SPAWN_EFIELD(move_origin),
 	SPAWN_EFIELD(move_angles),
 	SPAWN_EFIELD(style),
@@ -284,11 +307,11 @@ bool ED_CallSpawn(entity &ent)
 		return true;
 	}
 
-	for (auto spawn = spawnable_entities::begin(); spawn != spawnable_entities::end(); spawn++)
+	for (auto spawn = registered_entities_head; spawn; spawn = spawn->next)
 	{
 		if (striequals(spawn->classname, st.classname))
 		{
-			ent.g.type = spawn->type;
+			ent.type = spawn->type;
 			spawn->func(ent);
 			return true;
 		}
@@ -322,20 +345,20 @@ static inline void G_FixTeams()
 	{
 		entity &e = itoe(i);
 
-		if (!e.g.teammaster.has_value())
+		if (!e.teammaster.has_value())
 			continue;
 		
-		entity &master = e.g.teammaster;
+		entity &master = e.teammaster;
 
 		// already a train, so don't worry about us
-		if (master.g.type == ET_FUNC_TRAIN)
+		if (master.type == ET_FUNC_TRAIN)
 			continue;
 
 		entityref first_train;
 
-		for (entityref e2 = master; e2.has_value(); e2 = e2->g.teamchain)
+		for (entityref e2 = master; e2.has_value(); e2 = e2->teamchain)
 		{
-			if (e2->g.type == ET_FUNC_TRAIN)
+			if (e2->type == ET_FUNC_TRAIN)
 			{
 				first_train = e2;
 				break;
@@ -352,16 +375,16 @@ static inline void G_FixTeams()
 
 		// got one! we have to reposition this train to be the master now.
 		// swap all of the masters out, and store the guy before the train
-		for (entityref e2 = master; e2.has_value(); e2 = e2->g.teamchain)
+		for (entityref e2 = master; e2.has_value(); e2 = e2->teamchain)
 		{
-			e2->g.teammaster = first_train;
+			e2->teammaster = first_train;
 
 			// copy over movetype and speed
-			e2->g.movetype = MOVETYPE_PUSH;
-			e2->g.speed = first_train->g.speed;
+			e2->movetype = MOVETYPE_PUSH;
+			e2->speed = first_train->speed;
 			
 			// reached the guy before first_train
-			if (e2->g.teamchain == first_train)
+			if (e2->teamchain == first_train)
 				prev = e2;
 		}
 		
@@ -373,16 +396,16 @@ static inline void G_FixTeams()
 		// prev = guy before first_train
 		// first_train = first.. train
 
-		prev->g.teamchain = master;
-		entity &old_master_next = master.g.teamchain;
-		master.g.teamchain = first_train->g.teamchain;
-		first_train->g.teamchain = old_master_next;
+		prev->teamchain = master;
+		entity &old_master_next = master.teamchain;
+		master.teamchain = first_train->teamchain;
+		first_train->teamchain = old_master_next;
 		
 		// remove our slave flag
-		first_train->g.flags &= ~FL_TEAMSLAVE;
+		first_train->flags &= ~FL_TEAMSLAVE;
 		
 		// give the old master the flag
-		master.g.flags |= FL_TEAMSLAVE;
+		master.flags |= FL_TEAMSLAVE;
 	}
 
 	gi.dprintf ("%i teams repaired\n", c);
@@ -398,14 +421,14 @@ static inline void G_FindTeams()
 		 
 		if (!e.inuse)
 			continue;
-		if (!e.g.team)
+		if (!e.team)
 			continue;
-		if (e.g.flags & FL_TEAMSLAVE)
+		if (e.flags & FL_TEAMSLAVE)
 			continue;
 
 		entityref chain = e;
-		e.g.teammaster = e;
-		e.g.teamchain = 0;
+		e.teammaster = e;
+		e.teamchain = 0;
 		c++;
 		c2++;
 
@@ -415,18 +438,18 @@ static inline void G_FindTeams()
 
 			if (!e2.inuse)
 				continue;
-			if (!e2.g.team)
+			if (!e2.team)
 				continue;
-			if (e2.g.flags & FL_TEAMSLAVE)
+			if (e2.flags & FL_TEAMSLAVE)
 				continue;
-			if (e.g.team == e2.g.team)
+			if (e.team == e2.team)
 			{
 				c2++;
-				chain->g.teamchain = e2;
-				e2.g.teammaster = e;
-				e2.g.teamchain = 0;
+				chain->teamchain = e2;
+				e2.teammaster = e;
+				e2.teamchain = 0;
 				chain = e2;
-				e2.g.flags |= FL_TEAMSLAVE;
+				e2.flags |= FL_TEAMSLAVE;
 			}
 		}
 	}
@@ -441,13 +464,13 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 	size_t entities_offset = 0;
 
 #ifdef SINGLE_PLAYER
-	int skill_level = skill.intVal;
+	int32_t skill_level = (int32_t)skill;
 
 	if (skill_level < 0)
 		skill_level = 0;
 	if (skill_level > 3)
 		skill_level = 3;
-	if (skill.intVal != skill_level)
+	if ((int32_t)skill != skill_level)
 		gi.cvar_forceset("skill", itos(skill_level));
 #endif
 
@@ -478,17 +501,17 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 
 #ifdef SINGLE_PLAYER
 		// yet another map hack
-		if (striequals(level.mapname, "command") && striequals(ent.classname, "trigger_once") && striequals(ent.model, "*27"))
-			ent.spawnflags &= ~SPAWNFLAG_NOT_HARD;
+		if (striequals(level.mapname, "command") && ent->type == ET_TRIGGER_ONCE && striequals(ent->model, "*27"))
+			ent->spawnflags &= ~SPAWNFLAG_NOT_HARD;
 #endif
 		// remove things (except the world) from different skill levels or deathmatch
 		if (ent != world)
 		{
 #ifdef SINGLE_PLAYER
-			if (deathmatch.intVal)
+			if ((int32_t)deathmatch)
 			{
 #endif
-				if (ent->g.spawnflags & SPAWNFLAG_NOT_DEATHMATCH)
+				if (ent->spawnflags & SPAWNFLAG_NOT_DEATHMATCH)
 				{
 					G_FreeEdict(ent);
 					inhibit++;
@@ -510,9 +533,9 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 				// is this true in only rogue maps?
 #endif
 
-				if (((skill_level == 0) && (ent.spawnflags & SPAWNFLAG_NOT_EASY)) ||
-					((skill_level == 1) && (ent.spawnflags & SPAWNFLAG_NOT_MEDIUM)) ||
-					(((skill_level == 2) || (skill_level == 3)) && (ent.spawnflags & SPAWNFLAG_NOT_HARD)))
+				if (((skill_level == 0) && (ent->spawnflags & SPAWNFLAG_NOT_EASY)) ||
+					((skill_level == 1) && (ent->spawnflags & SPAWNFLAG_NOT_MEDIUM)) ||
+					(((skill_level == 2) || (skill_level == 3)) && (ent->spawnflags & SPAWNFLAG_NOT_HARD)))
 				{
 					G_FreeEdict(ent);
 					inhibit++;
@@ -520,7 +543,7 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 				}
 			}
 #endif
-			ent->g.spawnflags &= ~SPAWNFLAG_NOT_MASK;
+			ent->spawnflags &= ~SPAWNFLAG_NOT_MASK;
 		}
 
 		if (!ED_CallSpawn(ent))
@@ -551,16 +574,12 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 #ifdef CTF
 	CTFSpawn();
 #endif
-
-#ifdef BOTS
-	AI_NewMap();
-#endif
 }
 
 #ifdef SINGLE_PLAYER
 //===================================================================
 
-PROGS_LOCAL_STATIC const string single_statusbar =
+static const string single_statusbar =
 "yb -24 "
 
 // health
@@ -710,7 +729,7 @@ Only used for the world.
 */
 static void SP_worldspawn(entity &ent)
 {
-	ent.g.movetype = MOVETYPE_PUSH;
+	ent.movetype = MOVETYPE_PUSH;
 	ent.solid = SOLID_BSP;
 	ent.s.modelindex = MODEL_WORLD;      // world model is always index 1
 
@@ -727,10 +746,10 @@ static void SP_worldspawn(entity &ent)
 
 	// make some data visible to the server
 
-	if (ent.g.message)
+	if (ent.message)
 	{
-		gi.configstring(CS_NAME, ent.g.message);
-		level.level_name = ent.g.message;
+		gi.configstring(CS_NAME, ent.message);
+		level.level_name = ent.message;
 	}
 	else
 		level.level_name = level.mapname;
@@ -744,13 +763,13 @@ static void SP_worldspawn(entity &ent)
 
 	gi.configstring(CS_SKYAXIS, va("%f %f %f", st.skyaxis[0], st.skyaxis[1], st.skyaxis[2]));
 
-	gi.configstring(CS_CDTRACK, va("%i", ent.g.sounds));
+	gi.configstring(CS_CDTRACK, va("%i", ent.sounds));
 
 	gi.configstring(CS_MAXCLIENTS, va("%i", game.maxclients));
 
 	// status bar program
 #ifdef SINGLE_PLAYER
-	if (!deathmatch.intVal)
+	if (!(int32_t)deathmatch)
 		gi.configstring(CS_STATUSBAR, single_statusbar);
 	else
 #endif

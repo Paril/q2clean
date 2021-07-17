@@ -39,6 +39,8 @@ Marks the edict as free
 */
 void G_FreeEdict(entity &e);
 
+DECLARE_SAVABLE_FUNCTION(G_FreeEdict);
+
 constexpr vector G_ProjectSource(const vector &point, const vector &distance, const vector &forward, const vector &right)
 {
 	return point + (forward * distance.x) + (right * distance.y) + vector(0, 0, distance.z);

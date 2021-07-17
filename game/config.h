@@ -1,7 +1,7 @@
 #pragma once
 
 /*@@ { "macro": "SINGLE_PLAYER", "desc": "Enable single-player support. This includes monsters, save/load, and any code related to making AI/single player work properly." } @@*/
-//#define SINGLE_PLAYER
+#define SINGLE_PLAYER
 
 /*@@ { "macro": "CTF", "desc": "Enable CTF support. This includes the techs/flags, the \"ctf\" cvar, and other gamemode-specific changes to make CTF work.", "requires": [ "PMENU", "GRAPPLE" ] } @@*/
 //#define CTF
@@ -26,9 +26,6 @@
 
 /*@@ { "macro": "THE_RECKONING", "desc": "The Reckoning support. This includes all of The Reckoning entities/weapons." } @@*/
 //#define THE_RECKONING
-
-/*@@ { "macro": "BOTS", "desc": "Provides the JABot bot base." } @@*/
-#define BOTS
 
 /*@@ { "macro": "KMQUAKE2_EXTENSIONS", "desc": "KMQuake2-specific features. This gives you access to certain additions that KMQuake2 adds, such as extra modelindex slots or gunindexes. These features will not work on non-KMQuake2 engines, but your mod will still function." } @@*/
 //#define KMQUAKE2_EXTENSIONS

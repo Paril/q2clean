@@ -1,4 +1,4 @@
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/gi.h"
 #include "itemlist.h"
 #include "game.h"
@@ -29,6 +29,10 @@ static pickup_func Pickup_Adrenaline;
 static pickup_func Pickup_Bandolier;
 static pickup_func Pickup_Pack;
 static pickup_func Pickup_Health;
+
+#if defined(SINGLE_PLAYER)
+static pickup_func Pickup_Key;
+#endif
 
 // note that this order must match the order of gitem_id!
 static array<gitem_t, ITEM_TOTAL> itemlist
@@ -1036,216 +1040,135 @@ always owned, never in the world
 	key for computer centers
 	*/
 	{
-		"key_data_cd",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/data_cd/tris.md2", EF_ROTATE,
-		0,
-		"k_datacd",
-		"Data CD",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_data_cd",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/data_cd/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_datacd",
+		.pickup_name = "Data CD",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_power_cube (0 .5 .8) (-16 -16 -16) (16 16 16) TRIGGER_SPAWN NO_TOUCH
 	warehouse circuits
 	*/
 	{
-		"key_power_cube",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/power/tris.md2", EF_ROTATE,
-		0,
-		"k_powercube",
-		"Power Cube",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_power_cube",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/power/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_powercube",
+		.pickup_name = "Power Cube",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_pyramid (0 .5 .8) (-16 -16 -16) (16 16 16)
 	key for the entrance of jail3
 	*/
 	{
-		"key_pyramid",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/pyramid/tris.md2", EF_ROTATE,
-		0,
-		"k_pyramid",
-		"Pyramid Key",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_pyramid",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/pyramid/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_pyramid",
+		.pickup_name = "Pyramid Key",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_data_spinner (0 .5 .8) (-16 -16 -16) (16 16 16)
 	key for the city computer
 	*/
 	{
-		"key_data_spinner",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/spinner/tris.md2", EF_ROTATE,
-		0,
-		"k_dataspin",
-		"Data Spinner",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_data_spinner",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/spinner/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_dataspin",
+		.pickup_name = "Data Spinner",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_pass (0 .5 .8) (-16 -16 -16) (16 16 16)
 	security pass for the security level
 	*/
 	{
-		"key_pass",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/pass/tris.md2", EF_ROTATE,
-		0,
-		"k_security",
-		"Security Pass",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_pass",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/pass/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_security",
+		.pickup_name = "Security Pass",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_blue_key (0 .5 .8) (-16 -16 -16) (16 16 16)
 	normal door key - blue
 	*/
 	{
-		"key_blue_key",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/key/tris.md2", EF_ROTATE,
-		0,
-		"k_bluekey",
-		"Blue Key",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_blue_key",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/key/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_bluekey",
+		.pickup_name = "Blue Key",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_red_key (0 .5 .8) (-16 -16 -16) (16 16 16)
 	normal door key - red
 	*/
 	{
-		"key_red_key",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/red_key/tris.md2", EF_ROTATE,
-		0,
-		"k_redkey",
-		"Red Key",
-		2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_red_key",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/red_key/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "k_redkey",
+		.pickup_name = "Red Key",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_commander_head (0 .5 .8) (-16 -16 -16) (16 16 16)
 	tank commander's head
 	*/
 	{
-		"key_commander_head",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/monsters/commandr/head/tris.md2", EF_GIB,
-		0,
-		/* icon */      "k_comhead",
-		/* pickup */    "Commander's Head",
-		/* width */     2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_commander_head",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/monsters/commandr/head/tris.md2",
+		.world_model_flags = EF_GIB,
+		.icon = "k_comhead",
+		.pickup_name = "Commander's Head",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 	/*QUAKED key_airstrike_target (0 .5 .8) (-16 -16 -16) (16 16 16)
 	tank commander's head
 	*/
 	{
-		"key_airstrike_target",
-		"Pickup_Key",
-		0,
-		"Drop_General",
-		0,
-		"items/pkup.wav",
-		"models/items/keys/target/tris.md2", EF_ROTATE,
-		0,
-		/* icon */      "i_airstrike",
-		/* pickup */    "Airstrike Marker",
-		/* width */     2,
-		0,
-		0,
-		IT_STAY_COOP | IT_KEY,
-		0,
-		0,
-		0,
-		/* precache */ ""
+		.classname = "key_airstrike_target",
+		.pickup = Pickup_Key,
+		.drop = Drop_General,
+		.pickup_sound = "items/pkup.wav",
+		.world_model = "models/items/keys/target/tris.md2",
+		.world_model_flags = EF_ROTATE,
+		.icon = "i_airstrike",
+		.pickup_name = "Airstrike Marker",
+		.flags = IT_STAY_COOP | IT_KEY
 	},
 
 #ifdef THE_RECKONING
@@ -1500,9 +1423,9 @@ void DoRespawn(entity &item)
 {
 	entityref ent = item;
 
-	if (ent->g.team)
+	if (ent->team)
 	{
-		entityref master = ent->g.teammaster;
+		entityref master = ent->teammaster;
 
 #ifdef CTF
 //in ctf, when we are weapons stay, only the master of a team of weapons
@@ -1516,11 +1439,11 @@ void DoRespawn(entity &item)
 #endif	
 			uint32_t	count;
 
-			for (count = 0, ent = master; ent.has_value(); ent = ent->g.chain, count++) ;
+			for (count = 0, ent = master; ent.has_value(); ent = ent->chain, count++) ;
 
 			uint32_t choice = Q_rand_uniform(count);
 
-			for (count = 0, ent = master; count < choice; ent = ent->g.chain, count++) ;
+			for (count = 0, ent = master; count < choice; ent = ent->chain, count++) ;
 #ifdef CTF
 		}
 #endif
@@ -1534,13 +1457,15 @@ void DoRespawn(entity &item)
 	ent->s.event = EV_ITEM_RESPAWN;
 }
 
+REGISTER_SAVABLE_FUNCTION(DoRespawn);
+
 void SetRespawn(entity &ent, float delay)
 {
-	ent.g.flags |= FL_RESPAWN;
+	ent.flags |= FL_RESPAWN;
 	ent.svflags |= SVF_NOCLIENT;
 	ent.solid = SOLID_NOT;
-	ent.g.nextthink = level.framenum + (gtime)(delay * BASE_FRAMERATE);
-	ent.g.think = DoRespawn;
+	ent.nextthink = level.framenum + (gtime)(delay * BASE_FRAMERATE);
+	ent.think = DoRespawn_savable;
 	gi.linkentity(ent);
 }
 
@@ -1553,40 +1478,40 @@ static bool Pickup_Powerup(entity &ent, entity &other)
 #ifdef SINGLE_PLAYER
 	const int32_t &quantity = other.client->pers.inventory[ent.item->id];
 
-	if ((skill.intVal == 1 && quantity >= 2) || (skill.intVal >= 2 && quantity >= 1))
+	if (((int32_t)skill == 1 && quantity >= 2) || ((int32_t)skill >= 2 && quantity >= 1))
 		return false;
 
-	if (coop.intVal && (ent.item->flags & IT_STAY_COOP) && quantity > 0)
+	if (coop && (ent.item->flags & IT_STAY_COOP) && quantity > 0)
 		return false;
 #endif
 
-	other.client->g.pers.inventory[ent.g.item->id]++;
+	other.client->pers.inventory[ent.item->id]++;
 
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal)
+	if (deathmatch)
 	{
 #endif
-		if (!(ent.g.spawnflags & DROPPED_ITEM))
-			SetRespawn(ent, ent.g.item->quantity);
+		if (!(ent.spawnflags & DROPPED_ITEM))
+			SetRespawn(ent, ent.item->quantity);
 
-		if (((dm_flags)dmflags & DF_INSTANT_ITEMS) || ((ent.g.item->use == Use_Quad
+		if (((dm_flags)dmflags & DF_INSTANT_ITEMS) || ((ent.item->use == Use_Quad
 #ifdef THE_RECKONING
 			|| ent.item->use == Use_QuadFire
 #endif
-			) && (ent.g.spawnflags & DROPPED_PLAYER_ITEM)))
+			) && (ent.spawnflags & DROPPED_PLAYER_ITEM)))
 		{
-			if (ent.g.spawnflags & DROPPED_PLAYER_ITEM)
+			if (ent.spawnflags & DROPPED_PLAYER_ITEM)
 			{
-				if (ent.g.item->use == Use_Quad)
-					quad_drop_timeout_hack = ent.g.nextthink - level.framenum;
+				if (ent.item->use == Use_Quad)
+					quad_drop_timeout_hack = ent.nextthink - level.framenum;
 #ifdef THE_RECKONING
 				else if (ent.item->use == Use_QuadFire)
 					quad_drop_timeout_hack = ent.nextthink - level.framenum;
 #endif
 			}
 
-			if (ent.g.item->use)
-				ent.g.item->use(other, ent.g.item);
+			if (ent.item->use)
+				ent.item->use(other, ent.item);
 		}
 #ifdef SINGLE_PLAYER
 	}
@@ -1601,7 +1526,7 @@ void ValidateSelectedItem(entity &);
 static void Drop_General(entity &ent, const gitem_t &it)
 {
 	Drop_Item(ent, it);
-	ent.client->g.pers.inventory[it.id]--;
+	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 }
 
@@ -1610,44 +1535,44 @@ static void Drop_General(entity &ent, const gitem_t &it)
 static bool Pickup_Adrenaline(entity &ent, entity &other)
 {
 #ifdef SINGLE_PLAYER
-	if (!deathmatch.intVal)
+	if (!deathmatch)
 		other.max_health += 1;
 #endif
 
-	other.g.health = max(other.g.health, other.g.max_health);
+	other.health = max(other.health, other.max_health);
 
 #ifdef SINGLE_PLAYER
-	if (!(ent.g.spawnflags & DROPPED_ITEM) && deathmatch)
+	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	if (!(ent.g.spawnflags & DROPPED_ITEM))
+	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.g.item->quantity);
+		SetRespawn(ent, ent.item->quantity);
 
 	return true;
 }
 
 static bool Pickup_AncientHead(entity &ent, entity &other)
 {
-	other.g.max_health += 2;
+	other.max_health += 2;
 
 #ifdef SINGLE_PLAYER
 	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	if (!(ent.g.spawnflags & DROPPED_ITEM))
+	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.g.item->quantity);
+		SetRespawn(ent, ent.item->quantity);
 
 	return true;
 }
 
 static inline void AdjustAmmoMax(entity &other, const ammo_id &ammo, const int32_t &new_max)
 {
-	other.client->g.pers.max_ammo[ammo] = max(other.client->g.pers.max_ammo[ammo], new_max);
+	other.client->pers.max_ammo[ammo] = max(other.client->pers.max_ammo[ammo], new_max);
 }
 
 static inline void AddAndCapAmmo(entity &other, const gitem_t &ammo)
 {
-	other.client->g.pers.inventory[ammo.id] = min(other.client->g.pers.inventory[ammo.id] + ammo.quantity, other.client->g.pers.max_ammo[ammo.ammotag]);
+	other.client->pers.inventory[ammo.id] = min(other.client->pers.inventory[ammo.id] + ammo.quantity, other.client->pers.max_ammo[ammo.ammotag]);
 }
 
 static bool Pickup_Bandolier(entity &ent, entity &other)
@@ -1668,11 +1593,11 @@ static bool Pickup_Bandolier(entity &ent, entity &other)
 	AddAndCapAmmo(other, GetItemByIndex(ITEM_SHELLS));
 
 #ifdef SINGLE_PLAYER
-	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch.intVal)
+	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	if (!(ent.g.spawnflags & DROPPED_ITEM))
+	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.g.item->quantity);
+		SetRespawn(ent, ent.item->quantity);
 
 	return true;
 }
@@ -1708,11 +1633,11 @@ static bool Pickup_Pack(entity &ent, entity &other)
 #endif
 
 #ifdef SINGLE_PLAYER
-	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch.intVal)
+	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	if (!(ent.g.spawnflags & DROPPED_ITEM))
+	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.g.item->quantity);
+		SetRespawn(ent, ent.item->quantity);
 
 	return true;
 }
@@ -1721,7 +1646,7 @@ static bool Pickup_Pack(entity &ent, entity &other)
 
 static void Use_Quad(entity &ent, const gitem_t &it)
 {
-	ent.client->g.pers.inventory[it.id]--;
+	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
 	gtime timeout;
@@ -1734,10 +1659,10 @@ static void Use_Quad(entity &ent, const gitem_t &it)
 	else
 		timeout = 300;
 
-	if (ent.client->g.quad_framenum > level.framenum)
-		ent.client->g.quad_framenum += timeout;
+	if (ent.client->quad_framenum > level.framenum)
+		ent.client->quad_framenum += timeout;
 	else
-		ent.client->g.quad_framenum = level.framenum + timeout;
+		ent.client->quad_framenum = level.framenum + timeout;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage.wav"), 1, ATTN_NORM, 0);
 }
@@ -1746,39 +1671,39 @@ static void Use_Quad(entity &ent, const gitem_t &it)
 
 static void Use_Breather(entity &ent, const gitem_t &it)
 {
-	ent.client->g.pers.inventory[it.id]--;
+	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->g.breather_framenum > level.framenum)
-		ent.client->g.breather_framenum += 300;
+	if (ent.client->breather_framenum > level.framenum)
+		ent.client->breather_framenum += 300;
 	else
-		ent.client->g.breather_framenum = level.framenum + 300;
+		ent.client->breather_framenum = level.framenum + 300;
 }
 
 //======================================================================
 
 static void Use_Envirosuit(entity &ent, const gitem_t &it)
 {
-	ent.client->g.pers.inventory[it.id]--;
+	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->g.enviro_framenum > level.framenum)
-		ent.client->g.enviro_framenum += 300;
+	if (ent.client->enviro_framenum > level.framenum)
+		ent.client->enviro_framenum += 300;
 	else
-		ent.client->g.enviro_framenum = level.framenum + 300;
+		ent.client->enviro_framenum = level.framenum + 300;
 }
 
 //======================================================================
 
 static void Use_Invulnerability(entity &ent, const gitem_t &it)
 {
-	ent.client->g.pers.inventory[it.id]--;
+	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->g.invincible_framenum > level.framenum)
-		ent.client->g.invincible_framenum += 300;
+	if (ent.client->invincible_framenum > level.framenum)
+		ent.client->invincible_framenum += 300;
 	else
-		ent.client->g.invincible_framenum = level.framenum + 300;
+		ent.client->invincible_framenum = level.framenum + 300;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect.wav"), 1, ATTN_NORM, 0);
 }
@@ -1787,39 +1712,39 @@ static void Use_Invulnerability(entity &ent, const gitem_t &it)
 
 static void Use_Silencer(entity &ent, const gitem_t &it)
 {
-	ent.client->g.pers.inventory[it.id]--;
+	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
-	ent.client->g.silencer_shots += 30;
+	ent.client->silencer_shots += 30;
 }
 
 //======================================================================
 
 #ifdef SINGLE_PLAYER
-API_FUNC static bool(entity ent, entity other) Pickup_Key =
+static bool Pickup_Key(entity &ent, entity &other)
 {
-	if (coop.intVal)
+	if (coop)
 	{
-		if (ent.classname == "key_power_cube")
+		if (ent.item->id == ITEM_POWER_CUBE)
 		{
 			int cube_flag = (ent.spawnflags & 0x0000ff00) >> 8;
 
-			if (other.client.pers.power_cubes & cube_flag)
+			if (other.client->pers.power_cubes & cube_flag)
 				return false;
 
-			other.client.pers.inventory[ent.item->id]++;
-			other.client.pers.power_cubes |= cube_flag;
+			other.client->pers.inventory[ent.item->id]++;
+			other.client->pers.power_cubes |= cube_flag;
 		}
 		else
 		{
-			if (other.client.pers.inventory[ent.item->id])
+			if (other.client->pers.inventory[ent.item->id])
 				return false;
 
-			other.client.pers.inventory[ent.item->id] = 1;
+			other.client->pers.inventory[ent.item->id] = 1;
 		}
 
 		return true;
 	}
-	other.client.pers.inventory[ent.item->id]++;
+	other.client->pers.inventory[ent.item->id]++;
 	return true;
 }
 #endif
@@ -1831,46 +1756,46 @@ bool Add_Ammo(entity &ent, const gitem_t &it, int32_t count)
 	if (!ent.is_client())
 		return false;
 
-	int32_t max = ent.client->g.pers.max_ammo[it.ammotag];
+	int32_t max = ent.client->pers.max_ammo[it.ammotag];
 
-	if (ent.client->g.pers.inventory[it.id] == max)
+	if (ent.client->pers.inventory[it.id] == max)
 		return false;
 
-	ent.client->g.pers.inventory[it.id] = min(max, ent.client->g.pers.inventory[it.id] + count);
+	ent.client->pers.inventory[it.id] = min(max, ent.client->pers.inventory[it.id] + count);
 	return true;
 }
 
 static bool Pickup_Ammo(entity &ent, entity &other)
 {
-	const bool weapon = (ent.g.item->flags & IT_WEAPON);
+	const bool weapon = (ent.item->flags & IT_WEAPON);
 	int32_t ammocount;
 
 	if (weapon && ((dm_flags)dmflags & DF_INFINITE_AMMO))
 		ammocount = 1000;
-	else if (ent.g.count)
-		ammocount = ent.g.count;
+	else if (ent.count)
+		ammocount = ent.count;
 	else
-		ammocount = ent.g.item->quantity;
+		ammocount = ent.item->quantity;
 
-	const int32_t oldcount = other.client->g.pers.inventory[ent.g.item->id];
+	const int32_t oldcount = other.client->pers.inventory[ent.item->id];
 
-	if (!Add_Ammo(other, ent.g.item, ammocount))
+	if (!Add_Ammo(other, ent.item, ammocount))
 		return false;
 
-	if (weapon && !oldcount && other.client->g.pers.weapon != ent.g.item &&
+	if (weapon && !oldcount && other.client->pers.weapon != ent.item &&
 #ifdef SINGLE_PLAYER
-		(!deathmatch.intVal ||
+		(!deathmatch ||
 #endif
-		(other.client->g.pers.weapon && other.client->g.pers.weapon->id == ITEM_BLASTER))
+		(other.client->pers.weapon && other.client->pers.weapon->id == ITEM_BLASTER))
 #ifdef SINGLE_PLAYER
 		)
 #endif
-			other.client->g.newweapon = ent.g.item;
+			other.client->newweapon = ent.item;
 
 #ifdef SINGLE_PLAYER
-	if (!(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)) && deathmatch.intVal)
+	if (!(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)) && deathmatch)
 #else
-	if (!(ent.g.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)))
+	if (!(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)))
 #endif
 		SetRespawn(ent, 30);
 
@@ -1881,22 +1806,22 @@ static void Drop_Ammo(entity &ent, const gitem_t &it)
 {
 	entity &dropped = Drop_Item(ent, it);
 
-	if (ent.client->g.pers.inventory[it.id] >= it.quantity)
-		dropped.g.count = it.quantity;
+	if (ent.client->pers.inventory[it.id] >= it.quantity)
+		dropped.count = it.quantity;
 	else
-		dropped.g.count = ent.client->g.pers.inventory[it.id];
+		dropped.count = ent.client->pers.inventory[it.id];
 
-	if (ent.client->g.pers.weapon &&
-		ent.client->g.pers.weapon->ammotag == AMMO_GRENADES &&
+	if (ent.client->pers.weapon &&
+		ent.client->pers.weapon->ammotag == AMMO_GRENADES &&
 		it.ammotag == AMMO_GRENADES &&
-		(ent.client->g.pers.inventory[it.id] - dropped.g.count) <= 0)
+		(ent.client->pers.inventory[it.id] - dropped.count) <= 0)
 	{
 		gi.cprintf(ent, PRINT_HIGH, "Can't drop current weapon\n");
 		G_FreeEdict(dropped);
 		return;
 	}
 
-	ent.client->g.pers.inventory[it.id] -= dropped.g.count;
+	ent.client->pers.inventory[it.id] -= dropped.count;
 	ValidateSelectedItem(ent);
 }
 
@@ -1908,31 +1833,33 @@ bool(entity) CTFHasRegeneration;
 
 static void MegaHealth_think(entity &self)
 {
-	if (self.owner->g.health > self.owner->g.max_health
+	if (self.owner->health > self.owner->max_health
 #ifdef CTF
 		&& !CTFHasRegeneration(self.owner)
 #endif
 		)
 	{
-		self.g.nextthink = level.framenum + 1 * BASE_FRAMERATE;
-		self.owner->g.health -= 1;
+		self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+		self.owner->health -= 1;
 		return;
 	}
 
 #ifdef SINGLE_PLAYER
-	if (!(self.spawnflags & DROPPED_ITEM) && deathmatch.intVal)
+	if (!(self.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	if (!(self.g.spawnflags & DROPPED_ITEM))
+	if (!(self.spawnflags & DROPPED_ITEM))
 #endif
 		SetRespawn(self, 20);
 	else
 		G_FreeEdict(self);
 }
 
+REGISTER_SAVABLE_FUNCTION(MegaHealth_think);
+
 static bool Pickup_Health(entity &ent, entity &other)
 {
-	if (!(ent.g.style & HEALTH_IGNORE_MAX))
-		if (other.g.health >= other.g.max_health)
+	if (!(ent.style & HEALTH_IGNORE_MAX))
+		if (other.health >= other.max_health)
 			return false;
 
 #ifdef CTF
@@ -1940,33 +1867,33 @@ static bool Pickup_Health(entity &ent, entity &other)
 		return false;
 #endif
 
-	other.g.health += ent.g.count;
+	other.health += ent.count;
 
 #ifdef CTF
 	if (other.health > 250 && ent.count > 25)
 		other.health = 250;
 #endif
 
-	if (!(ent.g.style & HEALTH_IGNORE_MAX))
-		other.g.health = min(other.g.health, other.g.max_health);
+	if (!(ent.style & HEALTH_IGNORE_MAX))
+		other.health = min(other.health, other.max_health);
 
-	if (ent.g.style & HEALTH_TIMED
+	if (ent.style & HEALTH_TIMED
 #ifdef CTF
 		&& !CTFHasRegeneration(other)
 #endif
 		)
 	{
-		ent.g.think = MegaHealth_think;
-		ent.g.nextthink = level.framenum + 5 * BASE_FRAMERATE;
+		ent.think = MegaHealth_think_savable;
+		ent.nextthink = level.framenum + 5 * BASE_FRAMERATE;
 		ent.owner = other;
-		ent.g.flags |= FL_RESPAWN;
+		ent.flags |= FL_RESPAWN;
 		ent.svflags |= SVF_NOCLIENT;
 		ent.solid = SOLID_NOT;
 	}
 #ifdef SINGLE_PLAYER
-	else if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch.intVal)
+	else if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	else if (!(ent.g.spawnflags & DROPPED_ITEM))
+	else if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
 		SetRespawn(ent, 30);
 
@@ -1980,11 +1907,11 @@ gitem_id ArmorIndex(entity &ent)
 	if (!ent.is_client())
 		return ITEM_NONE;
 
-	if (ent.client->g.pers.inventory[ITEM_ARMOR_JACKET] > 0)
+	if (ent.client->pers.inventory[ITEM_ARMOR_JACKET] > 0)
 		return ITEM_ARMOR_JACKET;
-	else if (ent.client->g.pers.inventory[ITEM_ARMOR_COMBAT] > 0)
+	else if (ent.client->pers.inventory[ITEM_ARMOR_COMBAT] > 0)
 		return ITEM_ARMOR_COMBAT;
-	else if (ent.client->g.pers.inventory[ITEM_ARMOR_BODY] > 0)
+	else if (ent.client->pers.inventory[ITEM_ARMOR_BODY] > 0)
 		return ITEM_ARMOR_BODY;
 
 	return ITEM_NONE;
@@ -1995,16 +1922,16 @@ static bool Pickup_Armor(entity &ent, entity &other)
 	gitem_id old_armor_index = ArmorIndex(other);
 
 	// handle armor shards specially
-	if (ent.g.item->id == ITEM_ARMOR_SHARD)
-		other.client->g.pers.inventory[old_armor_index ? old_armor_index : ITEM_ARMOR_JACKET] += 2;
+	if (ent.item->id == ITEM_ARMOR_SHARD)
+		other.client->pers.inventory[old_armor_index ? old_armor_index : ITEM_ARMOR_JACKET] += 2;
 	else
 	{
 		// get info on new armor
-		const gitem_armor &newinfo = ent.g.item->armor;
+		const gitem_armor &newinfo = ent.item->armor;
 
 		// if player has no armor, just use it
 		if (!old_armor_index)
-			other.client->g.pers.inventory[ent.g.item->id] = newinfo.base_count;
+			other.client->pers.inventory[ent.item->id] = newinfo.base_count;
 		// use the better armor
 		else
 		{
@@ -2015,36 +1942,36 @@ static bool Pickup_Armor(entity &ent, entity &other)
 			{
 				// calc new armor values
 				const float salvage = oldinfo.normal_protection / newinfo.normal_protection;
-				const int32_t salvagecount = (int32_t)(salvage * other.client->g.pers.inventory[old_armor_index]);
+				const int32_t salvagecount = (int32_t)(salvage * other.client->pers.inventory[old_armor_index]);
 				const int32_t newcount = min(newinfo.base_count + salvagecount, newinfo.max_count);
 
 				// zero count of old armor so it goes away
-				other.client->g.pers.inventory[old_armor_index] = 0;
+				other.client->pers.inventory[old_armor_index] = 0;
 
 				// change armor to new item with computed value
-				other.client->g.pers.inventory[ent.g.item->id] = newcount;
+				other.client->pers.inventory[ent.item->id] = newcount;
 			}
 			else
 			{
 				// calc new armor values
 				const float salvage = newinfo.normal_protection / oldinfo.normal_protection;
 				const int32_t salvagecount = (int32_t)(salvage * newinfo.base_count);
-				const int32_t newcount = min(other.client->g.pers.inventory[old_armor_index] + salvagecount, oldinfo.max_count);
+				const int32_t newcount = min(other.client->pers.inventory[old_armor_index] + salvagecount, oldinfo.max_count);
 
 				// if we're already maxed out then we don't need the new armor
-				if (other.client->g.pers.inventory[old_armor_index] >= newcount)
+				if (other.client->pers.inventory[old_armor_index] >= newcount)
 					return false;
 
 				// update current armor value
-				other.client->g.pers.inventory[old_armor_index] = newcount;
+				other.client->pers.inventory[old_armor_index] = newcount;
 			}
 		}
 	}
 
 #ifdef SINGLE_PLAYER
-	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch.intVal)
+	if (!(ent.spawnflags & DROPPED_ITEM) && deathmatch)
 #else
-	if (!(ent.g.spawnflags & DROPPED_ITEM))
+	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
 		SetRespawn(ent, 20);
 
@@ -2055,11 +1982,11 @@ static bool Pickup_Armor(entity &ent, entity &other)
 
 gitem_id PowerArmorType(entity &ent)
 {
-	if (ent.is_client() && (ent.g.flags & FL_POWER_ARMOR))
+	if (ent.is_client() && (ent.flags & FL_POWER_ARMOR))
 	{
-		if (ent.client->g.pers.inventory[ITEM_POWER_SHIELD] > 0)
+		if (ent.client->pers.inventory[ITEM_POWER_SHIELD] > 0)
 			return ITEM_POWER_SHIELD;
-		else if (ent.client->g.pers.inventory[ITEM_POWER_SCREEN] > 0)
+		else if (ent.client->pers.inventory[ITEM_POWER_SCREEN] > 0)
 			return ITEM_POWER_SCREEN;
 	}
 
@@ -2068,11 +1995,11 @@ gitem_id PowerArmorType(entity &ent)
 
 static void Use_PowerArmor(entity &ent, const gitem_t &)
 {
-	if (ent.g.flags & FL_POWER_ARMOR)
+	if (ent.flags & FL_POWER_ARMOR)
 		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/power2.wav"), 1, ATTN_NORM, 0);
 	else
 	{
-		if (!ent.client->g.pers.inventory[ITEM_CELLS])
+		if (!ent.client->pers.inventory[ITEM_CELLS])
 		{
 			gi.cprintf(ent, PRINT_HIGH, "No cells for power armor.\n");
 			return;
@@ -2080,25 +2007,25 @@ static void Use_PowerArmor(entity &ent, const gitem_t &)
 		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/power1.wav"), 1, ATTN_NORM, 0);
 	}
 
-	ent.g.flags ^= FL_POWER_ARMOR;
+	ent.flags ^= FL_POWER_ARMOR;
 }
 
 static bool Pickup_PowerArmor(entity &ent, entity &other)
 {
-	const int32_t quantity = other.client->g.pers.inventory[ent.g.item->id];
+	const int32_t quantity = other.client->pers.inventory[ent.item->id];
 
-	other.client->g.pers.inventory[ent.g.item->id]++;
+	other.client->pers.inventory[ent.item->id]++;
 
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal)
+	if (deathmatch)
 	{
 #endif
-		if (!(ent.g.spawnflags & DROPPED_ITEM))
-			SetRespawn(ent, ent.g.item->quantity);
+		if (!(ent.spawnflags & DROPPED_ITEM))
+			SetRespawn(ent, ent.item->quantity);
 
 		// auto-use for DM only if we didn't already have one
 		if (!quantity)
-			ent.g.item->use(other, ent.g.item);
+			ent.item->use(other, ent.item);
 #ifdef SINGLE_PLAYER
 	}
 #endif
@@ -2108,7 +2035,7 @@ static bool Pickup_PowerArmor(entity &ent, entity &other)
 
 static void Drop_PowerArmor(entity &ent, const gitem_t &it)
 {
-	if ((ent.g.flags & FL_POWER_ARMOR) && (ent.client->g.pers.inventory[it.id] == 1))
+	if ((ent.flags & FL_POWER_ARMOR) && (ent.client->pers.inventory[it.id] == 1))
 		Use_PowerArmor(ent, it);
 
 	Drop_General(ent, it);
@@ -2125,60 +2052,62 @@ void Touch_Item(entity &ent, entity &other, vector , const surface &)
 {
 	if (!other.is_client())
 		return;
-	if (other.g.health < 1)
+	if (other.health < 1)
 		return;     // dead people can't pickup
-	if (!ent.g.item->pickup)
+	if (!ent.item->pickup)
 		return;     // not a grabbable item?
 
-	const bool taken = ent.g.item->pickup(ent, other);
+	const bool taken = ent.item->pickup(ent, other);
 
 	if (taken)
 	{
 		// flash the screen
-		other.client->g.bonus_alpha = 0.25f;
+		other.client->bonus_alpha = 0.25f;
 
 		// show icon and name on status bar
-		other.client->ps.stats[STAT_PICKUP_ICON] = gi.imageindex(ent.g.item->icon);
-		other.client->ps.stats[STAT_PICKUP_STRING] = CS_ITEMS + (config_string)ent.g.item->id;
-		other.client->g.pickup_msg_framenum = level.framenum + (int)(3.0f * BASE_FRAMERATE);
+		other.client->ps.stats[STAT_PICKUP_ICON] = gi.imageindex(ent.item->icon);
+		other.client->ps.stats[STAT_PICKUP_STRING] = CS_ITEMS + (config_string)ent.item->id;
+		other.client->pickup_msg_framenum = level.framenum + (int)(3.0f * BASE_FRAMERATE);
 
 		// change selected item
-		if (ent.g.item->use)
-			other.client->ps.stats[STAT_SELECTED_ITEM] = other.client->g.pers.selected_item = ent.g.item->id;
+		if (ent.item->use)
+			other.client->ps.stats[STAT_SELECTED_ITEM] = other.client->pers.selected_item = ent.item->id;
 
-		if (ent.g.item->pickup == Pickup_Health)
+		if (ent.item->pickup == Pickup_Health)
 		{
-			if (ent.g.count == 2)
+			if (ent.count == 2)
 				gi.sound(other, CHAN_ITEM, gi.soundindex("items/s_health.wav"), 1, ATTN_NORM, 0);
-			else if (ent.g.count == 10)
+			else if (ent.count == 10)
 				gi.sound(other, CHAN_ITEM, gi.soundindex("items/n_health.wav"), 1, ATTN_NORM, 0);
-			else if (ent.g.count == 25)
+			else if (ent.count == 25)
 				gi.sound(other, CHAN_ITEM, gi.soundindex("items/l_health.wav"), 1, ATTN_NORM, 0);
 			else
 				gi.sound(other, CHAN_ITEM, gi.soundindex("items/m_health.wav"), 1, ATTN_NORM, 0);
 		}
-		else if (ent.g.item->pickup_sound)
-			gi.sound(other, CHAN_ITEM, gi.soundindex(ent.g.item->pickup_sound), 1, ATTN_NORM, 0);
+		else if (ent.item->pickup_sound)
+			gi.sound(other, CHAN_ITEM, gi.soundindex(ent.item->pickup_sound), 1, ATTN_NORM, 0);
 	}
 
-	if (!(ent.g.spawnflags & ITEM_TARGETS_USED))
+	if (!(ent.spawnflags & ITEM_TARGETS_USED))
 	{
 		G_UseTargets(ent, other);
-		ent.g.spawnflags |= ITEM_TARGETS_USED;
+		ent.spawnflags |= ITEM_TARGETS_USED;
 	}
 
 	if (!taken)
 		return;
 #ifdef SINGLE_PLAYER
-	else if (coop.intVal && (ent.item->flags & IT_STAY_COOP) && !(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)))
+	else if (coop && (ent.item->flags & IT_STAY_COOP) && !(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)))
 		return;
 #endif
 
-	if (ent.g.flags & FL_RESPAWN)
-		ent.g.flags &= ~FL_RESPAWN;
+	if (ent.flags & FL_RESPAWN)
+		ent.flags &= ~FL_RESPAWN;
 	else
 		G_FreeEdict(ent);
 }
+
+REGISTER_SAVABLE_FUNCTION(Touch_Item);
 
 //======================================================================
 
@@ -2190,28 +2119,32 @@ static void drop_temp_touch(entity &ent, entity &other, vector plane, const surf
 	Touch_Item(ent, other, plane, surf);
 }
 
+REGISTER_SAVABLE_FUNCTION(drop_temp_touch);
+
 static void drop_make_touchable(entity &ent)
 {
-	ent.g.touch = Touch_Item;
+	ent.touch = Touch_Item_savable;
 
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal)
+	if (deathmatch)
 	{
 #endif
-		ent.g.nextthink = level.framenum + 29 * BASE_FRAMERATE;
-		ent.g.think = G_FreeEdict;
+		ent.nextthink = level.framenum + 29 * BASE_FRAMERATE;
+		ent.think = G_FreeEdict_savable;
 #ifdef SINGLE_PLAYER
 	}
 #endif
 }
 
+REGISTER_SAVABLE_FUNCTION(drop_make_touchable);
+
 entity &Drop_Item(entity &ent, const gitem_t &it)
 {
 	entity &dropped = G_Spawn();
 
-	dropped.g.type = ET_ITEM;
-	dropped.g.item = it;
-	dropped.g.spawnflags = DROPPED_ITEM;
+	dropped.type = ET_ITEM;
+	dropped.item = it;
+	dropped.spawnflags = DROPPED_ITEM;
 	dropped.s.effects = it.world_model_flags;
 	dropped.s.renderfx = RF_GLOW
 #ifdef GROUND_ZERO
@@ -2222,8 +2155,8 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 	dropped.maxs = { 15, 15, 15 };
 	gi.setmodel(dropped, it.world_model);
 	dropped.solid = SOLID_TRIGGER;
-	dropped.g.movetype = MOVETYPE_TOSS;
-	dropped.g.touch = drop_temp_touch;
+	dropped.movetype = MOVETYPE_TOSS;
+	dropped.touch = drop_temp_touch_savable;
 	dropped.owner = ent;
 
 	vector forward;
@@ -2231,7 +2164,7 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 	if (ent.is_client())
 	{
 		vector right;
-		AngleVectors(ent.client->g.v_angle, &forward, &right, nullptr);
+		AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 		dropped.s.origin = G_ProjectSource(ent.s.origin, { 24, 0, -16 }, forward, right);
 
 		trace tr = gi.trace(ent.s.origin, dropped.mins, dropped.maxs, dropped.s.origin, ent, CONTENTS_SOLID);
@@ -2243,11 +2176,11 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 		dropped.s.origin = ent.s.origin;
 	}
 
-	dropped.g.velocity = forward * 100;
-	dropped.g.velocity.z = 300.f;
+	dropped.velocity = forward * 100;
+	dropped.velocity.z = 300.f;
 
-	dropped.g.think = drop_make_touchable;
-	dropped.g.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+	dropped.think = drop_make_touchable_savable;
+	dropped.nextthink = level.framenum + 1 * BASE_FRAMERATE;
 
 	gi.linkentity(dropped);
 	return dropped;
@@ -2256,21 +2189,23 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 static void Use_Item(entity &ent, entity &, entity &)
 {
 	ent.svflags &= ~SVF_NOCLIENT;
-	ent.g.use = 0;
+	ent.use = 0;
 
-	if (ent.g.spawnflags & ITEM_NO_TOUCH)
+	if (ent.spawnflags & ITEM_NO_TOUCH)
 	{
 		ent.solid = SOLID_BBOX;
-		ent.g.touch = 0;
+		ent.touch = 0;
 	}
 	else
 	{
 		ent.solid = SOLID_TRIGGER;
-		ent.g.touch = Touch_Item;
+		ent.touch = Touch_Item_savable;
 	}
 
 	gi.linkentity(ent);
 }
+
+REGISTER_SAVABLE_FUNCTION(Use_Item);
 
 //======================================================================
 
@@ -2284,14 +2219,14 @@ void droptofloor(entity &ent)
 	ent.mins = { -15, -15, -15 };
 	ent.maxs = { 15, 15, 15 };
 
-	if (ent.g.model)
-		gi.setmodel(ent, ent.g.model);
+	if (ent.model)
+		gi.setmodel(ent, ent.model);
 	else
-		gi.setmodel(ent, ent.g.item->world_model);
+		gi.setmodel(ent, ent.item->world_model);
 
 	ent.solid = SOLID_TRIGGER;
-	ent.g.movetype = MOVETYPE_TOSS;
-	ent.g.touch = Touch_Item;
+	ent.movetype = MOVETYPE_TOSS;
+	ent.touch = Touch_Item_savable;
 
 	vector dest = ent.s.origin;
 	dest[2] -= 128;
@@ -2309,7 +2244,7 @@ void droptofloor(entity &ent)
 		else
 		{
 #endif
-			gi.dprintf("droptofloor: %i startsolid at %s\n", ent.g.type, vtos(ent.s.origin).ptr());
+			gi.dprintf("droptofloor: %i startsolid at %s\n", ent.type, vtos(ent.s.origin).ptr());
 			G_FreeEdict(ent);
 			return;
 #ifdef THE_RECKONING
@@ -2319,38 +2254,40 @@ void droptofloor(entity &ent)
 
 	ent.s.origin = tr.endpos;
 
-	if (ent.g.team)
+	if (ent.team)
 	{
-		ent.g.flags &= ~FL_TEAMSLAVE;
-		ent.g.chain = ent.g.teamchain;
-		ent.g.teamchain = nullptr;
+		ent.flags &= ~FL_TEAMSLAVE;
+		ent.chain = ent.teamchain;
+		ent.teamchain = nullptr;
 		ent.svflags |= SVF_NOCLIENT;
 		ent.solid = SOLID_NOT;
 
-		if (ent == ent.g.teammaster)
+		if (ent == ent.teammaster)
 		{
-			ent.g.nextthink = level.framenum + 1;
-			ent.g.think = DoRespawn;
+			ent.nextthink = level.framenum + 1;
+			ent.think = DoRespawn_savable;
 		}
 	}
 
-	if (ent.g.spawnflags & ITEM_NO_TOUCH)
+	if (ent.spawnflags & ITEM_NO_TOUCH)
 	{
 		ent.solid = SOLID_BBOX;
-		ent.g.touch = 0;
+		ent.touch = 0;
 		ent.s.effects &= ~EF_ROTATE;
 		ent.s.renderfx &= ~RF_GLOW;
 	}
 
-	if (ent.g.spawnflags & ITEM_TRIGGER_SPAWN)
+	if (ent.spawnflags & ITEM_TRIGGER_SPAWN)
 	{
 		ent.svflags |= SVF_NOCLIENT;
 		ent.solid = SOLID_NOT;
-		ent.g.use = Use_Item;
+		ent.use = Use_Item_savable;
 	}
 
 	gi.linkentity(ent);
 }
+
+REGISTER_SAVABLE_FUNCTION(droptofloor);
 
 /*
 ===============
@@ -2423,7 +2360,7 @@ void(entity) CTFFlagSetup;
 
 void SpawnItem(entity &ent, const gitem_t &it)
 {
-	if (ent.g.spawnflags
+	if (ent.spawnflags
 #ifdef GROUND_ZERO
 		> ITEM_TRIGGER_SPAWN
 #endif
@@ -2432,13 +2369,13 @@ void SpawnItem(entity &ent, const gitem_t &it)
 #endif
 		)
 	{
-		ent.g.spawnflags = NO_SPAWNFLAGS;
+		ent.spawnflags = NO_SPAWNFLAGS;
 		gi.dprintf("%s at %s has invalid spawnflags set\n", it.classname, vtos(ent.s.origin).ptr());
 	}
 
 #ifdef SINGLE_PLAYER
 	// some items will be prevented in deathmatch
-	if (deathmatch.intVal)
+	if (deathmatch)
 	{
 #endif
 		if (((dm_flags)dmflags & DF_NO_ARMOR) && (it.pickup == Pickup_Armor || it.pickup == Pickup_PowerArmor))
@@ -2470,15 +2407,16 @@ void SpawnItem(entity &ent, const gitem_t &it)
 	PrecacheItem(it);
 
 #ifdef SINGLE_PLAYER
-	if (coop.intVal && ent.classname == "key_power_cube")
+	if (coop && it.id == ITEM_POWER_CUBE)
 	{
-		ent.spawnflags |= (1 << (8 + level.power_cubes));
+		ent.spawnflags |= (spawn_flag)(1 << (8 + level.power_cubes));
 		level.power_cubes++;
 	}
 
 	// don't let them drop items that stay in a coop game
-	if (coop.intVal && (it->flags & IT_STAY_COOP))
-		it->drop = 0;
+	if (coop && (it.flags & IT_STAY_COOP))
+		// FIXME
+		const_cast<gitem_t &>(it).drop = nullptr;
 #endif
 
 #ifdef CTF
@@ -2492,15 +2430,15 @@ void SpawnItem(entity &ent, const gitem_t &it)
 	}
 #endif
 
-	ent.g.item = it;
-	ent.g.nextthink = level.framenum + 2;    // items start after other solids
-	ent.g.think = droptofloor;
+	ent.item = it;
+	ent.nextthink = level.framenum + 2;    // items start after other solids
+	ent.think = droptofloor_savable;
 	ent.s.effects = it.world_model_flags;
 	ent.s.renderfx = RF_GLOW;
-	ent.g.type = ET_ITEM;
+	ent.type = ET_ITEM;
 
-	if (ent.g.model)
-		gi.modelindex(ent.g.model);
+	if (ent.model)
+		gi.modelindex(ent.model);
 
 #ifdef GROUND_ZERO
 	if (ent.spawnflags & ITEM_TRIGGER_SPAWN)
@@ -2520,7 +2458,7 @@ void SpawnItem(entity &ent, const gitem_t &it)
 static void SP_item_health(entity &self)
 {
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal && (dmflags.intVal & DF_NO_HEALTH))
+	if (deathmatch && ((dm_flags)dmflags & DF_NO_HEALTH))
 #else
 	if ((dm_flags)dmflags & DF_NO_HEALTH)
 #endif
@@ -2529,8 +2467,8 @@ static void SP_item_health(entity &self)
 		return;
 	}
 
-	self.g.model = "models/items/healing/medium/tris.md2";
-	self.g.count = 10;
+	self.model = "models/items/healing/medium/tris.md2";
+	self.count = 10;
 	SpawnItem(self, GetItemByIndex(ITEM_HEALTH));
 	gi.soundindex("items/n_health.wav");
 }
@@ -2542,7 +2480,7 @@ REGISTER_ENTITY(item_health, ET_ITEM);
 static void SP_item_health_small(entity &self)
 {
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal && (dmflags.intVal & DF_NO_HEALTH))
+	if (deathmatch && ((dm_flags)dmflags & DF_NO_HEALTH))
 #else
 	if ((dm_flags)dmflags & DF_NO_HEALTH)
 #endif
@@ -2551,10 +2489,10 @@ static void SP_item_health_small(entity &self)
 		return;
 	}
 
-	self.g.model = "models/items/healing/stimpack/tris.md2";
-	self.g.count = 2;
+	self.model = "models/items/healing/stimpack/tris.md2";
+	self.count = 2;
 	SpawnItem(self, GetItemByIndex(ITEM_HEALTH));
-	self.g.style = HEALTH_IGNORE_MAX;
+	self.style = HEALTH_IGNORE_MAX;
 	gi.soundindex("items/s_health.wav");
 }
 
@@ -2565,7 +2503,7 @@ REGISTER_ENTITY(item_health_small, ET_ITEM);
 static void SP_item_health_large(entity &self)
 {
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal && (dmflags.intVal & DF_NO_HEALTH))
+	if (deathmatch && ((dm_flags)dmflags & DF_NO_HEALTH))
 #else
 	if ((dm_flags)dmflags & DF_NO_HEALTH)
 #endif
@@ -2574,8 +2512,8 @@ static void SP_item_health_large(entity &self)
 		return;
 	}
 
-	self.g.model = "models/items/healing/large/tris.md2";
-	self.g.count = 25;
+	self.model = "models/items/healing/large/tris.md2";
+	self.count = 25;
 	SpawnItem(self, GetItemByIndex(ITEM_HEALTH));
 	gi.soundindex("items/l_health.wav");
 }
@@ -2587,7 +2525,7 @@ REGISTER_ENTITY(item_health_large, ET_ITEM);
 static void SP_item_health_mega(entity &self)
 {
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal && (dmflags.intVal & DF_NO_HEALTH))
+	if (deathmatch && ((dm_flags)dmflags & DF_NO_HEALTH))
 #else
 	if ((dm_flags)dmflags & DF_NO_HEALTH)
 #endif
@@ -2596,11 +2534,11 @@ static void SP_item_health_mega(entity &self)
 		return;
 	}
 
-	self.g.model = "models/items/mega_h/tris.md2";
-	self.g.count = 100;
+	self.model = "models/items/mega_h/tris.md2";
+	self.count = 100;
 	SpawnItem(self, GetItemByIndex(ITEM_HEALTH));
 	gi.soundindex("items/m_health.wav");
-	self.g.style = HEALTH_IGNORE_MAX | HEALTH_TIMED;
+	self.style = HEALTH_IGNORE_MAX | HEALTH_TIMED;
 }
 
 REGISTER_ENTITY(item_health_mega, ET_ITEM);

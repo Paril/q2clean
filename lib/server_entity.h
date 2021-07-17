@@ -1,8 +1,7 @@
 #pragma once
 
 #include "types.h"
-#include "../game/gentity.h"
-#include "../game/gclient.h"
+#include "server_client.h"
 #include "entity_effects.h"
 
 // render effects affect the rendering of an entity
@@ -99,11 +98,15 @@ enum server_flags : uint32_t
 {
 	SVF_NONE,
 	// don't send entity to clients, even if it has effects
-	SVF_NOCLIENT,
+	SVF_NOCLIENT = 1 << 0,
 	// treat as CONTENTS_DEADMONSTER for collision
-	SVF_DEADMONSTER,
+	SVF_DEADMONSTER = 1 << 1,
 	// treat as CONTENTS_MONSTER for collision
-	SVF_MONSTER
+	SVF_MONSTER = 1 << 2
+
+#ifdef GROUND_ZERO
+	, SVF_DAMAGEABLE = 1 << 3
+#endif
 };
 
 MAKE_ENUM_BITWISE(server_flags);
@@ -120,32 +123,27 @@ enum solidity : uint32_t
     SOLID_BSP
 };
 
-#include "client.h"
-
 // this is a reference to the world entity.
 extern entityref world;
 
 // this is the structure used by all entities in Q2++.
-struct entity
+struct server_entity
 {
+friend struct entity;
+
 private:
 	// an error here means you're using entity as a value type. Always use entity&
 	// to pass things around.
-	entity() { }
+	server_entity() { }
 	// Entities can also not be copied; use a.copy(b)
 	// to do a proper copy, which resets members that would break the game.
-	entity(entity&) { };
-
-public:
-	// internal use only
-	void __init();
-	// internal use only
-	void __free();
+	server_entity(server_entity&) { };
 
 	// move constructor not allowed; entities can't be "deleted"
 	// so move constructor would be weird
-	entity(entity&&) = delete;
+	server_entity(server_entity&&) = delete;
 
+public:
 	// this data is shared between the game and engine
 
 	entity_state	s;
@@ -161,19 +159,17 @@ private:
 	array<int32_t, MAX_ENT_CLUSTERS>	clusternums;
 
 	int32_t		headnode;			// unused if num_clusters != -1
-	area_index	areanum, areanum2;
 
 	// back to shared members
 public:
+	area_index		areanum, areanum2;
+
 	server_flags	svflags;
 	vector			mins, maxs;
 	vector			absmin, absmax, size;
 	solidity		solid;
 	content_flags	clipmask;
 	entityref		owner;
-
-	// game data
-	gentity	g;
 
 	// check whether this entity is the world entity.
 	// for QC compatibility mostly.
@@ -195,42 +191,8 @@ public:
 		return area.prev;
 	}
 	
-	inline bool operator==(const entity &rhs) const { return s.number == rhs.s.number; }
-	inline bool operator!=(const entity &rhs) const { return s.number != rhs.s.number; }
+	inline bool operator==(const server_entity &rhs) const { return s.number == rhs.s.number; }
+	inline bool operator!=(const server_entity &rhs) const { return s.number != rhs.s.number; }
 };
 
-// fetch an entity by their number.
-entity &itoe(size_t index);
-
-// fetch an entity's number
-constexpr size_t etoi(const entity &ent)
-{
-	return ent.s.number;
-}
-
-// fetch the entity that follows this one
-inline entity &next_ent(const entity &e)
-{
-	return itoe(etoi(e) + 1);
-}
-
-class entity_range_iterable
-{
-private:
-	entity	*first, *last;
-
-public:
-	entity_range_iterable(size_t first, size_t last);
-
-	entity *begin();
-	entity *end();
-};
-
-// fetch an entity range, for iteration.
-entity_range_iterable entity_range(size_t start, size_t end);
-
-// reference to the live number of entities
-extern uint32_t &num_entities;
-
-// reference to max entities
-extern const uint32_t &max_entities;
+#include "../game/entity.h"

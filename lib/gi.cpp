@@ -1,5 +1,5 @@
 #include "gi.h"
-#include "entity.h"
+#include "server_entity.h"
 
 game_import gi;
 

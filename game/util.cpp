@@ -1,5 +1,5 @@
 #include "../lib/types.h"
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/gi.h"
 #include "game.h"
 #include "util.h"
@@ -21,9 +21,9 @@ void G_InitEdict(entity &e)
 
 	e.__init();
 	e.inuse = true;
-	e.g.gravity = 1.0f;
+	e.gravity = 1.0f;
 #ifdef GROUND_ZERO
-	e.g.gravityVector = MOVEDIR_DOWN;
+	e.gravityVector = MOVEDIR_DOWN;
 #endif
 }
 
@@ -37,7 +37,7 @@ entity &G_Spawn()
 
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (!e.inuse && (e.g.freeframenum < (2 * BASE_FRAMERATE) || (level.framenum - e.g.freeframenum) > (gtime)(0.5f * BASE_FRAMERATE)))
+		if (!e.inuse && (e.freeframenum < (2 * BASE_FRAMERATE) || (level.framenum - e.freeframenum) > (gtime)(0.5f * BASE_FRAMERATE)))
 		{
 		    G_InitEdict(e);
 		    return e;
@@ -65,9 +65,11 @@ void G_FreeEdict(entity &e)
 	
 	e.__free();
 	e.inuse = false;
-	e.g.type = ET_FREED;
-	e.g.freeframenum = level.framenum;
+	e.type = ET_FREED;
+	e.freeframenum = level.framenum;
 }
+
+REGISTER_SAVABLE_FUNCTION(G_FreeEdict);
 
 entityref findradius(entityref from, vector org, float rad)
 {
@@ -102,7 +104,7 @@ entityref G_PickTarget(const stringref &stargetname)
 	entityref			ent;
 	dynarray<entityref>	choice;
 
-	while ((ent = G_FindFunc(ent, g.targetname, stargetname, striequals)).has_value())
+	while ((ent = G_FindFunc(ent, targetname, stargetname, striequals)).has_value())
 		choice.push_back(ent);
 
 	if (!choice.size())
@@ -116,37 +118,39 @@ entityref G_PickTarget(const stringref &stargetname)
 
 static void Think_Delay(entity &ent)
 {
-	G_UseTargets(ent, ent.g.activator);
+	G_UseTargets(ent, ent.activator);
 	G_FreeEdict(ent);
 }
+
+REGISTER_SAVABLE_FUNCTION(Think_Delay);
 
 void G_UseTargets(entity &ent, entity &cactivator)
 {
 //
 // check for a delay
 //
-	if (ent.g.delay)
+	if (ent.delay)
 	{
 		// create a temp object to fire at a later time
 		entity &t = G_Spawn();
-		t.g.type = ET_DELAYED_USE;
-		t.g.nextthink = level.framenum + (gtime)(ent.g.delay * BASE_FRAMERATE);
-		t.g.think = Think_Delay;
-		t.g.activator = cactivator;
-		t.g.message = ent.g.message;
-		t.g.target = ent.g.target;
-		t.g.killtarget = ent.g.killtarget;
+		t.type = ET_DELAYED_USE;
+		t.nextthink = level.framenum + (gtime)(ent.delay * BASE_FRAMERATE);
+		t.think = Think_Delay_savable;
+		t.activator = cactivator;
+		t.message = ent.message;
+		t.target = ent.target;
+		t.killtarget = ent.killtarget;
 		return;
 	}
 
 //
 // print the message
 //
-	if ((ent.g.message) && !(cactivator.svflags & SVF_MONSTER))
+	if ((ent.message) && !(cactivator.svflags & SVF_MONSTER))
 	{
-		gi.centerprintf(cactivator, "%s", ent.g.message.ptr());
-		if (ent.g.noise_index)
-			gi.sound(cactivator, CHAN_AUTO, ent.g.noise_index, 1, ATTN_NORM, 0);
+		gi.centerprintf(cactivator, "%s", ent.message.ptr());
+		if (ent.noise_index)
+			gi.sound(cactivator, CHAN_AUTO, ent.noise_index, 1, ATTN_NORM, 0);
 		else
 			gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/talk1.wav"), 1, ATTN_NORM, 0);
 	}
@@ -154,7 +158,7 @@ void G_UseTargets(entity &ent, entity &cactivator)
 //
 // kill killtargets
 //
-	if (ent.g.killtarget)
+	if (ent.killtarget)
 	{
 #ifdef GROUND_ZERO
 		bool done = false;
@@ -162,7 +166,7 @@ void G_UseTargets(entity &ent, entity &cactivator)
 #endif
 		entityref t;
 
-		while ((t = G_FindFunc(t, g.targetname, ent.g.killtarget, striequals)).has_value())
+		while ((t = G_FindFunc(t, targetname, ent.killtarget, striequals)).has_value())
 		{
 #ifdef GROUND_ZERO
 			// PMM - if this entity is part of a train, cleanly remove it
@@ -194,21 +198,21 @@ void G_UseTargets(entity &ent, entity &cactivator)
 //
 // fire targets
 //
-	if (ent.g.target)
+	if (ent.target)
 	{
 		entityref t;
 
-		while ((t = G_FindFunc(t, g.targetname, ent.g.target, striequals)).has_value())
+		while ((t = G_FindFunc(t, targetname, ent.target, striequals)).has_value())
 		{
 			// doors fire area portals in a specific way
-			if (t->g.type == ET_FUNC_AREAPORTAL &&
-				(ent.g.type == ET_FUNC_DOOR || ent.g.type == ET_FUNC_DOOR_ROTATING))
+			if (t->type == ET_FUNC_AREAPORTAL &&
+				(ent.type == ET_FUNC_DOOR || ent.type == ET_FUNC_DOOR_ROTATING))
 				continue;
 
 			if (t == ent)
 				gi.dprintf("WARNING: Entity used itself.\n");
-			else if (t->g.use)
-				t->g.use(t, ent, cactivator);
+			else if (t->use)
+				t->use(t, ent, cactivator);
 
 			if (!ent.inuse)
 			{
@@ -290,7 +294,7 @@ void BecomeExplosion2(entity &self)
 void G_TouchTriggers(entity &ent)
 {
 	// dead things don't activate triggers!
-	if ((ent.is_client() || (ent.svflags & SVF_MONSTER)) && (ent.g.health <= 0))
+	if ((ent.is_client() || (ent.svflags & SVF_MONSTER)) && (ent.health <= 0))
 		return;
 
 	dynarray<entityref> touches = gi.BoxEdicts(ent.absmin, ent.absmax, AREA_TRIGGERS);
@@ -301,9 +305,9 @@ void G_TouchTriggers(entity &ent)
 	{
 		if (!hit.inuse)
 			continue;
-		if (!hit.g.touch)
+		if (!hit.touch)
 			continue;
-		hit.g.touch(hit, ent, vec3_origin, null_surface);
+		hit.touch(hit, ent, vec3_origin, null_surface);
 	}
 }
 
@@ -330,9 +334,9 @@ bool KillBox(entity &ent)
 bool visible(const entity &self, const entity &other)
 {
 	vector spot1 = self.s.origin;
-	spot1.z += self.g.viewheight;
+	spot1.z += self.viewheight;
 	vector spot2 = other.s.origin;
-	spot2.z += other.g.viewheight;
+	spot2.z += other.viewheight;
 	trace tr = gi.traceline(spot1, spot2, self, MASK_OPAQUE);
 	
 	if (tr.fraction == 1.0f || tr.ent == other)

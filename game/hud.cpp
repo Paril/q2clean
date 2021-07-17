@@ -1,5 +1,5 @@
 #include "../lib/types.h"
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/dynarray.h"
 #include "../lib/gi.h"
 #include "game.h"
@@ -31,7 +31,7 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 	{
 		entity &cl_ent = itoe(1 + i);
 
-		if (!cl_ent.inuse || cl_ent.client->g.resp.spectator)
+		if (!cl_ent.inuse || cl_ent.client->resp.spectator)
 			continue;
 
 		sorted.push_back(cl_ent);
@@ -42,14 +42,14 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 
 	std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b)
 	{
-		return b->client->g.resp.score < a->client->g.resp.score;
+		return b->client->resp.score < a->client->resp.score;
 	});
 
 	// add the clients in sorted order
 	if (sorted.size() > 12)
 		sorted.resize(12);
 
-	size_t i = 0;
+	uint32_t i = 0;
 
 	for (auto &cl_ent : sorted)
 	{
@@ -79,7 +79,7 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 		}
 
 		// send the layout
-		entry = va("client %i %i %i %i %i %i ", x, y, sorted[i]->s.number - 1, cl_ent->client->g.resp.score, cl_ent->client->ping, ((level.framenum - cl_ent->client->g.resp.enterframe) / 600));
+		entry = va("client %i %i %i %i %i %i ", x, y, sorted[i]->s.number - 1, cl_ent->client->resp.score, cl_ent->client->ping, ((level.framenum - cl_ent->client->resp.enterframe) / 600));
 		j = strlen(entry);
 
 		if (stringlength + j > 1024)
@@ -106,9 +106,9 @@ INTERMISSION
 void MoveClientToIntermission(entity &ent)
 {
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal || coop.intVal)
+	if (deathmatch || coop)
 #endif
-		ent.client->g.showscores = true;
+		ent.client->showscores = true;
 	ent.s.origin = level.intermission_origin;
 	ent.client->ps.pmove.set_origin(level.intermission_origin);
 	ent.client->ps.viewangles = level.intermission_angle;
@@ -118,12 +118,12 @@ void MoveClientToIntermission(entity &ent)
 	ent.client->ps.rdflags &= ~RDF_UNDERWATER;
 
 	// clean up powerup info
-	ent.client->g.quad_framenum = 0;
-	ent.client->g.invincible_framenum = 0;
-	ent.client->g.breather_framenum = 0;
-	ent.client->g.enviro_framenum = 0;
-	ent.client->g.grenade_blew_up = false;
-	ent.client->g.grenade_framenum = 0;
+	ent.client->quad_framenum = 0;
+	ent.client->invincible_framenum = 0;
+	ent.client->breather_framenum = 0;
+	ent.client->enviro_framenum = 0;
+	ent.client->grenade_blew_up = false;
+	ent.client->grenade_framenum = 0;
 
 #ifdef THE_RECKONING
 	ent.client.quadfire_framenum = 0;
@@ -138,7 +138,7 @@ void MoveClientToIntermission(entity &ent)
 	ent.client.double_framenum = 0;				// PMM
 #endif
 
-	ent.g.viewheight = 0;
+	ent.viewheight = 0;
 	ent.s.modelindex = MODEL_NONE;
 	ent.s.modelindex2 = MODEL_NONE;
 	ent.s.modelindex3 = MODEL_NONE;
@@ -151,7 +151,7 @@ void MoveClientToIntermission(entity &ent)
 
 	// add the layout
 #ifdef SINGLE_PLAYER
-	if (deathmatch.intVal || coop.intVal)
+	if (deathmatch || coop)
 	{
 #endif
 		DeathmatchScoreboardMessage(ent, world);
@@ -181,35 +181,34 @@ void BeginIntermission(entity &targ)
 		entity &cl = itoe(1 + i);
 		if (!cl.inuse)
 			continue;
-		if (cl.g.health <= 0)
+		if (cl.health <= 0)
 			respawn(cl);
 	}
 
 	level.intermission_framenum = level.framenum;
-	level.changemap = targ.g.map;
+	level.changemap = targ.map;
 
 #ifdef SINGLE_PLAYER
 	if (strstr(level.changemap, "*") != -1)
 	{
-		if (coop.intVal)
+		if (coop)
 		{
-			for (int i = 0 ; i < game.maxclients ; i++)
+			for (uint32_t i = 0 ; i < game.maxclients ; i++)
 			{
-				cl = itoe(1 + i);
+				entity &cl = itoe(1 + i);
 				if (!cl.inuse)
 					continue;
 					
-				gitem_t *it = itemlist;
 				// strip players of all keys between units
-				for (int n = 0; n < itemlist.length; n++, it++)
-					if (it->flags & IT_KEY)
-						cl.client.pers.inventory[n] = 0;
+				for (auto &it : item_list())
+					if (it.flags & IT_KEY)
+						cl.client->pers.inventory[it.id] = 0;
 			}
 		}
 	}
 	else
 	{
-		if (!deathmatch.intVal)
+		if (!deathmatch)
 		{
 			level.exitintermission = 1;     // go immediately to the next level
 			return;
@@ -220,15 +219,15 @@ void BeginIntermission(entity &targ)
 	level.exitintermission = 0;
 
 	// find an intermission spot
-	entityref ent = G_FindEquals(world, g.type, ET_INFO_PLAYER_INTERMISSION);
+	entityref ent = G_FindEquals(world, type, ET_INFO_PLAYER_INTERMISSION);
 
 	if (!ent.has_value())
 	{
 		// the map creator forgot to put in an intermission point...
-		ent = G_FindEquals(world, g.type, ET_INFO_PLAYER_START);
+		ent = G_FindEquals(world, type, ET_INFO_PLAYER_START);
 
 		if (!ent.has_value())
-			ent = G_FindEquals(world, g.type, ET_INFO_PLAYER_DEATHMATCH);
+			ent = G_FindEquals(world, type, ET_INFO_PLAYER_DEATHMATCH);
 	}
 	else
 	{
@@ -236,9 +235,9 @@ void BeginIntermission(entity &targ)
 		int32_t i = Q_rand() & 3;
 		while (i--)
 		{
-			ent = G_FindEquals(ent, g.type, ET_INFO_PLAYER_INTERMISSION);
+			ent = G_FindEquals(ent, type, ET_INFO_PLAYER_INTERMISSION);
 			if (!ent.has_value())   // wrap around the list
-				ent = G_FindEquals(ent, g.type, ET_INFO_PLAYER_INTERMISSION);
+				ent = G_FindEquals(ent, type, ET_INFO_PLAYER_INTERMISSION);
 		}
 	}
 
@@ -264,13 +263,13 @@ Note that it isn't that hard to overflow the MESSAGE_LIMIT!
 */
 static void DeathmatchScoreboard(entity &ent)
 {
-	DeathmatchScoreboardMessage(ent, ent.g.enemy);
+	DeathmatchScoreboardMessage(ent, ent.enemy);
 	gi.unicast(ent, true);
 }
 
 void Cmd_Score_f(entity &ent)
 {
-	ent.client->g.showinventory = false;
+	ent.client->showinventory = false;
 
 #ifdef PMENU
 	if (ent.client.menu.open)
@@ -278,19 +277,19 @@ void Cmd_Score_f(entity &ent)
 #endif
 
 #ifdef SINGLE_PLAYER
-	ent.client.showhelp = false;
+	ent.client->showhelp = false;
 
-	if (!deathmatch.intVal && !coop.intVal)
+	if (!deathmatch && !coop)
 		return;
 #endif
 
-	if (ent.client->g.showscores)
+	if (ent.client->showscores)
 	{
-		ent.client->g.showscores = false;
+		ent.client->showscores = false;
 		return;
 	}
 
-	ent.client->g.showscores = true;
+	ent.client->showscores = true;
 	DeathmatchScoreboard(ent);
 }
 
@@ -302,19 +301,26 @@ HelpComputer
 Draw help computer.
 ==================
 */
-static void(entity ent) HelpComputer =
+static void HelpComputer(entity &ent)
 {
 	string	str;
-	string	sk;
+	stringlit	sk;
 
-	if (skill.intVal == 0)
-		sk = "easy";
-	else if (skill.intVal == 1)
-		sk = "medium";
-	else if (skill.intVal == 2)
-		sk = "hard";
-	else
-		sk = "hard+";
+	switch ((int32_t)skill)
+	{
+		case 0:
+			sk = "easy";
+			break;
+		case 1:
+			sk = "medium";
+			break;
+		case 2:
+			sk = "hard";
+			break;
+		default:
+			sk = "hard+";
+			break;
+	}
 
 	// send the layout
 	str = va(	"xv 32 yv 8 picn help "             // background
@@ -323,13 +329,13 @@ static void(entity ent) HelpComputer =
 			"xv 0 yv 54 cstring2 \"%s\" "       // help 1
 			"xv 0 yv 110 cstring2 \"%s\" ",     // help 2
 			sk,
-			level.level_name,
-			game.helpmessage1,
-			game.helpmessage2);
+			level.level_name.ptr(),
+			game.helpmessage1.ptr(),
+			game.helpmessage2.ptr());
 	
 	str = va(	"%sxv 50 yv 164 string2 \" kills     goals    secrets\" "
 			"xv 50 yv 172 string2 \"%3i/%3i     %i/%i       %i/%i\" ",
-			str,
+			str.ptr(),
 			level.killed_monsters, level.total_monsters,
 			level.found_goals, level.total_goals,
 			level.found_secrets, level.total_secrets);
@@ -344,22 +350,22 @@ void Cmd_Help_f(entity &ent)
 {
 #ifdef SINGLE_PLAYER
 	// this is for backwards compatability
-	if (deathmatch.intVal)
+	if (deathmatch)
 	{
 		Cmd_Score_f(ent);
 		return;
 	}
 
-	ent.client.showinventory = false;
-	ent.client.showscores = false;
+	ent.client->showinventory = false;
+	ent.client->showscores = false;
 
-	if (ent.client.showhelp && (ent.client.pers.game_helpchanged == game.helpchanged)) {
-		ent.client.showhelp = false;
+	if (ent.client->showhelp && (ent.client->pers.game_helpchanged == game.helpchanged)) {
+		ent.client->showhelp = false;
 		return;
 	}
 
-	ent.client.showhelp = true;
-	ent.client.pers.helpchanged = 0;
+	ent.client->showhelp = true;
+	ent.client->pers.helpchanged = 0;
 	HelpComputer(ent);
 #else
 	Cmd_Score_f(ent);
@@ -374,21 +380,21 @@ void G_SetStats(entity &ent)
 	// health
 	//
 	ent.client->ps.stats[STAT_HEALTH_ICON] = level.pic_health;
-	ent.client->ps.stats[STAT_HEALTH] = ent.g.health;
+	ent.client->ps.stats[STAT_HEALTH] = ent.health;
 
 	//
 	// ammo
 	//
-	if (!ent.client->g.ammo_index)
+	if (!ent.client->ammo_index)
 	{
 		ent.client->ps.stats[STAT_AMMO_ICON] = 0;
 		ent.client->ps.stats[STAT_AMMO] = 0;
 	}
 	else
 	{
-		const gitem_t &it = GetItemByIndex(ent.client->g.ammo_index);
+		const gitem_t &it = GetItemByIndex(ent.client->ammo_index);
 		ent.client->ps.stats[STAT_AMMO_ICON] = gi.imageindex(it.icon);
-		ent.client->ps.stats[STAT_AMMO] = ent.client->g.pers.inventory[it.id];
+		ent.client->ps.stats[STAT_AMMO] = ent.client->pers.inventory[it.id];
 	}
 
 	//
@@ -399,12 +405,12 @@ void G_SetStats(entity &ent)
 
 	if (power_armor_type)
 	{
-		cells = ent.client->g.pers.inventory[ITEM_CELLS];
+		cells = ent.client->pers.inventory[ITEM_CELLS];
 		
 		if (!cells)
 		{
 			// ran out of cells for power armor
-			ent.g.flags &= ~FL_POWER_ARMOR;
+			ent.flags &= ~FL_POWER_ARMOR;
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/power2.wav"), 1, ATTN_NORM, 0);
 			power_armor_type = ITEM_NONE;
 		}
@@ -425,7 +431,7 @@ void G_SetStats(entity &ent)
 	{
 		const gitem_t &it = GetItemByIndex(index);
 		ent.client->ps.stats[STAT_ARMOR_ICON] = gi.imageindex(it.icon);
-		ent.client->ps.stats[STAT_ARMOR] = ent.client->g.pers.inventory[index];
+		ent.client->ps.stats[STAT_ARMOR] = ent.client->pers.inventory[index];
 	}
 	else
 	{
@@ -436,7 +442,7 @@ void G_SetStats(entity &ent)
 	//
 	// pickup message
 	//
-	if (level.framenum > ent.client->g.pickup_msg_framenum)
+	if (level.framenum > ent.client->pickup_msg_framenum)
 	{
 		ent.client->ps.stats[STAT_PICKUP_ICON] = 0;
 		ent.client->ps.stats[STAT_PICKUP_STRING] = 0;
@@ -445,10 +451,10 @@ void G_SetStats(entity &ent)
 	//
 	// timers
 	//
-	if (ent.client->g.quad_framenum > level.framenum)
+	if (ent.client->quad_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_quad");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->g.quad_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->quad_framenum - level.framenum) / 10;
 	}
 #ifdef THE_RECKONING
 	// RAFAEL
@@ -465,20 +471,20 @@ void G_SetStats(entity &ent)
 		ent.client.ps.stats[STAT_TIMER] = (ent.client.double_framenum - level.framenum)/10;
 	}
 #endif
-	else if (ent.client->g.invincible_framenum > level.framenum)
+	else if (ent.client->invincible_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_invulnerability");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->g.invincible_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->invincible_framenum - level.framenum) / 10;
 	}
-	else if (ent.client->g.enviro_framenum > level.framenum)
+	else if (ent.client->enviro_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_envirosuit");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->g.enviro_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->enviro_framenum - level.framenum) / 10;
 	}
-	else if (ent.client->g.breather_framenum > level.framenum)
+	else if (ent.client->breather_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->g.breather_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->breather_framenum - level.framenum) / 10;
 	}
 #ifdef GROUND_ZERO
 	else if (ent.client.ir_framenum > level.framenum)
@@ -496,12 +502,12 @@ void G_SetStats(entity &ent)
 	//
 	// selected item
 	//
-	if (!ent.client->g.pers.selected_item)
+	if (!ent.client->pers.selected_item)
 		ent.client->ps.stats[STAT_SELECTED_ICON] = 0;
 	else
-		ent.client->ps.stats[STAT_SELECTED_ICON] = gi.imageindex(GetItemByIndex(ent.client->g.pers.selected_item).icon);
+		ent.client->ps.stats[STAT_SELECTED_ICON] = gi.imageindex(GetItemByIndex(ent.client->pers.selected_item).icon);
 
-	ent.client->ps.stats[STAT_SELECTED_ITEM] = ent.client->g.pers.selected_item;
+	ent.client->ps.stats[STAT_SELECTED_ITEM] = ent.client->pers.selected_item;
 
 	//
 	// layouts
@@ -509,39 +515,39 @@ void G_SetStats(entity &ent)
 	ent.client->ps.stats[STAT_LAYOUTS] = 0;
 #ifdef SINGLE_PLAYER
 
-	if (deathmatch.intVal)
+	if (deathmatch)
 	{
 #endif
-		if (ent.g.health <= 0 || level.intermission_framenum || ent.client->g.showscores)
+		if (ent.health <= 0 || level.intermission_framenum || ent.client->showscores)
 			ent.client->ps.stats[STAT_LAYOUTS] |= 1;
-		if (ent.client->g.showinventory && ent.g.health > 0)
+		if (ent.client->showinventory && ent.health > 0)
 			ent.client->ps.stats[STAT_LAYOUTS] |= 2;
 #ifdef SINGLE_PLAYER
 	}
 	else
 	{
-		if (ent.client.showscores || ent.client.showhelp)
-			ent.client.ps.stats[STAT_LAYOUTS] |= 1;
-		if (ent.client.showinventory && ent.client.pers.health > 0)
-			ent.client.ps.stats[STAT_LAYOUTS] |= 2;
+		if (ent.client->showscores || ent.client->showhelp)
+			ent.client->ps.stats[STAT_LAYOUTS] |= 1;
+		if (ent.client->showinventory && ent.client->pers.health > 0)
+			ent.client->ps.stats[STAT_LAYOUTS] |= 2;
 	}
 #endif
 
 	//
 	// frags
 	//
-	ent.client->ps.stats[STAT_FRAGS] = ent.client->g.resp.score;
+	ent.client->ps.stats[STAT_FRAGS] = ent.client->resp.score;
 
 	//
 	// help icon / current weapon if not shown
 	//
 #ifdef SINGLE_PLAYER
-	if (ent.client.pers.helpchanged && (level.framenum & 8))
-		ent.client.ps.stats[STAT_HELPICON] = gi.imageindex("i_help");
+	if (ent.client->pers.helpchanged && (level.framenum & 8))
+		ent.client->ps.stats[STAT_HELPICON] = gi.imageindex("i_help");
 	else
 #endif
-	if ((ent.client->g.pers.hand == CENTER_HANDED || ent.client->ps.fov > 91.f) && ent.client->g.pers.weapon)
-		ent.client->ps.stats[STAT_HELPICON] = gi.imageindex(ent.client->g.pers.weapon->icon);
+	if ((ent.client->pers.hand == CENTER_HANDED || ent.client->ps.fov > 91.f) && ent.client->pers.weapon)
+		ent.client->ps.stats[STAT_HELPICON] = gi.imageindex(ent.client->pers.weapon->icon);
 	else
 		ent.client->ps.stats[STAT_HELPICON] = 0;
 
@@ -554,20 +560,20 @@ void G_SetStats(entity &ent)
 
 void G_SetSpectatorStats(entity &ent)
 {
-	if (!ent.client->g.chase_target.has_value())
+	if (!ent.client->chase_target.has_value())
 		G_SetStats(ent);
 
 	ent.client->ps.stats[STAT_SPECTATOR] = 1;
 
 	// layouts are independant in spectator
 	ent.client->ps.stats[STAT_LAYOUTS] = 0;
-	if (ent.g.health <= 0 || level.intermission_framenum || ent.client->g.showscores)
+	if (ent.health <= 0 || level.intermission_framenum || ent.client->showscores)
 		ent.client->ps.stats[STAT_LAYOUTS] |= 1;
-	if (ent.client->g.showinventory && ent.g.health > 0)
+	if (ent.client->showinventory && ent.health > 0)
 		ent.client->ps.stats[STAT_LAYOUTS] |= 2;
 
-	if (ent.client->g.chase_target.has_value() && ent.client->g.chase_target->inuse)
-		ent.client->ps.stats[STAT_CHASE] = CS_PLAYERSKINS + (ent.client->g.chase_target->s.number - 1);
+	if (ent.client->chase_target.has_value() && ent.client->chase_target->inuse)
+		ent.client->ps.stats[STAT_CHASE] = CS_PLAYERSKINS + (ent.client->chase_target->s.number - 1);
 	else
 		ent.client->ps.stats[STAT_CHASE] = 0;
 }
@@ -577,7 +583,7 @@ void G_CheckChaseStats(entity &ent)
 	for (uint32_t i = 1; i <= game.maxclients; i++)
 	{
 		entity &cl = itoe(i);
-		if (!cl.inuse || cl.client->g.chase_target != ent)
+		if (!cl.inuse || cl.client->chase_target != ent)
 			continue;
 		cl.client->ps.stats = ent.client->ps.stats;
 		G_SetSpectatorStats(cl);

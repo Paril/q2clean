@@ -2,7 +2,7 @@
 
 #include "../lib/types.h"
 #include "../lib/gi.h"
-#include "../lib/entity.h"
+#include "entity.h"
 #include "util.h"
 
 extern bool		is_quad;
@@ -17,7 +17,7 @@ void P_DamageModifier(entity &ent);
 inline vector P_ProjectSource(entity &ent, vector point, vector distance, vector forward, vector right)
 {
 	constexpr float handedness_scales[] = { 1, -1, 0 };
-	vector scaled_dist = { distance[0], distance[1] * handedness_scales[ent.client->g.pers.hand], distance[2] };
+	vector scaled_dist = { distance[0], distance[1] * handedness_scales[ent.client->pers.hand], distance[2] };
 	return G_ProjectSource(point, scaled_dist, forward, right);
 }
 
@@ -72,5 +72,25 @@ void Weapon_Railgun(entity &ent);
 void Weapon_BFG(entity &ent);
 
 #ifdef SINGLE_PLAYER
-void PlayerNoise(entity &who, vector where, player_noise_type type)
+
+enum player_noise : int32_t
+{
+	PNOISE_SELF,
+	PNOISE_WEAPON,
+	PNOISE_IMPACT
+};
+
+/*
+===============
+PlayerNoise
+
+Each player can have two noise objects associated with it:
+a personal noise (jumping, pain, weapon firing), and a weapon
+target noise (bullet wall impacts)
+
+Monsters that don't directly see the player can move
+to a noise in hopes of seeing the player from there.
+===============
+*/
+void PlayerNoise(entity &who, vector where, player_noise type);
 #endif

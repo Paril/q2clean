@@ -78,7 +78,7 @@ extern "C" struct vector
 	constexpr bool operator==(const vector &rhs) const { return x == rhs.x && y == rhs.y && z == rhs.z; }
 	constexpr bool operator!=(const vector &rhs) const { return x != rhs.x && y != rhs.y && z != rhs.z; }
 
-	constexpr operator bool() const { return x || y || z; }
+	constexpr explicit operator bool() const { return x || y || z; }
 
 	// member functions; global versions are provided too
 

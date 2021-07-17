@@ -1,7 +1,7 @@
 #include "../lib/types.h"
 
 #ifdef HOOK_CODE
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/gi.h"
 #include "game.h"
 #include "itemlist.h"
@@ -21,12 +21,12 @@ static void GrappleReset(entity &self)
 {
 	entity &cl = self.owner;
 
-	if (!cl.client->g.grapple.has_value())
+	if (!cl.client->grapple.has_value())
 		return;
 
 	float volume = 1.0;
 
-	if (cl.client->g.silencer_shots)
+	if (cl.client->silencer_shots)
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
@@ -34,9 +34,9 @@ static void GrappleReset(entity &self)
 #else
 	gi.sound (cl, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grreset.wav"), volume, ATTN_NORM, 0);
 #endif
-	cl.client->g.grapple = 0;
-	cl.client->g.grapplereleaseframenum = level.framenum;
-	cl.client->g.grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
+	cl.client->grapple = 0;
+	cl.client->grapplereleaseframenum = level.framenum;
+	cl.client->grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
 	cl.client->ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
 	G_FreeEdict(self);
 }
@@ -44,8 +44,8 @@ static void GrappleReset(entity &self)
 // ent is player
 void GrapplePlayerReset(entity &ent)
 {
-	if (ent.is_client() && ent.client->g.grapple.has_value())
-		GrappleReset(ent.client->g.grapple);
+	if (ent.is_client() && ent.client->grapple.has_value())
+		GrappleReset(ent.client->grapple);
 }
 
 static void GrappleTouch(entity &self, entity &other, vector plane, const surface &surf)
@@ -55,7 +55,7 @@ static void GrappleTouch(entity &self, entity &other, vector plane, const surfac
 	if (other == self.owner)
 		return;
 
-	if (self.owner->client->g.grapplestate != GRAPPLE_STATE_FLY)
+	if (self.owner->client->grapplestate != GRAPPLE_STATE_FLY)
 		return;
 
 	if (surf.flags & SURF_SKY)
@@ -64,25 +64,25 @@ static void GrappleTouch(entity &self, entity &other, vector plane, const surfac
 		return;
 	}
 
-	self.g.velocity = vec3_origin;
+	self.velocity = vec3_origin;
 #if defined(SINGLE_PLAYER)
 
 	PlayerNoise(self.owner, self.s.origin, PNOISE_IMPACT);
 #endif
 
-	if (other.g.takedamage)
+	if (other.takedamage)
 	{
-		T_Damage (other, self, self.owner, self.g.velocity, self.s.origin, plane, self.g.dmg, 1, DAMAGE_NONE, MOD_GRAPPLE);
+		T_Damage (other, self, self.owner, self.velocity, self.s.origin, plane, self.dmg, 1, DAMAGE_NONE, MOD_GRAPPLE);
 		GrappleReset(self);
 		return;
 	}
 
-	self.owner->client->g.grapplestate = GRAPPLE_STATE_PULL; // we're on hook
-	self.g.enemy = other;
+	self.owner->client->grapplestate = GRAPPLE_STATE_PULL; // we're on hook
+	self.enemy = other;
 
 	self.solid = SOLID_NOT;
 
-	if (self.owner->client->g.silencer_shots)
+	if (self.owner->client->silencer_shots)
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
@@ -106,8 +106,8 @@ static void GrappleDrawCable(entity &self)
 	vector	dir;
 	float	distance;
 
-	AngleVectors(self.owner->client->g.v_angle, &f, &r, nullptr);
-	offset = { 16.f, self.g.count ? -16.f : 16.f, self.owner->g.viewheight - 8.f };
+	AngleVectors(self.owner->client->v_angle, &f, &r, nullptr);
+	offset = { 16.f, self.count ? -16.f : 16.f, self.owner->viewheight - 8.f };
 	start = P_ProjectSource(self.owner, self.owner->s.origin, offset, f, r);
 
 	offset = start - self.owner->s.origin;
@@ -143,38 +143,38 @@ void GrapplePull(entity &self)
 	float vlen;
 
 #ifdef GRAPPLE
-	if (self.owner->client->g.pers.weapon &&
-		self.owner->client->g.pers.weapon->id == ITEM_GRAPPLE &&
-		!self.owner->client->g.newweapon &&
-		self.owner->client->g.weaponstate != WEAPON_FIRING &&
-		self.owner->client->g.weaponstate != WEAPON_ACTIVATING)
+	if (self.owner->client->pers.weapon &&
+		self.owner->client->pers.weapon->id == ITEM_GRAPPLE &&
+		!self.owner->client->newweapon &&
+		self.owner->client->weaponstate != WEAPON_FIRING &&
+		self.owner->client->weaponstate != WEAPON_ACTIVATING)
 	{
 		GrappleReset(self);
 		return;
 	}
 #endif
 
-	if (self.g.enemy.has_value())
+	if (self.enemy.has_value())
 	{
-		if (self.g.enemy->solid == SOLID_NOT || self.g.enemy->g.deadflag)
+		if (self.enemy->solid == SOLID_NOT || self.enemy->deadflag)
 		{
 			GrappleReset(self);
 			return;
 		}
-		else if (self.g.enemy->solid == SOLID_BBOX)
+		else if (self.enemy->solid == SOLID_BBOX)
 		{
-			v = self.g.enemy->size * 0.5f;
-			v += self.g.enemy->s.origin;
-			self.s.origin = v + self.g.enemy->mins;
+			v = self.enemy->size * 0.5f;
+			v += self.enemy->s.origin;
+			self.s.origin = v + self.enemy->mins;
 			gi.linkentity (self);
 		}
 		else
-			self.g.velocity = self.g.enemy->g.velocity;
+			self.velocity = self.enemy->velocity;
 	}
 
 	GrappleDrawCable(self);
 
-	if (self.owner->client->g.grapplestate > GRAPPLE_STATE_FLY)
+	if (self.owner->client->grapplestate > GRAPPLE_STATE_FLY)
 	{
 		// pull player toward grapple
 		// this causes icky stuff with prediction, we need to extend
@@ -183,18 +183,18 @@ void GrapplePull(entity &self)
 		// that velociy in the direction of the point
 		vector forward, up;
 
-		AngleVectors (self.owner->client->g.v_angle, &forward, nullptr, &up);
+		AngleVectors (self.owner->client->v_angle, &forward, nullptr, &up);
 		v = self.owner->s.origin;
-		v[2] += self.owner->g.viewheight;
+		v[2] += self.owner->viewheight;
 		hookdir = self.s.origin - v;
 
 		vlen = VectorNormalize(hookdir);
 
-		if (self.owner->client->g.grapplestate == GRAPPLE_STATE_PULL)
+		if (self.owner->client->grapplestate == GRAPPLE_STATE_PULL)
 		{
 			float volume = 1.0;
 
-			if (self.owner->client->g.silencer_shots)
+			if (self.owner->client->silencer_shots)
 				volume = 0.2f;
 
 			if (vlen < 64)
@@ -203,22 +203,24 @@ void GrapplePull(entity &self)
 #ifndef HOOK_STANDARD_ASSETS
 				gi.sound (self.owner, CHAN_RELIABLE+CHAN_WEAPON, gi.soundindex("weapons/grapple/grhang.wav"), volume, ATTN_NORM, 0);
 #endif
-				self.owner->client->g.grapplestate = GRAPPLE_STATE_HANG;
+				self.owner->client->grapplestate = GRAPPLE_STATE_HANG;
 			}
 #ifdef HOOK_STANDARD_ASSETS
-			else if (self.g.pain_debounce_framenum < level.framenum)
+			else if (self.pain_debounce_framenum < level.framenum)
 			{
 				gi.sound (self.owner, CHAN_WEAPON, gi.soundindex("world/turbine1.wav"), volume, ATTN_NORM, 0);
-				self.g.pain_debounce_framenum = level.framenum + (gtime)(0.5 * BASE_FRAMERATE);
+				self.pain_debounce_framenum = level.framenum + (gtime)(0.5 * BASE_FRAMERATE);
 			}
 #endif
 		}
 
 		hookdir *= GRAPPLE_PULL_SPEED;
-		self.owner->g.velocity = hookdir;
+		self.owner->velocity = hookdir;
 		SV_AddGravity(self.owner);
 	}
 }
+
+REGISTER_SAVABLE_FUNCTION(GrappleTouch);
 
 static void CTFFireGrapple(entity &self, vector start, vector dir, int damage, int speed, bool offhand)
 {
@@ -227,28 +229,28 @@ static void CTFFireGrapple(entity &self, vector start, vector dir, int damage, i
 	entity &grapple = G_Spawn();
 	grapple.s.origin = grapple.s.old_origin = start;
 	grapple.s.angles = vectoangles(dir);
-	grapple.g.velocity = dir * speed;
-	grapple.g.movetype = MOVETYPE_FLYMISSILE;
+	grapple.velocity = dir * speed;
+	grapple.movetype = MOVETYPE_FLYMISSILE;
 	grapple.clipmask = MASK_SHOT;
 	grapple.solid = SOLID_BBOX;
-	grapple.g.count = offhand;
+	grapple.count = offhand;
 #ifdef HOOK_STANDARD_ASSETS
 	grapple.s.modelindex = gi.modelindex ("models/objects/debris2/tris.md2");
 #else
 	grapple.s.modelindex = gi.modelindex ("models/weapons/grapple/hook/tris.md2");
 #endif
 	grapple.owner = self;
-	grapple.g.touch = GrappleTouch;
-	grapple.g.dmg = damage;
-	self.client->g.grapple = grapple;
-	self.client->g.grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
+	grapple.touch = GrappleTouch_savable;
+	grapple.dmg = damage;
+	self.client->grapple = grapple;
+	self.client->grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
 	gi.linkentity (grapple);
 
 	trace tr = gi.traceline (self.s.origin, grapple.s.origin, grapple, MASK_SHOT);
 	if (tr.fraction < 1.0)
 	{
 		grapple.s.origin += dir * -10;
-		grapple.g.touch (grapple, tr.ent, vec3_origin, null_surface);
+		grapple.touch (grapple, tr.ent, vec3_origin, null_surface);
 	}
 }
 
@@ -259,14 +261,14 @@ static void CTFGrappleFire(entity &ent, int damage, bool offhand)
 	vector offset;
 	float volume = 1.0;
 
-	if (ent.client->g.grapplestate > GRAPPLE_STATE_FLY)
+	if (ent.client->grapplestate > GRAPPLE_STATE_FLY)
 		return; // it's already out
 
-	AngleVectors (ent.client->g.v_angle, &forward, &right, nullptr);
-	offset = { 24.f, offhand ? -8.f : 8.f, ent.g.viewheight - 8.f + 2.f };
+	AngleVectors (ent.client->v_angle, &forward, &right, nullptr);
+	offset = { 24.f, offhand ? -8.f : 8.f, ent.viewheight - 8.f + 2.f };
 	start = P_ProjectSource (ent, ent.s.origin, offset, forward, right);
 
-	if (ent.client->g.silencer_shots)
+	if (ent.client->silencer_shots)
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
@@ -292,39 +294,39 @@ static void Weapon_Grapple_Fire(entity &ent)
 void CTFWeapon_Grapple(entity &ent)
 {
 	// if the the attack button is still down, stay in the firing frame
-	if ((ent.client->g.buttons & BUTTON_ATTACK) && 
-		ent.client->g.weaponstate == WEAPON_FIRING && ent.client->g.grapple.has_value())
+	if ((ent.client->buttons & BUTTON_ATTACK) && 
+		ent.client->weaponstate == WEAPON_FIRING && ent.client->grapple.has_value())
 		ent.client->ps.gunframe = 9;
 
-	if (!(ent.client->g.buttons & BUTTON_ATTACK) && ent.client->g.grapple.has_value())
+	if (!(ent.client->buttons & BUTTON_ATTACK) && ent.client->grapple.has_value())
 	{
-		GrappleReset(ent.client->g.grapple);
-		if (ent.client->g.weaponstate == WEAPON_FIRING)
-			ent.client->g.weaponstate = WEAPON_READY;
+		GrappleReset(ent.client->grapple);
+		if (ent.client->weaponstate == WEAPON_FIRING)
+			ent.client->weaponstate = WEAPON_READY;
 	}
 
-	if (ent.client->g.newweapon && 
-		ent.client->g.grapplestate > GRAPPLE_STATE_FLY &&
-		ent.client->g.weaponstate == WEAPON_FIRING)
+	if (ent.client->newweapon && 
+		ent.client->grapplestate > GRAPPLE_STATE_FLY &&
+		ent.client->weaponstate == WEAPON_FIRING)
 	{
 		// he wants to change weapons while grappled
-		ent.client->g.weaponstate = WEAPON_DROPPING;
+		ent.client->weaponstate = WEAPON_DROPPING;
 		ent.client->ps.gunframe = 32;
 	}
 
-	const weapon_state prevstate = ent.client->g.weaponstate;
+	const weapon_state prevstate = ent.client->weaponstate;
 	Weapon_Generic (ent, 5, 9, 31, 36, { 10, 18, 27 }, { 6 }, Weapon_Grapple_Fire);
 
 	// if we just switched back to grapple, immediately go to fire frame
 	if (prevstate == WEAPON_ACTIVATING &&
-		ent.client->g.weaponstate == WEAPON_READY &&
-		ent.client->g.grapplestate > GRAPPLE_STATE_FLY)
+		ent.client->weaponstate == WEAPON_READY &&
+		ent.client->grapplestate > GRAPPLE_STATE_FLY)
 	{
-		if (!(ent.client->g.buttons & BUTTON_ATTACK))
+		if (!(ent.client->buttons & BUTTON_ATTACK))
 			ent.client->ps.gunframe = 9;
 		else
 			ent.client->ps.gunframe = 5;
-		ent.client->g.weaponstate = WEAPON_FIRING;
+		ent.client->weaponstate = WEAPON_FIRING;
 	}
 }
 #endif
@@ -336,7 +338,7 @@ void GrappleCmd(entity &ent)
 	
 	if (cmd == "fire")
 	{
-		if (ent.g.health && ent.g.movetype != MOVETYPE_NOCLIP)
+		if (ent.health && ent.movetype != MOVETYPE_NOCLIP)
 			CTFGrappleFire(ent, 10, true);
 	}
 	else if (cmd == "release")

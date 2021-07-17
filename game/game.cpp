@@ -1,4 +1,4 @@
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/gi.h"
 #include "game.h"
 #include "view.h"
@@ -7,9 +7,9 @@
 #include "hud.h"
 #include "phys.h"
 #include "spawn.h"
-#ifdef BOTS
-#include "ai/aimain.h"
-#include "ai/aispawn.h"
+#ifdef SINGLE_PLAYER
+#include "ai.h"
+#include "monster.h"
 #endif
 
 game_locals game;
@@ -147,10 +147,6 @@ void InitGame()
 #ifdef CTF
 	CTFInit();
 #endif
-
-#ifdef BOTS
-	AI_Init();
-#endif
 }
 
 void ShutdownGame()
@@ -186,9 +182,9 @@ Returns the created target changelevel
 static entity &CreateTargetChangeLevel(string new_map)
 {
 	entity &ent = G_Spawn();
-	ent.g.type = ET_TARGET_CHANGELEVEL;
+	ent.type = ET_TARGET_CHANGELEVEL;
 	level.nextmap = new_map;
-	ent.g.map = level.nextmap;
+	ent.map = level.nextmap;
 	return ent;
 }
 
@@ -237,7 +233,7 @@ void EndDMLevel()
 		BeginIntermission(CreateTargetChangeLevel(level.nextmap));
 	else
 	{  // search for a changelevel
-		entityref ent = G_FindEquals(world, g.type, ET_TARGET_CHANGELEVEL);
+		entityref ent = G_FindEquals(world, type, ET_TARGET_CHANGELEVEL);
 		if (!ent.has_value())
 		{
 			// the map designer didn't include a changelevel,
@@ -283,7 +279,7 @@ static void CheckDMRules()
 		return;
 
 #ifdef SINGLE_PLAYER
-	if (!deathmatch.intVal)
+	if (!deathmatch)
 		return;
 #endif
 
@@ -314,7 +310,7 @@ static void CheckDMRules()
 			if (!cl.inuse)
 				continue;
 
-			if (cl.client->g.resp.score >= (int32_t)fraglimit)
+			if (cl.client->resp.score >= (int32_t)fraglimit)
 			{
 				gi.bprintf(PRINT_HIGH, "Fraglimit hit.\n");
 				EndDMLevel();
@@ -347,13 +343,9 @@ static void ExitLevel()
 		if (!ent.inuse)
 			continue;
 	
-		if (ent.g.health > ent.g.max_health)
-			ent.g.health = ent.g.max_health;
+		if (ent.health > ent.max_health)
+			ent.health = ent.max_health;
 	}
-	
-#ifdef BOTS
-	BOT_RemoveBot("all");
-#endif
 }
 
 void RunFrame()
@@ -389,11 +381,11 @@ void RunFrame()
 		ent.s.old_origin = ent.s.origin;
 		
 		// if the ground entity moved, make sure we are still on it
-		if (ent.g.groundentity.has_value() && (ent.g.groundentity->linkcount != ent.g.groundentity_linkcount))
+		if (ent.groundentity.has_value() && (ent.groundentity->linkcount != ent.groundentity_linkcount))
 #ifdef SINGLE_PLAYER
 		{
 #endif
-			ent.g.groundentity = null_entity;
+			ent.groundentity = null_entity;
 #ifdef SINGLE_PLAYER
 			if (!(ent.flags & (FL_SWIM | FL_FLY)) && (ent.svflags & SVF_MONSTER))
 				M_CheckGround(ent);
@@ -414,8 +406,4 @@ void RunFrame()
 	
 	// build the playerstate_t structures for all players
 	ClientEndServerFrames();
-
-#ifdef BOTS
-	//AITools_Frame();	//give think time to AI debug tools
-#endif
 }

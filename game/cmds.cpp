@@ -1,5 +1,5 @@
 #include "../lib/types.h"
-#include "../lib/entity.h"
+#include "entity.h"
 #include "../lib/info.h"
 #include "game.h"
 #include "m_player.h"
@@ -17,7 +17,7 @@ static string ClientTeam(entity &ent)
 	if (!ent.is_client())
 		return "???";
 
-	string team = Info_ValueForKey(ent.client->g.pers.userinfo, "skin");
+	string team = Info_ValueForKey(ent.client->pers.userinfo, "skin");
 	size_t p = strchr(team, '/');
 
 	if (p == -1)
@@ -38,7 +38,7 @@ bool OnSameTeam(entity &ent1, entity &ent2)
 	{
 #ifdef SINGLE_PLAYER
 		// coop players always teamed
-		if (coop.intVal)
+		if (coop)
 			return true;
 		else
 #endif
@@ -64,7 +64,7 @@ static void SelectNextItem(entity &ent, gitem_flags itflags)
 	}
 #endif
 
-	if (ent.client->g.chase_target.has_value())
+	if (ent.client->chase_target.has_value())
 	{
 		ChaseNext(ent);
 		return;
@@ -73,9 +73,9 @@ static void SelectNextItem(entity &ent, gitem_flags itflags)
 	// scan for the next valid one
 	for (size_t i = 1; i <= item_list().size(); i++)
 	{
-		gitem_id index = (gitem_id)((ent.client->g.pers.selected_item + i) % item_list().size());
+		gitem_id index = (gitem_id)((ent.client->pers.selected_item + i) % item_list().size());
 
-		if (!ent.client->g.pers.inventory[index])
+		if (!ent.client->pers.inventory[index])
 			continue;
 
 		const gitem_t &it = GetItemByIndex(index);
@@ -85,11 +85,11 @@ static void SelectNextItem(entity &ent, gitem_flags itflags)
 		if (!(it.flags & itflags))
 			continue;
 
-		ent.client->g.pers.selected_item = index;
+		ent.client->pers.selected_item = index;
 		return;
 	}
 
-	ent.client->g.pers.selected_item = ITEM_NONE;
+	ent.client->pers.selected_item = ITEM_NONE;
 }
 
 static void SelectPrevItem(entity &ent, gitem_flags itflags)
@@ -102,7 +102,7 @@ static void SelectPrevItem(entity &ent, gitem_flags itflags)
 	}
 #endif
 
-	if (ent.client->g.chase_target.has_value())
+	if (ent.client->chase_target.has_value())
 	{
 		ChasePrev(ent);
 		return;
@@ -111,9 +111,9 @@ static void SelectPrevItem(entity &ent, gitem_flags itflags)
 	// scan for the next valid one
 	for (size_t i = 1; i <= item_list().size(); i++)
 	{
-		gitem_id index = (gitem_id)((ent.client->g.pers.selected_item + item_list().size() - i) % item_list().size());
+		gitem_id index = (gitem_id)((ent.client->pers.selected_item + item_list().size() - i) % item_list().size());
 
-		if (!ent.client->g.pers.inventory[index])
+		if (!ent.client->pers.inventory[index])
 			continue;
 
 		const gitem_t &it = GetItemByIndex(index);
@@ -123,16 +123,16 @@ static void SelectPrevItem(entity &ent, gitem_flags itflags)
 		if (!(it.flags & itflags))
 			continue;
 
-		ent.client->g.pers.selected_item = index;
+		ent.client->pers.selected_item = index;
 		return;
 	}
 
-	ent.client->g.pers.selected_item = ITEM_NONE;
+	ent.client->pers.selected_item = ITEM_NONE;
 }
 
 void ValidateSelectedItem(entity &ent)
 {
-	if (!ent.client->g.pers.inventory[ent.client->g.pers.selected_item])
+	if (!ent.client->pers.inventory[ent.client->pers.selected_item])
 		SelectNextItem(ent, (gitem_flags)-1);
 }
 
@@ -149,7 +149,7 @@ static void Cmd_Give_f(entity &ent)
 {
 	if (
 #ifdef SINGLE_PLAYER
-		deathmatch.intVal && 
+		deathmatch && 
 #endif
 		!sv_cheats)
 	{
@@ -163,9 +163,9 @@ static void Cmd_Give_f(entity &ent)
 	if (give_all || striequals(gi.argv(1), "health"))
 	{
 		if (gi.argc() == 3)
-			ent.g.health = atoi(gi.argv(2));
+			ent.health = atoi(gi.argv(2));
 		else
-			ent.g.health = ent.g.max_health;
+			ent.health = ent.max_health;
 		if (!give_all)
 			return;
 	}
@@ -187,12 +187,12 @@ static void Cmd_Give_f(entity &ent)
 			else if (it.flags & IT_WEAPON)
 			{
 				if (give_weapons)
-					ent.client->g.pers.inventory[it.id] += 1;
+					ent.client->pers.inventory[it.id] += 1;
 			}
 			else if (!(it.flags & IT_ARMOR))
 			{
 				if (give_all)
-					ent.client->g.pers.inventory[it.id] = 1;
+					ent.client->pers.inventory[it.id] = 1;
 			}
 		}
 
@@ -202,9 +202,9 @@ static void Cmd_Give_f(entity &ent)
 
 	if (give_all || striequals(name, "armor"))
 	{
-		ent.client->g.pers.inventory[ITEM_ARMOR_JACKET] = 0;
-		ent.client->g.pers.inventory[ITEM_ARMOR_COMBAT] = 0;
-		ent.client->g.pers.inventory[ITEM_ARMOR_BODY] = GetItemByIndex(ITEM_ARMOR_BODY).armor.max_count;
+		ent.client->pers.inventory[ITEM_ARMOR_JACKET] = 0;
+		ent.client->pers.inventory[ITEM_ARMOR_COMBAT] = 0;
+		ent.client->pers.inventory[ITEM_ARMOR_BODY] = GetItemByIndex(ITEM_ARMOR_BODY).armor.max_count;
 
 		if (!give_all)
 			return;
@@ -252,9 +252,9 @@ static void Cmd_Give_f(entity &ent)
 	if (it->flags & IT_AMMO)
 	{
 		if (gi.argc() == 3)
-			ent.client->g.pers.inventory[it->id] = atoi(gi.argv(2));
+			ent.client->pers.inventory[it->id] = atoi(gi.argv(2));
 		else
-			ent.client->g.pers.inventory[it->id] += it->quantity;
+			ent.client->pers.inventory[it->id] += it->quantity;
 	}
 	else
 	{
@@ -282,7 +282,7 @@ static void Cmd_God_f(entity &ent)
 {
 	if (
 #ifdef SINGLE_PLAYER
-		deathmatch.intVal && 
+		deathmatch && 
 #endif
 		!sv_cheats)
 	{
@@ -290,11 +290,11 @@ static void Cmd_God_f(entity &ent)
 		return;
 	}
 
-	ent.g.flags ^= FL_GODMODE;
+	ent.flags ^= FL_GODMODE;
 
 	stringlit msg;
 
-	if (!(ent.g.flags & FL_GODMODE) )
+	if (!(ent.flags & FL_GODMODE) )
 		msg = "godmode OFF\n";
 	else
 		msg = "godmode ON\n";
@@ -302,7 +302,7 @@ static void Cmd_God_f(entity &ent)
 	gi.cprintf(ent, PRINT_HIGH, msg);
 }
 
-#if defined(SINGLE_PLAYER) || defined(BOTS)
+#if defined(SINGLE_PLAYER)
 /*
 ==================
 Cmd_Notarget_f
@@ -324,11 +324,11 @@ static void Cmd_Notarget_f(entity &ent)
 		return;
 	}
 
-	ent.g.flags ^= FL_NOTARGET;
+	ent.flags ^= FL_NOTARGET;
 
 	stringlit msg;
 
-	if (!(ent.g.flags & FL_NOTARGET) )
+	if (!(ent.flags & FL_NOTARGET) )
 		msg = "notarget OFF\n";
 	else
 		msg = "notarget ON\n";
@@ -348,7 +348,7 @@ static void Cmd_Noclip_f(entity &ent)
 {
 	if (
 #ifdef SINGLE_PLAYER
-		deathmatch.intVal && 
+		deathmatch && 
 #endif
 		!sv_cheats)
 	{
@@ -358,14 +358,14 @@ static void Cmd_Noclip_f(entity &ent)
 
 	stringlit msg;
 
-	if (ent.g.movetype == MOVETYPE_NOCLIP)
+	if (ent.movetype == MOVETYPE_NOCLIP)
 	{
-		ent.g.movetype = MOVETYPE_WALK;
+		ent.movetype = MOVETYPE_WALK;
 		msg = "noclip OFF\n";
 	}
 	else
 	{
-		ent.g.movetype = MOVETYPE_NOCLIP;
+		ent.movetype = MOVETYPE_NOCLIP;
 		msg = "noclip ON\n";
 	}
 
@@ -390,7 +390,7 @@ static void Cmd_Use_f(entity &ent)
 		return;
 	}
 
-	if (!ent.client->g.pers.inventory[it->id])
+	if (!ent.client->pers.inventory[it->id])
 		gi.cprintf (ent, PRINT_HIGH, "Out of item: %s\n", s);
 	else if (!it->use)
 		gi.cprintf (ent, PRINT_HIGH, "Item is not usable.\n");
@@ -428,7 +428,7 @@ static void Cmd_Drop_f(entity &ent)
 		return;
 	}
 
-	if (!ent.client->g.pers.inventory[it->id])
+	if (!ent.client->pers.inventory[it->id])
 		gi.cprintf (ent, PRINT_HIGH, "Out of item: %s\n", s.ptr());
 	else if (!it->drop)
 		gi.cprintf (ent, PRINT_HIGH, "Item is not droppable.\n");
@@ -443,9 +443,9 @@ Cmd_Inven_f
 */
 static void Cmd_Inven_f(entity& ent)
 {
-	ent.client->g.showscores = false;
+	ent.client->showscores = false;
 #ifdef SINGLE_PLAYER
-	ent.client.showhelp = false;
+	ent.client->showhelp = false;
 #endif
 #ifdef PMENU
 	if (ent.client.menu.open)
@@ -456,9 +456,9 @@ static void Cmd_Inven_f(entity& ent)
 	}
 #endif
 
-	if (ent.client->g.showinventory)
+	if (ent.client->showinventory)
 	{
-		ent.client->g.showinventory = false;
+		ent.client->showinventory = false;
 		return;
 	}
 
@@ -470,13 +470,13 @@ static void Cmd_Inven_f(entity& ent)
 	}
 #endif
 
-	ent.client->g.showinventory = true;
+	ent.client->showinventory = true;
 
 	gi.WriteByte(svc_inventory);
 	for (size_t i = 0; i < MAX_ITEMS; i++)
 	{
 		if (i < item_list().size())
-			gi.WriteShort((int16_t)ent.client->g.pers.inventory[i]);
+			gi.WriteShort((int16_t)ent.client->pers.inventory[i]);
 		else
 			gi.WriteShort(0);
 	}
@@ -500,13 +500,13 @@ static void Cmd_InvUse_f(entity &ent)
 	
 	ValidateSelectedItem(ent);
 
-	if (!ent.client->g.pers.selected_item)
+	if (!ent.client->pers.selected_item)
 	{
 		gi.cprintf(ent, PRINT_HIGH, "No item to use.\n");
 		return;
 	}
 
-	const gitem_t &it = GetItemByIndex(ent.client->g.pers.selected_item);
+	const gitem_t &it = GetItemByIndex(ent.client->pers.selected_item);
 
 	if (!it.use)
 		gi.cprintf (ent, PRINT_HIGH, "Item is not usable.\n");
@@ -521,17 +521,17 @@ Cmd_WeapPrev_f
 */
 static void Cmd_WeapPrev_f(entity &ent)
 {
-	if (!ent.client->g.pers.weapon)
+	if (!ent.client->pers.weapon)
 		return;
 
-	const gitem_id selected_weapon = ent.client->g.pers.weapon->id;
+	const gitem_id selected_weapon = ent.client->pers.weapon->id;
 
 	// scan  for the next valid one
 	for (size_t i = 1; i <= item_list().size(); i++)
 	{
 		const gitem_id index = (gitem_id)((selected_weapon + item_list().size() - i) % item_list().size());
 
-		if (!ent.client->g.pers.inventory[index])
+		if (!ent.client->pers.inventory[index])
 			continue;
 
 		const gitem_t &it = GetItemByIndex(index);
@@ -543,7 +543,7 @@ static void Cmd_WeapPrev_f(entity &ent)
 
 		it.use(ent, it);
 
-		if (ent.client->g.newweapon == it || ent.client->g.pers.weapon == it)
+		if (ent.client->newweapon == it || ent.client->pers.weapon == it)
 			return;	// successful
 	}
 }
@@ -555,17 +555,17 @@ Cmd_WeapNext_f
 */
 static void Cmd_WeapNext_f(entity &ent)
 {
-	if (!ent.client->g.pers.weapon)
+	if (!ent.client->pers.weapon)
 		return;
 
-	const gitem_id selected_weapon = ent.client->g.pers.weapon->id;
+	const gitem_id selected_weapon = ent.client->pers.weapon->id;
 
 	// scan  for the next valid one
 	for (size_t i = 1; i <= item_list().size(); i++)
 	{
 		const gitem_id index = (gitem_id)((selected_weapon + i) % item_list().size());
 
-		if (!ent.client->g.pers.inventory[index])
+		if (!ent.client->pers.inventory[index])
 			continue;
 
 		const gitem_t &it = GetItemByIndex(index);
@@ -577,7 +577,7 @@ static void Cmd_WeapNext_f(entity &ent)
 
 		it.use(ent, it);
 
-		if (ent.client->g.newweapon == it || ent.client->g.pers.weapon == it)
+		if (ent.client->newweapon == it || ent.client->pers.weapon == it)
 			return;	// successful
 	}
 }
@@ -589,12 +589,12 @@ Cmd_WeapLast_f
 */
 static void Cmd_WeapLast_f(entity &ent)
 {
-	if (!ent.client->g.pers.weapon || !ent.client->g.pers.lastweapon)
+	if (!ent.client->pers.weapon || !ent.client->pers.lastweapon)
 		return;
 
-	const gitem_id index = ent.client->g.pers.lastweapon->id;
+	const gitem_id index = ent.client->pers.lastweapon->id;
 
-	if (!ent.client->g.pers.inventory[index])
+	if (!ent.client->pers.inventory[index])
 		return;
 
 	const gitem_t &it = GetItemByIndex(index);
@@ -616,13 +616,13 @@ static void Cmd_InvDrop_f(entity &ent)
 {
 	ValidateSelectedItem(ent);
 
-	if (!ent.client->g.pers.selected_item)
+	if (!ent.client->pers.selected_item)
 	{
 		gi.cprintf (ent, PRINT_HIGH, "No item to drop.\n");
 		return;
 	}
 
-	const gitem_t &it = GetItemByIndex(ent.client->g.pers.selected_item);
+	const gitem_t &it = GetItemByIndex(ent.client->pers.selected_item);
 
 	if (!it.drop)
 		gi.cprintf (ent, PRINT_HIGH, "Item is not dropable.\n");
@@ -639,11 +639,11 @@ static void Cmd_Kill_f(entity &ent)
 {
 	if (ent.solid == SOLID_NOT)
 		return;
-	if ((level.framenum - ent.client->g.respawn_framenum) < 5 * BASE_FRAMERATE)
+	if ((level.framenum - ent.client->respawn_framenum) < 5 * BASE_FRAMERATE)
 		return;
 
-	ent.g.flags &= ~FL_GODMODE;
-	ent.g.health = 0;
+	ent.flags &= ~FL_GODMODE;
+	ent.health = 0;
 	meansOfDeath = MOD_SUICIDE;
 	player_die (ent, ent, ent, 100000, vec3_origin);
 }
@@ -655,24 +655,24 @@ Cmd_PutAway_f
 */
 static void Cmd_PutAway_f(entity &ent)
 {
-	ent.client->g.showscores = false;
+	ent.client->showscores = false;
 #ifdef SINGLE_PLAYER
-	ent.client.showhelp = false;
+	ent.client->showhelp = false;
 #endif
-	ent.client->g.showinventory = false;
+	ent.client->showinventory = false;
 
 #ifdef PMENU
 	if (ent.client.menu.open)
 		PMenu_Close(ent);
 #endif
 
-	ent.client->g.update_chase = true;
+	ent.client->update_chase = true;
 }
 
 static bool PlayerSort(const entityref &a, const entityref &b)
 {
-	const int32_t anum = a->client->g.resp.score;
-	const int32_t bnum = b->client->g.resp.score;
+	const int32_t anum = a->client->resp.score;
+	const int32_t bnum = b->client->resp.score;
 	return anum < bnum;
 }
 
@@ -689,7 +689,7 @@ static void Cmd_Players_f(entity &ent)
 	{
 		entity &cl = itoe(i + 1);
 
-		if (cl.is_client() && cl.client->g.pers.connected)
+		if (cl.is_client() && cl.client->pers.connected)
 			index.push_back(cl);
 	}
 
@@ -701,7 +701,7 @@ static void Cmd_Players_f(entity &ent)
 
 	for (auto &e : index)
 	{
-		string small = va("%3i %s\n", e->client->g.resp.score, e->client->g.pers.netname.ptr());
+		string small = va("%3i %s\n", e->client->resp.score, e->client->pers.netname.ptr());
 
 		if (strlen(small) + strlen(large) > 1280 - 100)
 		{
@@ -727,38 +727,38 @@ static void Cmd_Wave_f(entity &ent)
 	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 		return;
 
-	if (ent.client->g.anim_priority > ANIM_WAVE)
+	if (ent.client->anim_priority > ANIM_WAVE)
 		return;
 
-	ent.client->g.anim_priority = ANIM_WAVE;
+	ent.client->anim_priority = ANIM_WAVE;
 
 	switch (atoi(gi.argv(1)))
 	{
 	case 0:
 		gi.cprintf (ent, PRINT_HIGH, "flipoff\n");
 		ent.s.frame = FRAME_flip01-1;
-		ent.client->g.anim_end = FRAME_flip12;
+		ent.client->anim_end = FRAME_flip12;
 		break;
 	case 1:
 		gi.cprintf (ent, PRINT_HIGH, "salute\n");
 		ent.s.frame = FRAME_salute01-1;
-		ent.client->g.anim_end = FRAME_salute11;
+		ent.client->anim_end = FRAME_salute11;
 		break;
 	case 2:
 		gi.cprintf (ent, PRINT_HIGH, "taunt\n");
 		ent.s.frame = FRAME_taunt01-1;
-		ent.client->g.anim_end = FRAME_taunt17;
+		ent.client->anim_end = FRAME_taunt17;
 		break;
 	case 3:
 		gi.cprintf (ent, PRINT_HIGH, "wave\n");
 		ent.s.frame = FRAME_wave01-1;
-		ent.client->g.anim_end = FRAME_wave11;
+		ent.client->anim_end = FRAME_wave11;
 		break;
 	case 4:
 	default:
 		gi.cprintf (ent, PRINT_HIGH, "point\n");
 		ent.s.frame = FRAME_point01-1;
-		ent.client->g.anim_end = FRAME_point12;
+		ent.client->anim_end = FRAME_point12;
 		break;
 	}
 }
@@ -778,9 +778,9 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 	string text;
 
 	if (team)
-		text = va("(%s): ", ent.client->g.pers.netname.ptr());
+		text = va("(%s): ", ent.client->pers.netname.ptr());
 	else
-		text = va("%s: ", ent.client->g.pers.netname.ptr());
+		text = va("%s: ", ent.client->pers.netname.ptr());
 
 	if (arg0)
 		text = va("%s%s %s", text.ptr(), gi.argv(0), gi.args());
@@ -802,26 +802,26 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 
 	if (flood_msgs)
 	{
-		if (level.time < ent.client->g.flood_locktill)
+		if (level.time < ent.client->flood_locktill)
 		{
-			gi.cprintf(ent, PRINT_HIGH, "You can't talk for %d more seconds\n", (int32_t)(ent.client->g.flood_locktill - level.time));
+			gi.cprintf(ent, PRINT_HIGH, "You can't talk for %d more seconds\n", (int32_t)(ent.client->flood_locktill - level.time));
 			return;
 		}
 
-		int32_t i = ent.client->g.flood_whenhead - (int32_t)flood_msgs + 1;
+		int32_t i = (int32_t) (ent.client->flood_whenhead - (int32_t)flood_msgs + 1);
 
 		if (i < 0)
-			i = ent.client->g.flood_when.size() + i;
-            
-		if (ent.client->g.flood_when[i] && level.time - ent.client->g.flood_when[i] < (int32_t)flood_persecond)
+			i = (int32_t) (ent.client->flood_when.size() + i);
+
+		if (ent.client->flood_when[i] && level.time - ent.client->flood_when[i] < (int32_t)flood_persecond)
 		{
-			ent.client->g.flood_locktill = level.time + (float)flood_waitdelay;
+			ent.client->flood_locktill = level.time + (float)flood_waitdelay;
 			gi.cprintf(ent, PRINT_CHAT, "You can't talk for %d more seconds.\n", (int32_t)flood_waitdelay);
 			return;
 		}
 
-		ent.client->g.flood_whenhead = (ent.client->g.flood_whenhead + 1) % ent.client->g.flood_when.size();
-		ent.client->g.flood_when[ent.client->g.flood_whenhead] = level.time;
+		ent.client->flood_whenhead = (ent.client->flood_whenhead + 1) % ent.client->flood_when.size();
+		ent.client->flood_when[ent.client->flood_whenhead] = level.time;
 	}
 
 	if (dedicated)
@@ -852,12 +852,12 @@ static void Cmd_PlayerList_f(entity &ent)
 			continue;
 
 		string str = va("%02d:%02d %4d %3d %s%s\n",
-			(level.framenum - e2.client->g.resp.enterframe) / 600,
-			((level.framenum - e2.client->g.resp.enterframe) % 600) / 10,
+			(level.framenum - e2.client->resp.enterframe) / 600,
+			((level.framenum - e2.client->resp.enterframe) % 600) / 10,
 			e2.client->ping,
-			e2.client->g.resp.score,
-			e2.client->g.pers.netname.ptr(),
-			e2.client->g.resp.spectator ? " (spectator)" : "");
+			e2.client->resp.score,
+			e2.client->pers.netname.ptr(),
+			e2.client->resp.spectator ? " (spectator)" : "");
 
 		if (strlen(text) + strlen(str) > MESSAGE_LIMIT - 50)
 		{
@@ -878,7 +878,7 @@ static void Cmd_Spawn_f(entity &ent)
 {
 	if (
 #ifdef SINGLE_PLAYER
-		deathmatch.intVal && 
+		deathmatch && 
 #endif
 		!sv_cheats)
 	{
@@ -890,7 +890,7 @@ static void Cmd_Spawn_f(entity &ent)
 	st.classname = gi.argv(1);
 	
 	vector forward;
-	AngleVectors(ent.client->g.v_angle, &forward, nullptr, nullptr);
+	AngleVectors(ent.client->v_angle, &forward, nullptr, nullptr);
 	
 	e.s.origin = ent.s.origin + (forward * 128);
 	e.s.angles[YAW] = ent.s.angles[YAW];
@@ -940,7 +940,7 @@ void ClientCommand(entity &ent)
 		Cmd_Give_f (ent);
 	else if (cmd == "god")
 		Cmd_God_f (ent);
-#if defined(SINGLE_PLAYER) || defined(BOTS)
+#if defined(SINGLE_PLAYER)
 	else if (cmd == "notarget")
 		Cmd_Notarget_f (ent);
 #endif

@@ -9,6 +9,8 @@ struct registered_entity
 	stringlit	classname;
 	spawn_func	func;
 	entity_type	type;
+
+	const registered_entity	*next;
 };
 
 // static structure that maintains a list of entities
@@ -16,17 +18,17 @@ struct registered_entity
 // this work.
 struct spawnable_entities
 {
-	spawnable_entities(const registered_entity &ent)
+private:
+	registered_entity ent;
+
+	static void register_entity(registered_entity &ent);
+
+public:
+	spawnable_entities(const registered_entity &ent) :
+		ent(ent)
 	{
-		register_entity(ent);
+		register_entity(this->ent);
 	}
-
-	static void register_entity(const registered_entity &ent);
-	
-	// iterable-like
-
-	static const registered_entity *begin();
-	static const registered_entity *end();
 };
 
 #define REGISTER_ENTITY(n, i) \

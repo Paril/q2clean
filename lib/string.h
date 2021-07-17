@@ -62,13 +62,12 @@ public:
 			shared = std::shared_ptr<char[]>(nullptr);
 	}
 
-
 	// copy substring ref passed by argument into a new string.
 	// mainly internal; start/length must be validated before calling this
 	inline string(const stringref &sub, const size_t &start, const size_t &length);
 
 	// allocate new string with specified length. used internally.
-	inline string(const size_t &length) :
+	explicit inline string(const size_t &length) :
 		shared(),
 		slength(length)
 	{
@@ -127,7 +126,7 @@ public:
 	inline bool operator!=(const stringref &lit) const;
 
 	// string is "valid" if its non-null and doesn't start with a zero
-	inline operator bool() const { return shared.get() && slength; }
+	inline explicit operator bool() const { return shared.get() && slength; }
 };
 
 // format string
@@ -216,7 +215,7 @@ public:
 	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
 
 	// string is "valid" if its length is non-zero and doesn't start with a 0
-	inline operator bool() const { return slength && operator stringlit()[0]; }
+	inline explicit operator bool() const { return slength && operator stringlit()[0]; }
 };
 
 template<typename T>
@@ -473,6 +472,23 @@ public:
 	{
 	}
 
+	constexpr stringarray(stringlit lit)
+	{
+		if (!lit)
+		{
+			this->data()[0] = '\0';
+			return;
+		}
+
+		const size_t len = strlen(lit);
+		size_t i = 0;
+
+		for (; i < min(len, size - 1); i++)
+			this->data()[i] = lit[i];
+
+		this->data()[i] = 0;
+	}
+
 	constexpr stringarray(const array<char, size> &init) :
 		array<char, size>(init)
 	{
@@ -487,7 +503,7 @@ public:
 	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
 
 	// string is "valid" if its length is non-zero and doesn't start with a 0
-	inline operator bool() const { return size && operator stringlit()[0]; }
+	inline explicit operator bool() const { return size && operator stringlit()[0]; }
 };
 
 /*
