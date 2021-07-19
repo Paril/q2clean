@@ -1,16 +1,20 @@
-#include "../lib/types.h"
+#include <algorithm>
+#include "lib/types.h"
 #include "entity.h"
-#include "../lib/info.h"
+#include "lib/info.h"
 #include "game.h"
 #include "m_player.h"
 #include "items.h"
-#include "itemlist.h"
 #include "chase.h"
-#include "util.h"
 #include "player.h"
 #include "combat.h"
-#include "hud.h"
-#include <algorithm>
+
+import util;
+import game_locals;
+import hud;
+import dynarray;
+import string.format;
+import items.weaponry;
 
 static string ClientTeam(entity &ent)
 {
@@ -900,7 +904,7 @@ static void Cmd_Spawn_f(entity &ent)
 };
 
 #ifdef OFFHAND_HOOK
-#include "grapple.h"
+import ctf.grapple;
 #endif
 
 /*

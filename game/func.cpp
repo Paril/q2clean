@@ -1,11 +1,14 @@
-#include "../lib/types.h"
+#include "lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "func.h"
 #include "game.h"
 #include "combat.h"
-#include "util.h"
 #include "spawn.h"
+
+import gi;
+import util;
+import math.random;
+import string.format;
 
 /*
 =========================================================
@@ -1005,7 +1008,7 @@ static void door_use_areaportals(entity &self, bool open)
 		return;
 	
 	entityref t;
-	while ((t = G_FindFunc(t, targetname, self.target, striequals)).has_value())
+	while ((t = G_FindFunc<&entity::targetname>(t, self.target, striequals)).has_value())
 		if (t->type == ET_FUNC_AREAPORTAL)
 			gi.SetAreaPortalState(t->style, open);
 }

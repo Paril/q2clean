@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../lib/types.h"
+#include "lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 
 #ifdef SINGLE_PLAYER
+import gi;
+
 bool FindTarget(entity &self);
 
 enum range_t : uint8_t

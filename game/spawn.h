@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../lib/types.h"
+#include "entity.h"
 
 using spawn_func = void(*)(entity &);
 

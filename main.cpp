@@ -1,15 +1,17 @@
+#include <fstream>
+
 #include "lib/types.h"
-#include "lib/gi.h"
-#include "lib/server_entity.h"
 #include "lib/info.h"
+
+import protocol;
+import gi;
+import string.format;
+
 #include "game/player.h"
 #include "game/game.h"
 #include "game/cmds.h"
 #include "game/svcmds.h"
 #include "game/spawn.h"
-#include "game/itemlist.h"
-
-#include <fstream>
 
 #define CJSON_HIDE_SYMBOLS
 #include "debug/cJSON.h"
@@ -557,6 +559,8 @@ inline void json_serializer_read(cJSON *json, json_serializer &stream, savable_d
 	inline void operator>>(binary_serializer &stream, type &str) { stream.read_struct(type##_save, &str); } \
 	inline cJSON *json_serializer_write(json_serializer &stream, const type &str, const bool &) { return stream.write_struct(type##_save, &str, true); } \
 	inline void json_serializer_read(cJSON *json, json_serializer &stream, type &str) { stream.read_struct(json, type##_save, &str); }
+
+import game_locals;
 
 static save_member game_locals_members[] = {
 #ifdef SINGLE_PLAYER

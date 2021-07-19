@@ -1,6 +1,7 @@
 #pragma once
 
-#include "gi.h"
+import gi;
+import string;
 
 constexpr bool isprint(const char &c)
 {

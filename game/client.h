@@ -1,8 +1,10 @@
 #pragma once
 
-#include "../lib/usercmd.h"
 #include "items.h"
-#include "itemref.h"
+
+import gi;
+import string;
+import items.list;
 
 // handedness values
 enum handedness : uint8_t

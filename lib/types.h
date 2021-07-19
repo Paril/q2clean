@@ -13,20 +13,12 @@
 #include <array>
 // expose as array globally
 using std::array;
-// varargs are used in a few places
-#include <cstdarg>
 
 // Math!
 #include "math.h"
 
 // Allocator for STL containers
 #include "allocator.h"
-
-// type name for a string literal
-using stringlit = const char *;
-
-// Strings are used in a lot of places
-#include "string.h"
 
 // allows lengthof(array) for C-style arrays
 template<typename T, size_t S>
@@ -37,14 +29,14 @@ using gtime = uint64_t;
 
 // certain enums used in the code are bitwise. this allows bitwise
 // operators to work. stupid but functional.
-#define MAKE_ENUM_BITWISE(enumtype) \
-	constexpr enumtype operator|(const enumtype &l, const enumtype &r) { return (enumtype)((std::underlying_type<enumtype>::type)l | (std::underlying_type<enumtype>::type)r); } \
-	constexpr enumtype operator&(const enumtype &l, const enumtype &r) { return (enumtype)((std::underlying_type<enumtype>::type)l & (std::underlying_type<enumtype>::type)r); } \
-	constexpr enumtype operator^(const enumtype &l, const enumtype &r) { return (enumtype)((std::underlying_type<enumtype>::type)l ^ (std::underlying_type<enumtype>::type)r); } \
-	constexpr enumtype operator~(const enumtype &v) { return (enumtype)(~(std::underlying_type<enumtype>::type)v); } \
-	constexpr enumtype &operator|=(enumtype &l, const enumtype &r) { return l = l | r; } \
-	constexpr enumtype &operator&=(enumtype &l, const enumtype &r) { return l = l & r; } \
-	constexpr enumtype &operator^=(enumtype &l, const enumtype &r) { return l = l ^ r; }
+#define MAKE_ENUM_BITWISE(enumtype, ...) \
+	__VA_ARGS__ constexpr enumtype operator|(const enumtype &l, const enumtype &r) { return (enumtype)((std::underlying_type<enumtype>::type)l | (std::underlying_type<enumtype>::type)r); } \
+	__VA_ARGS__ constexpr enumtype operator&(const enumtype &l, const enumtype &r) { return (enumtype)((std::underlying_type<enumtype>::type)l & (std::underlying_type<enumtype>::type)r); } \
+	__VA_ARGS__ constexpr enumtype operator^(const enumtype &l, const enumtype &r) { return (enumtype)((std::underlying_type<enumtype>::type)l ^ (std::underlying_type<enumtype>::type)r); } \
+	__VA_ARGS__ constexpr enumtype operator~(const enumtype &v) { return (enumtype)(~(std::underlying_type<enumtype>::type)v); } \
+	__VA_ARGS__ constexpr enumtype &operator|=(enumtype &l, const enumtype &r) { return l = l | r; } \
+	__VA_ARGS__ constexpr enumtype &operator&=(enumtype &l, const enumtype &r) { return l = l & r; } \
+	__VA_ARGS__ constexpr enumtype &operator^=(enumtype &l, const enumtype &r) { return l = l ^ r; }
 
 // default server FPS
 constexpr gtime		BASE_FRAMERATE		= 10;
@@ -56,8 +48,6 @@ constexpr gtime		BASE_FRAMETIME		= (gtime)(BASE_1_FRAMETIME * 1000);
 constexpr float		BASE_FRAMETIME_1000	= BASE_1_FRAMETIME;
 // the amount of time, in s, that a single frame lasts for
 constexpr float		FRAMETIME			= BASE_1_FRAMETIME;
-
-constexpr stringlit GAMEVERSION = "clean";
 
 // extended features
 enum game_features : uint32_t
@@ -76,7 +66,7 @@ enum game_features : uint32_t
 MAKE_ENUM_BITWISE(game_features);
 
 // features this game supports
-constexpr game_features G_FEATURES = (GMF_PROPERINUSE | GMF_WANT_ALL_DISCONNECTS | GMF_ENHANCED_SAVEGAMES);
+constexpr game_features G_FEATURES = (GMF_CLIENTNUM | GMF_PROPERINUSE | GMF_WANT_ALL_DISCONNECTS | GMF_ENHANCED_SAVEGAMES);
 
 // Q2's engine uses an int32-wide value to represent booleans.
 using qboolean = int32_t;
@@ -207,7 +197,3 @@ public:
 };
 
 constexpr image_index IMAGE_NONE(0);
-
-#include "random.h"
-
-#include "savables.h"

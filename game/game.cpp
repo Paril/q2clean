@@ -1,18 +1,22 @@
 #include "entity.h"
-#include "../lib/gi.h"
-#include "game.h"
-#include "view.h"
 #include "player.h"
-#include "util.h"
-#include "hud.h"
 #include "phys.h"
 #include "spawn.h"
+#include "game.h"
 #ifdef SINGLE_PLAYER
 #include "ai.h"
 #include "monster.h"
 #endif
 
-game_locals game;
+import gi;
+import game_locals;
+import util;
+import hud;
+import string.format;
+import player.view;
+
+constexpr stringlit GAMEVERSION = "clean";
+
 spawn_temp st;
 level_locals level;
 
@@ -233,7 +237,7 @@ void EndDMLevel()
 		BeginIntermission(CreateTargetChangeLevel(level.nextmap));
 	else
 	{  // search for a changelevel
-		entityref ent = G_FindEquals(world, type, ET_TARGET_CHANGELEVEL);
+		entityref ent = G_FindEquals<&entity::type>(world, ET_TARGET_CHANGELEVEL);
 		if (!ent.has_value())
 		{
 			// the map designer didn't include a changelevel,

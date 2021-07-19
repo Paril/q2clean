@@ -1,5 +1,6 @@
-#include "gi.h"
 #include "allocator.h"
+
+import gi;
 
 void *internal::alloc(size_t len, mem_tag tag)
 {

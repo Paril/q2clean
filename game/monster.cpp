@@ -2,13 +2,16 @@
 
 #ifdef SINGLE_PLAYER
 #include "entity.h"
-#include "itemlist.h"
-#include "../lib/gi.h"
 #include "gweapon.h"
 #include "game.h"
-#include "util.h"
 #include "move.h"
 #include "ai.h"
+
+import gi;
+import util;
+import math.random;
+import string.format;
+
 //
 // monster weapons
 //
@@ -601,7 +604,7 @@ static void monster_start_go(entity &self)
 		entityref ctarget = world;
 		notcombat = false;
 		fixup = false;
-		while ((ctarget = G_FindEquals(ctarget, targetname, self.target)).has_value())
+		while ((ctarget = G_FindFunc<&entity::targetname>(ctarget, self.target, striequals)).has_value())
 		{
 			if (ctarget->type == ET_POINT_COMBAT)
 			{
@@ -622,7 +625,7 @@ static void monster_start_go(entity &self)
 	if (self.combattarget)
 	{
 		entityref	ctarget = world;
-		while ((ctarget = G_FindEquals(ctarget, targetname, self.combattarget)).has_value())
+		while ((ctarget = G_FindFunc<&entity::targetname>(ctarget, self.combattarget, striequals)).has_value())
 			if (ctarget->type != ET_POINT_COMBAT)
 				gi.dprintf("%i at (%s) has a bad combattarget %s : %i at (%s)\n",
 						   self.type, vtos(self.s.origin).ptr(),

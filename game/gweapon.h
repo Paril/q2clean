@@ -1,7 +1,8 @@
 #pragma once
 #include "../lib/types.h"
-#include "../lib/entity_effects.h"
 #include "combat.h"
+
+import protocol;
 
 /*
 =================

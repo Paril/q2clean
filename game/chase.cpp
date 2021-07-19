@@ -1,8 +1,9 @@
-#include "../lib/types.h"
+#include "lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "chase.h"
 #include "game.h"
+
+import gi;
 
 void UpdateChaseCam(entity &ent)
 {
@@ -105,6 +106,8 @@ void UpdateChaseCam(entity &ent)
 		gi.unicast(ent, false);
 	}
 }
+
+import game_locals;
 
 void ChaseNext(entity &ent)
 {

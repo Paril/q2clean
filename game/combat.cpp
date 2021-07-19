@@ -1,11 +1,12 @@
-#include "../lib/types.h"
+#include "lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "combat.h"
 #include "game.h"
-#include "itemlist.h"
 #include "cmds.h"
-#include "util.h"
+
+import gi;
+import util;
+import items.armor;
 
 means_of_death meansOfDeath;
 

@@ -1,14 +1,14 @@
 #include "../lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "trigger.h"
-#include "util.h"
 #include "combat.h"
 #include "spawn.h"
+#include "game.h"
 
-#ifdef SINGLE_PLAYER
-#include "itemlist.h"
-#endif
+import gi;
+import game_locals;
+import util;
+import string.format;
 
 constexpr spawn_flag TRIGGER_MONSTER = (spawn_flag)1;
 constexpr spawn_flag TRIGGER_NOT_PLAYER = (spawn_flag)2;

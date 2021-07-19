@@ -1,23 +1,27 @@
 #include "../lib/types.h"
 #include "entity.h"
 #include "../lib/info.h"
-#include "../lib/gi.h"
 #include "combat.h"
 #include "game.h"
-#include "itemlist.h"
-#include "util.h"
 #include "player.h"
 #include "chase.h"
 #include "cmds.h"
-#include "hud.h"
 #include "misc.h"
-#include "pweapon.h"
-#include "view.h"
 #include "spawn.h"
 #include "m_player.h"
+
+import util;
+import game_locals;
+import hud;
+import protocol;
+import gi;
+import math.random;
+import string.format;
+import player.view;
 #ifdef SINGLE_PLAYER
-#include "trail.h"
+import player.trail;
 #endif
+import weaponry;
 
 #ifdef SINGLE_PLAYER
 //
@@ -36,7 +40,7 @@ static void SP_FixCoopSpots(entity &self)
 {
 	entityref spot = world;
 
-	while ((spot = G_FindEquals(spot, type, ET_INFO_PLAYER_START)).has_value())
+	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_START)).has_value())
 	{
 		if (!spot->targetname)
 			continue;
@@ -563,7 +567,7 @@ static void LookAtKiller(entity &self, entity &inflictor, entity &attacker)
 }
 
 #ifdef HOOK_CODE
-#include "grapple.h"
+import ctf.grapple;
 #endif
 
 #ifdef CTF
@@ -897,7 +901,7 @@ entityref SelectRandomDeathmatchSpawnPoint()
 	entityref spot, spot1, spot2;
 	float range1 = FLT_MAX, range2 = FLT_MAX;
 
-	while ((spot = G_FindEquals(spot, type, ET_INFO_PLAYER_DEATHMATCH)).has_value())
+	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_DEATHMATCH)).has_value())
 	{
 		count++;
 		float range = PlayersRangeFromSpot(spot);
@@ -926,7 +930,7 @@ entityref SelectRandomDeathmatchSpawnPoint()
 	spot = nullptr;
 	do
 	{
-		spot = G_FindEquals(spot, type, ET_INFO_PLAYER_DEATHMATCH);
+		spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_DEATHMATCH);
 		if ((spot1.has_value() && spot == spot1) || (spot2.has_value() && spot == spot2))
 			selection++;
 	} while (selection--);
@@ -945,7 +949,7 @@ entityref SelectFarthestDeathmatchSpawnPoint()
 	entityref bestspot;
 	float bestdistance = 0;
 	
-	while ((spot = G_FindEquals(spot, type, ET_INFO_PLAYER_DEATHMATCH)).has_value())
+	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_DEATHMATCH)).has_value())
 	{
 		float bestplayerdistance = PlayersRangeFromSpot(spot);
 
@@ -961,7 +965,7 @@ entityref SelectFarthestDeathmatchSpawnPoint()
 
 	// if there is a player just spawned on each and every start spot
 	// we have no choice to turn one into a telefrag meltdown
-	return G_FindEquals(world, type, ET_INFO_PLAYER_DEATHMATCH);
+	return G_FindEquals<&entity::type>(world, ET_INFO_PLAYER_DEATHMATCH);
 }
 
 static entityref SelectDeathmatchSpawnPoint()
@@ -1067,7 +1071,7 @@ static entityref SelectCoopSpawnPoint(entity &ent)
 	entityref spot = world;
 
 	// assume there are four coop spots at each spawnpoint
-	while ((spot = G_FindEquals(spot, type, ET_INFO_PLAYER_COOP)).has_value())
+	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_COOP)).has_value())
 	{
 		if (stricmp(game.spawnpoint, spot->targetname) == 0)
 		{
@@ -1114,7 +1118,7 @@ static void SelectSpawnPoint(entity &ent [[maybe_unused]], vector &origin, vecto
 
 	// find a single player start spot
 	if (!spot.has_value())
-		while ((spot = G_FindEquals(spot, type, ET_INFO_PLAYER_START)).has_value())
+		while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_START)).has_value())
 		{
 			if (!game.spawnpoint && !spot->targetname)
 				break;
@@ -1124,7 +1128,7 @@ static void SelectSpawnPoint(entity &ent [[maybe_unused]], vector &origin, vecto
 
 	if (!spot.has_value())
 		// there wasn't a spawnpoint found yet
-		spot = G_FindEquals(spot, type, ET_INFO_PLAYER_START);
+		spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_START);
 	
 	if (!spot.has_value())
 	{

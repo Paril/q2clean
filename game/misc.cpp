@@ -1,12 +1,15 @@
 #include "../lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "misc.h"
 #include "game.h"
-#include "util.h"
 #include "combat.h"
 #include "spawn.h"
 #include <ctime>
+
+import gi;
+import util;
+import math.random;
+import string.format;
 
 /*QUAKED func_group (0 0 0) ?
 Used to group brushes together just for editor convenience.
@@ -1407,7 +1410,7 @@ static void misc_viper_bomb_use(entity &self, entity &, entity &cactivator)
 	self.touch = misc_viper_bomb_touch_savable;
 	self.activator = cactivator;
 
-	entityref viper = G_FindEquals(world, type, ET_MISC_VIPER);
+	entityref viper = G_FindEquals<&entity::type>(world, ET_MISC_VIPER);
 	self.velocity = viper->moveinfo.dir * viper->moveinfo.speed;
 
 	self.timestamp = level.framenum;
@@ -1705,7 +1708,7 @@ static void func_clock_think(entity &self)
 {
 	if (!self.enemy.has_value())
 	{
-		self.enemy = G_FindFunc(world, targetname, self.target, striequals);
+		self.enemy = G_FindFunc<&entity::targetname>(world, self.target, striequals);
 		if (!self.enemy.has_value())
 			return;
 	}
@@ -1805,7 +1808,7 @@ REGISTER_ENTITY(func_clock, ET_FUNC_CLOCK);
 //=================================================================================
 
 #ifdef HOOK_CODE
-#include "grapple.h"
+import ctf.grapple;
 #endif
 
 static void teleporter_touch(entity &self, entity &other, vector, const surface &)
@@ -1813,7 +1816,7 @@ static void teleporter_touch(entity &self, entity &other, vector, const surface 
 	if (!other.is_client())
 		return;
 
-	entityref dest = G_FindFunc(world, targetname, self.target, striequals);
+	entityref dest = G_FindFunc<&entity::targetname>(world, self.target, striequals);
 
 	if (!dest.has_value())
 	{

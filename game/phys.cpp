@@ -1,10 +1,13 @@
 #include "../lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
-#include "../lib/set.h"
 #include "game.h"
 #include "phys.h"
-#include "util.h"
+
+import gi;
+import util;
+import dynarray;
+import set;
+import string.format;
 
 /*
 

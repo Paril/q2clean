@@ -47,6 +47,3 @@ constexpr float PI = (float)3.14159265358979323846;
 {
 	return a * (180 / PI);
 }
-
-// 3d vector is integral to Q2, so it's a global type.
-#include "vector.h"

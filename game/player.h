@@ -2,6 +2,9 @@
 
 #include "../lib/types.h"
 
+import string;
+import math.vector;
+
 void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damage, vector);
 
 void InitClientPersistant(entity &ent);

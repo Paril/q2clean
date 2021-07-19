@@ -1,5 +1,5 @@
 #pragma once
-#include "../lib/types.h"
+#include "lib/types.h"
 
 // damage flags
 enum damage_flags : uint16_t

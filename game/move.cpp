@@ -1,9 +1,11 @@
 #include "../lib/types.h"
 #include "entity.h"
 #include "move.h"
-#include "util.h"
 #include "phys.h"
-#include "../lib/gi.h"
+
+import gi;
+import util;
+import math.random;
 
 #ifdef SINGLE_PLAYER
 

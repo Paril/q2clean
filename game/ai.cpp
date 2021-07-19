@@ -1,13 +1,17 @@
-#include "../lib/types.h"
+#include "lib/types.h"
 #include "entity.h"
-#include "itemlist.h"
-#include "../lib/gi.h"
 #include "gweapon.h"
 #include "game.h"
-#include "util.h"
 #include "move.h"
 #include "ai.h"
-#include "trail.h"
+
+import gi;
+import util;
+import math.random;
+import string.format;
+#ifdef SINGLE_PLAYER
+import player.trail;
+#endif
 
 #ifdef SINGLE_PLAYER
 
@@ -18,6 +22,7 @@ float	enemy_yaw;
 
 //============================================================================
 
+import game_locals;
 
 void AI_SetSightClient()
 {

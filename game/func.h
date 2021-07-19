@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../lib/types.h"
+#include "lib/types.h"
 #include "spawn_flag.h"
 
 constexpr spawn_flag PLAT_LOW_TRIGGER	= (spawn_flag)1;

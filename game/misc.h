@@ -2,6 +2,8 @@
 
 #include "../lib/types.h"
 
+import math.random;
+
 inline vector VelocityForDamage(int damage)
 {
 	return randomv({ -100, -100, 200 }, { 100, 100, 300 }) * ((damage < 50) ? 0.7f : 1.2f);

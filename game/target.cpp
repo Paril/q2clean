@@ -1,12 +1,16 @@
 #include "../lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "game.h"
 #include "combat.h"
-#include "util.h"
-#include "hud.h"
 #include "gweapon.h"
 #include "spawn.h"
+
+import gi;
+import game_locals;
+import util;
+import hud;
+import math.random;
+import string.format;
 
 /*QUAKED target_temp_entity (1 0 0) (-8 -8 -8) (8 8 8)
 Fire an origin based temp entity event to the clients.
@@ -682,7 +686,7 @@ static void target_laser_start(entity &self)
 	{
 		if (self.target)
 		{
-			entityref ent = G_FindFunc(world, targetname, self.target, striequals);
+			entityref ent = G_FindFunc<&entity::targetname>(world, self.target, striequals);
 			if (!ent.has_value())
 				gi.dprintf("%s at %s: %s is a bad target\n", st.classname.ptr(), vtos(self.s.origin).ptr(), self.target.ptr());
 			self.enemy = ent;
@@ -753,7 +757,7 @@ static void target_lightramp_use(entity &self, entity &, entity &)
 		// check all the targets
 		entityref e = world;
 
-		while ((e = G_FindEquals(e, targetname, self.target)).has_value())
+		while ((e = G_FindFunc<&entity::targetname>(e, self.target, striequals)).has_value())
 		{
 			if (e->type != ET_LIGHT)
 			{

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -26,62 +26,97 @@
     <ClInclude Include="game\cmds.h" />
     <ClInclude Include="game\combat.h" />
     <ClInclude Include="game\config.h" />
-    <ClInclude Include="game\flash.h" />
     <ClInclude Include="game\func.h" />
     <ClInclude Include="game\game.h" />
     <ClInclude Include="game\client.h" />
     <ClInclude Include="game\entity.h" />
-    <ClInclude Include="game\grapple.h" />
     <ClInclude Include="game\gweapon.h" />
-    <ClInclude Include="game\hud.h" />
-    <ClInclude Include="game\itemlist.h" />
-    <ClInclude Include="game\itemref.h" />
+    <ClCompile Include="game\ctf\grapple.ixx" />
+    <ClCompile Include="game\hud.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="game\items.h" />
     <ClInclude Include="game\misc.h" />
     <ClInclude Include="game\monster.h" />
+    <ClInclude Include="game\monster\soldier_model.h" />
     <ClInclude Include="game\move.h" />
     <ClInclude Include="game\m_infantry.h" />
     <ClInclude Include="game\m_player.h" />
-    <ClInclude Include="game\m_soldier.h" />
     <ClInclude Include="game\phys.h" />
     <ClInclude Include="game\player.h" />
-    <ClInclude Include="game\pweapon.h" />
     <ClInclude Include="game\spawn.h" />
     <ClInclude Include="game\spawn_flag.h" />
     <ClInclude Include="game\svcmds.h" />
     <ClInclude Include="game\target.h" />
-    <ClInclude Include="game\trail.h" />
     <ClInclude Include="game\trigger.h" />
-    <ClInclude Include="game\util.h" />
-    <ClInclude Include="game\view.h" />
+    <ClCompile Include="game\items\armor.ixx" />
+    <ClCompile Include="game\items\general.ixx" />
+    <ClCompile Include="game\items\health.ixx" />
+    <ClCompile Include="game\items\itemlist.impl.cpp" />
+    <ClCompile Include="game\items\itemlist.ixx" />
+    <ClCompile Include="game\items\keys.ixx" />
+    <ClCompile Include="game\items\powerups.ixx" />
+    <ClCompile Include="game\items\weaponry.ixx" />
+    <ClCompile Include="game\monster\flash.ixx" />
+    <ClCompile Include="game\monster\infantry.cpp">
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</PreprocessToFile>
+    </ClCompile>
+    <ClCompile Include="game\monster\soldier.cpp" />
+    <ClCompile Include="game\util.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="lib\allocator.h" />
-    <ClInclude Include="lib\box_edicts_area.h" />
-    <ClInclude Include="lib\savables.h" />
-    <ClInclude Include="lib\server_client.h" />
-    <ClInclude Include="lib\config_string.h" />
-    <ClInclude Include="lib\cvar.h" />
-    <ClInclude Include="lib\dynarray.h" />
-    <ClInclude Include="lib\server_entity.h" />
+    <ClCompile Include="game\weaponry\bfg.ixx" />
+    <ClCompile Include="game\weaponry\blaster.ixx" />
+    <ClCompile Include="game\weaponry\chaingun.ixx" />
+    <ClCompile Include="game\weaponry\grenadelauncher.ixx" />
+    <ClCompile Include="game\weaponry\handgrenade.impl.cpp" />
+    <ClCompile Include="game\weaponry\handgrenade.ixx" />
+    <ClCompile Include="game\weaponry\hyperblaster.ixx" />
+    <ClCompile Include="game\weaponry\machinegun.ixx" />
+    <ClCompile Include="game\weaponry\railgun.ixx" />
+    <ClCompile Include="game\weaponry\rocketlauncher.ixx" />
+    <ClCompile Include="game\weaponry\shotgun.ixx" />
+    <ClCompile Include="game\weaponry\supershotgun.ixx" />
+    <ClCompile Include="game\weaponry\weaponry.ixx" />
+    <ClCompile Include="lib\savables.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="lib\dynarray.ixx">
+      <FileType>Document</FileType>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Default</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Default</CompileAs>
+    </ClCompile>
     <ClInclude Include="lib\entityref.h" />
-    <ClInclude Include="lib\entity_effects.h" />
-    <ClInclude Include="lib\gi.h" />
+    <ClCompile Include="lib\gi.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="lib\info.h" />
-    <ClInclude Include="lib\map.h" />
+    <ClCompile Include="lib\map.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="lib\math.h" />
-    <ClInclude Include="lib\multicast_destination.h" />
-    <ClInclude Include="lib\pmove_state.h" />
-    <ClInclude Include="lib\print_level.h" />
-    <ClInclude Include="lib\random.h" />
-    <ClInclude Include="lib\set.h" />
-    <ClInclude Include="lib\sound_attn.h" />
-    <ClInclude Include="lib\sound_channel.h" />
-    <ClInclude Include="lib\string.h" />
-    <ClInclude Include="lib\surface.h" />
-    <ClInclude Include="lib\surface_flags.h" />
-    <ClInclude Include="lib\trace.h" />
+    <ClCompile Include="lib\random.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClInclude Include="lib\savables.h" />
+    <ClCompile Include="lib\set.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="lib\string.format.impl.cpp" />
+    <ClCompile Include="lib\string.format.ixx" />
+    <ClCompile Include="lib\string.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
     <ClInclude Include="lib\types.h" />
-    <ClInclude Include="lib\usercmd.h" />
-    <ClInclude Include="lib\vector.h" />
+    <ClCompile Include="lib\vector.ixx">
+      <FileType>Document</FileType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="debug\cJSON.c" />
@@ -92,41 +127,27 @@
     <ClCompile Include="game\combat.cpp" />
     <ClCompile Include="game\func.cpp" />
     <ClCompile Include="game\game.cpp" />
-    <ClCompile Include="game\grapple.cpp" />
+    <ClCompile Include="game\game_locals.ixx" />
     <ClCompile Include="game\gweapon.cpp" />
-    <ClCompile Include="game\hud.cpp" />
-    <ClCompile Include="game\infantry.cpp" />
-    <ClCompile Include="game\itemref.cpp" />
     <ClCompile Include="game\items.cpp" />
     <ClCompile Include="game\misc.cpp" />
     <ClCompile Include="game\monster.cpp" />
     <ClCompile Include="game\move.cpp" />
     <ClCompile Include="game\phys.cpp" />
     <ClCompile Include="game\player.cpp" />
-    <ClCompile Include="game\pweapon.cpp" />
     <ClCompile Include="game\spawn.cpp" />
     <ClCompile Include="game\svcmds.cpp" />
     <ClCompile Include="game\target.cpp" />
-    <ClCompile Include="game\trail.cpp" />
+    <ClCompile Include="game\trail.ixx" />
     <ClCompile Include="game\trigger.cpp" />
-    <ClCompile Include="game\util.cpp" />
-    <ClCompile Include="game\view.cpp" />
+    <ClCompile Include="game\view.ixx" />
     <ClCompile Include="lib\allocator.cpp" />
-    <ClCompile Include="lib\cvar.cpp" />
-    <ClCompile Include="lib\gi.cpp" />
     <ClCompile Include="lib\info.cpp" />
-    <ClCompile Include="lib\pmove_state.cpp" />
-    <ClCompile Include="lib\random.cpp" />
-    <ClCompile Include="lib\savables.cpp" />
-    <ClCompile Include="lib\string.cpp" />
-    <ClCompile Include="lib\surface.cpp" />
-    <ClCompile Include="lib\trace.cpp" />
-    <ClCompile Include="lib\usercmd.cpp" />
+    <ClCompile Include="lib\protocol.ixx" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="game.def" />
-    <ClCompile Include="game\soldier.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -185,24 +206,28 @@
     <OutDir>..\</OutDir>
     <TargetName>$(ProjectName)x86</TargetName>
     <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>.;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\</OutDir>
     <TargetName>$(ProjectName)x86</TargetName>
     <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>.;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\</OutDir>
     <TargetName>$(ProjectName)x86_64</TargetName>
     <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>.;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>..\</OutDir>
     <TargetName>$(ProjectName)x86_64</TargetName>
     <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
+    <IncludePath>.;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -215,6 +240,11 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4706;4244</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -236,6 +266,11 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4706;4244</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -257,6 +292,11 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4706;4244</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -278,6 +318,11 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4706;4244</DisableSpecificWarnings>
+      <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
+      <ModuleOutputFile>$(IntDir)%(RelativeDir)</ModuleOutputFile>
+      <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
+      <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
+      <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

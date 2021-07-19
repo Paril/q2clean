@@ -1,13 +1,16 @@
 #include "../lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "combat.h"
-#include "util.h"
 #include "cmds.h"
 #include "misc.h"
+#include "game.h"
+
+import gi;
+import util;
+import math.random;
 
 #ifdef SINGLE_PLAYER
-#include "pweapon.h"
+import weaponry;
 
 void check_dodge(entity &self, vector start, vector dir, int32_t speed)
 {

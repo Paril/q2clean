@@ -1,4 +1,8 @@
+#include "types.h"
 #include "info.h"
+
+import protocol;
+import string.format;
 
 /*
 ===============

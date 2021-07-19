@@ -1,13 +1,12 @@
 #pragma once
 
-#include "../lib/server_entity.h"
-#include "../lib/types.h"
-#include "../lib/pmove_state.h"
-#include "../lib/surface.h"
-#include "../lib/sound_attn.h"
+#include "lib/types.h"
 #include "spawn_flag.h"
 #include "items.h"
-#include "itemref.h"
+
+import protocol;
+import string;
+import items.list;
 
 // entity type; this is to replace classname comparisons. Every entity spawnable by
 // classnames must have their own ID. You can assign IDs to other entities if you're
@@ -619,4 +618,4 @@ extern uint32_t &num_entities;
 // reference to max entities
 extern const uint32_t &max_entities;
 
-#include "../game/client.h"
+#include "game/client.h"

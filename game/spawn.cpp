@@ -1,14 +1,17 @@
 #include "../lib/types.h"
 #include "entity.h"
-#include "../lib/gi.h"
 #include "spawn.h"
 #include "game.h"
-#include "util.h"
-#include "itemlist.h"
 #include "player.h"
+
+import gi;
+import game_locals;
+import util;
+import string.format;
 #ifdef SINGLE_PLAYER
-#include "trail.h"
+import player.trail;
 #endif
+import items.list;
 
 static const registered_entity *registered_entities_head;
 
@@ -638,6 +641,13 @@ static const string single_statusbar =
 ;
 #endif
 
+import protocol;
+
+// for stringifying stat in static strings
+#define STRINGIFY(s) #s
+#define STRINGIFY2(s) STRINGIFY(s)
+#define STAT(s) STRINGIFY2(STAT_##s)
+
 static stringlit dm_statusbar =
 "yb -24 "
 
@@ -739,7 +749,8 @@ static void SP_worldspawn(entity &ent)
 	InitBodyQue();
 
 	// set configstrings for items
-	SetItemNames();
+	for (auto &it : item_list())
+		gi.configstring((config_string) (CS_ITEMS + (config_string) it.id), it.pickup_name);
 
 	if (st.nextmap)
 		level.nextmap = st.nextmap;
