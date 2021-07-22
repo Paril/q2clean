@@ -1,9 +1,9 @@
 #pragma once
 
-import "config.h";
-import <type_traits>;
-import "lib/types.h";
-import "lib/string.h";
+#include "config.h"
+#include <type_traits>
+#include "lib/types.h"
+#include "lib/string.h"
 
 template<typename TFunc>
 struct registered_save_function
@@ -16,7 +16,7 @@ struct registered_save_function
 };
 
 // linked list pointing to all savable functions.
-registered_save_function<void *> *registered_functions_head;
+extern registered_save_function<void *> *registered_functions_head;
 
 template<typename TFunc>
 registered_save_function<TFunc>::registered_save_function(stringlit name, TFunc address) :
@@ -74,7 +74,7 @@ struct registered_save_data
 };
 
 // linked list pointing to all savable functions.
-registered_save_data<void *> *registered_data_head;
+extern registered_save_data<void *> *registered_data_head;
 
 template<typename T>
 registered_save_data<T>::registered_save_data(stringlit name, T &address) :

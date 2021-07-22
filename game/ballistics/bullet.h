@@ -1,10 +1,10 @@
 #pragma once
 
-import "config.h";
-import "lib/types.h";
-import "lib/math/vector.h";
-import "game/combat.h";
-import "game/entity_types.h";
+#include "config.h"
+#include "lib/types.h"
+#include "lib/math/vector.h"
+#include "game/combat.h"
+#include "game/entity_types.h"
 
 /*
 =================

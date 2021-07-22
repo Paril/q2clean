@@ -1,6 +1,7 @@
-import "armor.h";
-import "game/entity.h";
-import "entity.h";
+#include "armor.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "entity.h"
 
 gitem_id ArmorIndex(entity &ent)
 {

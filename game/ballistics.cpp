@@ -1,7 +1,7 @@
-import "ballistics.h";
-import "lib/gi.h";
-import "lib/math/random.h";
-import "game/util.h";
+#include "ballistics.h"
+#include "lib/gi.h"
+#include "lib/math/random.h"
+#include "game/util.h"
 
 #ifdef SINGLE_PLAYER
 void check_dodge(entity &self, vector start, vector dir, int32_t speed)

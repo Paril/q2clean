@@ -1,6 +1,6 @@
 #pragma once
 
-import "entity_types.h";
+#include "entity_types.h"
 
 /*
 ==================

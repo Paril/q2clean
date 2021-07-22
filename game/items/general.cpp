@@ -1,7 +1,7 @@
-import "general.h";
-import "entity.h";
-import "game/entity.h";
-import "game/cmds.h";
+#include "general.h"
+#include "entity.h"
+#include "game/entity.h"
+#include "game/cmds.h"
 
 void Drop_General(entity &ent, const gitem_t &it)
 {

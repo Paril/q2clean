@@ -1,13 +1,13 @@
 #pragma once
 
-import <memory>;
-import <cctype>;
-import <variant>;
-import <type_traits>;
+#include <memory>
+#include <cctype>
+#include <variant>
+#include <type_traits>
 
-import "lib/types.h";
-import "lib/string.h";
-import "lib/math/vector.h";
+#include "lib/types.h"
+#include "lib/string.h"
+#include "lib/math/vector.h"
 
 // format string
 string va(stringlit fmt, ...);

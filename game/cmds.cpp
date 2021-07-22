@@ -1,18 +1,19 @@
-import <algorithm>;
-import "config.h";
-import "entity.h";
-import "lib/info.h";
-import "game.h";
-import "chase.h";
-import "player.h";
+#include <algorithm>
+#include "config.h"
+#include "entity.h"
+#include "lib/info.h"
+#include "game.h"
+#include "chase.h"
+#include "player.h"
 
-import "util.h";
-import "hud.h";
-import "lib/types/dynarray.h";
-import "lib/string/format.h";
-import "items/weaponry.h";
-import "combat.h";
-import "player_frames.h";
+#include "util.h"
+#include "hud.h"
+#include "lib/types/dynarray.h"
+#include "lib/string/format.h"
+#include "items/weaponry.h"
+#include "combat.h"
+#include "player_frames.h"
+#include "game/items/entity.h"
 
 static string ClientTeam(entity &ent)
 {

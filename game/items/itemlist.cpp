@@ -1,27 +1,27 @@
-import "config.h";
-import "itemlist.h";
-import "general.h";
-import "armor.h";
-import "weaponry.h";
-import "powerups.h";
-import "keys.h";
-import "health.h";
+#include "config.h"
+#include "itemlist.h"
+#include "general.h"
+#include "armor.h"
+#include "weaponry.h"
+#include "powerups.h"
+#include "keys.h"
+#include "health.h"
 
 #ifdef GRAPPLE
-import "game/ctf/grapple.h";
+#include "game/ctf/grapple.h"
 #endif
 
-import "game/weaponry/blaster.h";
-import "game/weaponry/shotgun.h";
-import "game/weaponry/supershotgun.h";
-import "game/weaponry/machinegun.h";
-import "game/weaponry/chaingun.h";
-import "game/weaponry/handgrenade.h";
-import "game/weaponry/grenadelauncher.h";
-import "game/weaponry/rocketlauncher.h";
-import "game/weaponry/hyperblaster.h";
-import "game/weaponry/railgun.h";
-import "game/weaponry/bfg.h";
+#include "game/weaponry/blaster.h"
+#include "game/weaponry/shotgun.h"
+#include "game/weaponry/supershotgun.h"
+#include "game/weaponry/machinegun.h"
+#include "game/weaponry/chaingun.h"
+#include "game/weaponry/handgrenade.h"
+#include "game/weaponry/grenadelauncher.h"
+#include "game/weaponry/rocketlauncher.h"
+#include "game/weaponry/hyperblaster.h"
+#include "game/weaponry/railgun.h"
+#include "game/weaponry/bfg.h"
 
 // note that this order must match the order of gitem_id!
 static array<gitem_t, ITEM_TOTAL> itemlist

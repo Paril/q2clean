@@ -1,15 +1,15 @@
-import "config.h";
-import "entity.h";
-import "game.h";
-import "move.h";
-import "ai.h";
+#include "config.h"
+#include "entity.h"
+#include "game.h"
+#include "move.h"
+#include "ai.h"
 
-import "lib/gi.h";
-import "game/util.h";
-import "lib/math/random.h";
-import "lib/string/format.h";
+#include "lib/gi.h"
+#include "game/util.h"
+#include "lib/math/random.h"
+#include "lib/string/format.h"
 #ifdef SINGLE_PLAYER
-import "game/trail.h";
+#include "game/trail.h"
 #endif
 
 #ifdef SINGLE_PLAYER
@@ -20,8 +20,6 @@ range_t	enemy_range;
 float	enemy_yaw;
 
 //============================================================================
-
-import game_locals;
 
 void AI_SetSightClient()
 {

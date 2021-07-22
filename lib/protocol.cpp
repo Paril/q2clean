@@ -1,6 +1,6 @@
-import "protocol.h";
+#include "protocol.h"
 
-inline trace::trace() :
+trace::trace() :
 	surface(null_surface),
 	contents(CONTENTS_NONE),
 	ent(world)

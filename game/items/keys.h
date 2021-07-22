@@ -1,9 +1,9 @@
 #pragma once
 
-import "config.h";
+#include "config.h"
 
 #if defined(SINGLE_PLAYER)
-import "game/entity_types.h";
+#include "game/entity_types.h"
 
 bool Pickup_Key(entity &ent, entity &other);
 #endif

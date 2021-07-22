@@ -1,10 +1,10 @@
-import "entity.h";
-import "game.h";
-import "cmds.h";
-import "combat.h";
-import "util.h";
-import "lib/gi.h";
-import "items/armor.h";
+#include "entity.h"
+#include "game.h"
+#include "cmds.h"
+#include "combat.h"
+#include "util.h"
+#include "lib/gi.h"
+#include "items/armor.h"
 
 bool CanDamage(entity &targ, entity &inflictor)
 {
@@ -293,7 +293,7 @@ void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, v
 }
 
 #ifdef SINGLE_PLAYER
-import "ai.h";
+#include "ai.h"
 
 #ifdef GROUND_ZERO
 bool(entity self, entity tesla) MarkTeslaArea;

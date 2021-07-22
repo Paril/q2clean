@@ -1,8 +1,8 @@
-import "config.h";
-import "game/entity.h";
-import "lib/math/random.h";
-import "game/weaponry.h";
-import "game/combat.h";
+#include "config.h"
+#include "game/entity.h"
+#include "lib/math/random.h"
+#include "game/weaponry.h"
+#include "game/combat.h"
 
 /*
 =================

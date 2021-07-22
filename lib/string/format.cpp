@@ -1,9 +1,9 @@
-import <cstdarg>;
+#include <cstdarg>
 
-import "lib/string.h";
-import "lib/string/format.h";
-import "lib/gi.h";
-import "lib/types/allocator.h";
+#include "lib/string.h"
+#include "lib/string/format.h"
+#include "lib/gi.h"
+#include "lib/types/allocator.h"
 
 string va(stringlit fmt, ...)
 {

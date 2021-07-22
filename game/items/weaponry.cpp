@@ -1,10 +1,10 @@
-import "config.h";
-import "lib/math.h";
-import "weaponry.h";
-import "entity.h";
-import "game/entity.h";
-import "game/game.h";
-import "game/cmds.h";
+#include "config.h"
+#include "lib/math.h"
+#include "weaponry.h"
+#include "entity.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "game/cmds.h"
 
 bool Add_Ammo(entity &ent, const gitem_t &it, int32_t count)
 {

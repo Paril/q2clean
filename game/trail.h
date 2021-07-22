@@ -1,11 +1,11 @@
 #pragma once
 
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
-import "entity_types.h";
-import "game.h";
-import "lib/math/vector.h";
+#include "entity_types.h"
+#include "game.h"
+#include "lib/math/vector.h"
 
 /*
 ==============================================================================

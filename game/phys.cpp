@@ -1,12 +1,12 @@
-import "config.h";
-import "entity.h";
-import "game.h";
-import "phys.h";
-import "lib/gi.h";
-import "game/util.h";
-import "lib/types/dynarray.h";
-import "lib/types/set.h";
-import "lib/string/format.h";
+#include "config.h"
+#include "entity.h"
+#include "game.h"
+#include "phys.h"
+#include "lib/gi.h"
+#include "game/util.h"
+#include "lib/types/dynarray.h"
+#include "lib/types/set.h"
+#include "lib/string/format.h"
 
 /*
 
@@ -670,8 +670,8 @@ STEPPING MOVEMENT
 ===============================================================================
 */
 
-import "monster.h";
-import "move.h";
+#include "monster.h"
+#include "move.h"
 
 /*
 =============

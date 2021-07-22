@@ -1,10 +1,10 @@
-import "config.h";
-import "game/entity.h";
-import "game/game.h";
-import "game/cmds.h";
-import "powerups.h";
-import "lib/math.h";
-import "entity.h";
+#include "config.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "game/cmds.h"
+#include "powerups.h"
+#include "lib/math.h"
+#include "entity.h"
 
 inline void AdjustAmmoMax(entity &other, const ammo_id &ammo, const int32_t &new_max)
 {

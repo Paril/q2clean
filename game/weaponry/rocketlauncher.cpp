@@ -1,11 +1,11 @@
-import "config.h";
-import "game/entity.h";
-import "game/game.h";
-import "game/weaponry.h";
-import "game/view.h";
-import "lib/math/vector.h";
-import "lib/math/random.h";
-import "game/ballistics/rocket.h";
+#include "config.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "game/weaponry.h"
+#include "game/view.h"
+#include "lib/math/vector.h"
+#include "lib/math/random.h"
+#include "game/ballistics/rocket.h"
 
 static void Weapon_RocketLauncher_Fire(entity &ent)
 {

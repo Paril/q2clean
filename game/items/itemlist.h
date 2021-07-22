@@ -1,12 +1,12 @@
 #pragma once
 
-import <exception>;
-import "config.h";
-import "lib/string.h";
-import "lib/protocol.h";
-import "lib/types/array.h";
-import "lib/types/enum.h";
-import "game/entity_types.h";
+#include <exception>
+#include "config.h"
+#include "lib/string.h"
+#include "lib/protocol.h"
+#include "lib/types/array.h"
+#include "lib/types/enum.h"
+#include "game/entity_types.h"
 
 // gitem_t.flags
 enum gitem_flags : uint16_t

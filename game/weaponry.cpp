@@ -1,11 +1,11 @@
-import "config.h";
-import "game/entity_types.h";
-import "lib/gi.h";
-import "lib/math/random.h";
-import "game/util.h";
-import "game/weaponry/handgrenade.h";
-import "game/player_frames.h";
-import "weaponry.h";
+#include "config.h"
+#include "game/entity_types.h"
+#include "lib/gi.h"
+#include "lib/math/random.h"
+#include "game/util.h"
+#include "game/weaponry/handgrenade.h"
+#include "game/player_frames.h"
+#include "weaponry.h"
 
 bool			is_quad;
 muzzleflash	is_silenced;

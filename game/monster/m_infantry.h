@@ -21,7 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-import "config.h";
+#include "config.h"
 
 #define FRAME_gun02             0
 #define FRAME_stand01           1

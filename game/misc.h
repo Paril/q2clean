@@ -1,11 +1,11 @@
 #pragma once
 
-import "config.h";
-import "lib/types.h";
-import "lib/string.h";
-import "lib/protocol.h";
-import "lib/math/random.h";
-import "game/entity_types.h";
+#include "config.h"
+#include "lib/types.h"
+#include "lib/string.h"
+#include "lib/protocol.h"
+#include "lib/math/random.h"
+#include "game/entity_types.h"
 
 inline vector VelocityForDamage(int32_t damage)
 {

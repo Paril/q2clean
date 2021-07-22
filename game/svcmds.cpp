@@ -1,4 +1,4 @@
-import "config.h";
+#include "config.h"
 
 void ServerCommand()
 {

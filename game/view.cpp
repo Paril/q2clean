@@ -1,13 +1,14 @@
-import "config.h";
-import "lib/gi.h";
-import "game.h";
-import "hud.h";
-import "lib/math/random.h";
-import "lib/string/format.h";
-import "items/armor.h";
-import "combat.h";
-import "weaponry.h";
-import "player_frames.h";
+#include "config.h"
+#include "lib/gi.h"
+#include "game.h"
+#include "hud.h"
+#include "lib/math/random.h"
+#include "lib/string/format.h"
+#include "items/armor.h"
+#include "combat.h"
+#include "weaponry.h"
+#include "player_frames.h"
+#include "view.h"
 
 constexpr float FALL_TIME = 0.3f;
 

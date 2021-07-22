@@ -1,12 +1,12 @@
-import "config.h";
-import "game/entity.h";
-import "lib/gi.h";
-import "game/util.h";
-import "game/weaponry.h";
-import "game/ballistics.h";
-import "lib/math/random.h";
-import "game/combat.h";
-import "lib/math/vector.h";
+#include "config.h"
+#include "game/entity.h"
+#include "lib/gi.h"
+#include "game/util.h"
+#include "game/weaponry.h"
+#include "game/ballistics.h"
+#include "lib/math/random.h"
+#include "game/combat.h"
+#include "lib/math/vector.h"
 
 constexpr spawn_flag GRENADE_IS_HAND = (spawn_flag) 1;
 constexpr spawn_flag GRENADE_IS_HELD = (spawn_flag) 2;

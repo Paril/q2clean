@@ -1,12 +1,12 @@
 #pragma once
 
-import "config.h";
-import <exception>;
-import "lib/string.h";
-import "lib/math/vector.h";
-import "lib/types/array.h";
-import "lib/types/enum.h";
-import "game/entity_types.h";
+#include "config.h"
+#include <exception>
+#include "lib/string.h"
+#include "lib/math/vector.h"
+#include "lib/types/array.h"
+#include "lib/types/enum.h"
+#include "game/entity_types.h"
 
 // Q2's engine uses an int32-wide value to represent booleans.
 using qboolean = int32_t;
@@ -77,7 +77,7 @@ enum content_flags : uint32_t
 	MASK_CURRENT = CONTENTS_CURRENT_0 | CONTENTS_CURRENT_90 | CONTENTS_CURRENT_180 | CONTENTS_CURRENT_270 | CONTENTS_CURRENT_UP | CONTENTS_CURRENT_DOWN
 };
 
-MAKE_ENUM_BITWISE(content_flags, export);
+MAKE_ENUM_BITWISE(content_flags);
 
 // special thin types for indexes
 class sound_index
@@ -162,7 +162,7 @@ enum pmflags : uint8_t
 	PMF_TELEPORT_BIT = 1 << 7
 };
 
-MAKE_ENUM_BITWISE(pmflags, export);
+MAKE_ENUM_BITWISE(pmflags);
 
 // this structure needs to be communicated bit-accurate
 // from the server to the client to guarantee that
@@ -218,7 +218,7 @@ enum cvar_flags : int32_t
 	CVAR_LATCH = 1 << 4
 };
 
-MAKE_ENUM_BITWISE(cvar_flags, export);
+MAKE_ENUM_BITWISE(cvar_flags);
 
 // console variables
 struct cvar
@@ -345,7 +345,7 @@ enum sound_channel : uint8_t
 	CHAN_RELIABLE = 1 << 4
 };
 
-MAKE_ENUM_BITWISE(sound_channel, export);
+MAKE_ENUM_BITWISE(sound_channel);
 
 // sound attenuation values
 enum sound_attn : uint8_t
@@ -405,7 +405,7 @@ enum surface_flags : uint32_t
 	SURF_ALPHATEST = 1 << 25
 };
 
-MAKE_ENUM_BITWISE(surface_flags, export);
+MAKE_ENUM_BITWISE(surface_flags);
 
 struct surface
 {
@@ -422,7 +422,7 @@ constexpr surface null_surface { stringarray<16>({ '\0' }), SURF_NONE, 0 };
 // a trace is returned when a box is swept through the world
 struct trace
 {
-	inline trace();
+	trace();
 
 	inline trace(const trace &tr) :
 		allsolid(tr.allsolid),
@@ -513,7 +513,7 @@ enum muzzleflash : uint8_t
 	MZ_NONE = 0
 };
 
-MAKE_ENUM_BITWISE(muzzleflash, export)
+MAKE_ENUM_BITWISE(muzzleflash)
 
 //
 // monster muzzle flashes
@@ -863,7 +863,7 @@ enum button_bits : uint8_t
 	BUTTON_ANY = 0xFF
 };
 
-MAKE_ENUM_BITWISE(button_bits, export);
+MAKE_ENUM_BITWISE(button_bits);
 
 // usercmd_t is sent to the server each client frame
 extern "C" struct usercmd
@@ -1019,7 +1019,7 @@ enum entity_effects : uint32_t
 	EF_TRACKERTRAIL = 1u << 31
 };
 
-MAKE_ENUM_BITWISE(entity_effects, export);
+MAKE_ENUM_BITWISE(entity_effects);
 
 // render effects affect the rendering of an entity
 enum render_effects : uint32_t
@@ -1046,7 +1046,7 @@ enum render_effects : uint32_t
 	//ROGUE
 };
 
-MAKE_ENUM_BITWISE(render_effects, export);
+MAKE_ENUM_BITWISE(render_effects);
 
 // entity events are for effects that take place reletive
 // to an existing entities origin.  Very network efficient.
@@ -1122,7 +1122,7 @@ enum server_flags : uint32_t
 	SVF_MONSTER = 1 << 2
 };
 
-MAKE_ENUM_BITWISE(server_flags, export);
+MAKE_ENUM_BITWISE(server_flags);
 
 enum solidity : uint32_t
 {
@@ -1153,7 +1153,7 @@ enum refdef_flags
 	//ROGUE
 };
 
-MAKE_ENUM_BITWISE(refdef_flags, export);
+MAKE_ENUM_BITWISE(refdef_flags);
 
 // player_state->stats[] indexes
 struct player_stat

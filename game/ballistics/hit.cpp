@@ -1,14 +1,14 @@
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
-import "lib/gi.h";
-import "lib/math/random.h";
-import "lib/math/vector.h";
-import "game/util.h";
-import "game/weaponry.h";
-import "game/combat.h";
-import "game/entity.h";
-import "game/game.h";
+#include "lib/gi.h"
+#include "lib/math/random.h"
+#include "lib/math/vector.h"
+#include "game/util.h"
+#include "game/weaponry.h"
+#include "game/combat.h"
+#include "game/entity.h"
+#include "game/game.h"
 
 /*
 =================

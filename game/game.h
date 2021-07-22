@@ -1,12 +1,12 @@
 #pragma once
 
-import "config.h";
-import "lib/types.h";
-import "lib/string.h";
-import "lib/math/vector.h";
-import "lib/types/enum.h";
-import "entity_types.h";
-import "lib/protocol.h";
+#include "config.h"
+#include "lib/types.h"
+#include "lib/string.h"
+#include "lib/math/vector.h"
+#include "lib/types/enum.h"
+#include "entity_types.h"
+#include "lib/protocol.h"
 
 // default server FPS
 constexpr gtime		BASE_FRAMERATE = 10;

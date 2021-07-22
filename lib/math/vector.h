@@ -1,9 +1,9 @@
 #pragma once
 
-import <exception>;
+#include <exception>
 
-import "lib/math.h";
-import "lib/types.h";
+#include "lib/math.h"
+#include "lib/types.h"
 
 // thrown on an invalid vector dereference
 class vector_out_of_range : public std::exception

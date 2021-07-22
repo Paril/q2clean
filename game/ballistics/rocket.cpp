@@ -1,13 +1,13 @@
-import "config.h";
-import "lib/gi.h";
-import "game/util.h";
-import "game/weaponry.h";
-import "game/ballistics.h";
-import "lib/math/random.h";
-import "game/combat.h";
-import "game/game.h";
-import "game/entity.h";
-import "game/misc.h";
+#include "config.h"
+#include "lib/gi.h"
+#include "game/util.h"
+#include "game/weaponry.h"
+#include "game/ballistics.h"
+#include "lib/math/random.h"
+#include "game/combat.h"
+#include "game/game.h"
+#include "game/entity.h"
+#include "game/misc.h"
 
 void rocket_touch(entity &ent, entity &other, vector normal, const surface &surf)
 {

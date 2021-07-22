@@ -1,9 +1,9 @@
 #pragma once
 
-import "config.h";
-import "game/entity_types.h";
-import "lib/math/random.h";
-import "game/util.h";
+#include "config.h"
+#include "game/entity_types.h"
+#include "lib/math/random.h"
+#include "game/util.h"
 
 using fire_func = void(entity &);
 

@@ -1,9 +1,11 @@
-import "config.h";
-import "game/weaponry.h";
-import "game/view.h";
-import "lib/math/vector.h";
-import "lib/math/random.h";
-import "game/entity.h";
+#include "config.h"
+#include "game/weaponry.h"
+#include "game/view.h"
+#include "lib/math/vector.h"
+#include "lib/math/random.h"
+#include "game/entity.h"
+#include "game/combat.h"
+#include "game/ballistics/blaster.h"
 
 void Blaster_Fire(entity &ent, vector g_offset, int32_t damage, bool hyper, entity_effects effect)
 {

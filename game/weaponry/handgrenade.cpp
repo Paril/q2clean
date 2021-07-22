@@ -1,12 +1,13 @@
-import "config.h";
-import "game/entity.h";
-import "game/game.h";
-import "game/weaponry.h";
-import "game/view.h";
-import "lib/math/vector.h";
-import "lib/math/random.h";
-import "game/ballistics/grenade.h";
-import "game/player_frames.h";
+#include "config.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "game/weaponry.h"
+#include "game/view.h"
+#include "lib/math/vector.h"
+#include "lib/math/random.h"
+#include "game/ballistics/grenade.h"
+#include "game/player_frames.h"
+#include "handgrenade.h"
 
 void weapon_grenade_fire(entity &ent, bool held)
 {

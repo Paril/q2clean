@@ -1,4 +1,4 @@
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
 #include "../entity.h"
@@ -8,5 +8,5 @@ import "config.h";
 #include "../monster.h"
 #include "../misc.h"
 #include "../spawn.h"
-import "m_infantry.h";
+#include "m_infantry.h"
 #endif

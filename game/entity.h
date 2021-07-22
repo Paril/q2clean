@@ -1,14 +1,14 @@
 #pragma once
 
-import "config.h";
-import "lib/protocol.h";
-import "lib/string.h";
-import "game/items/itemlist.h";
-import "lib/types.h";
-import "lib/math/vector.h";
-import "lib/savables.h";
-import "lib/types/enum.h";
-import "entity_types.h";
+#include "config.h"
+#include "lib/protocol.h"
+#include "lib/string.h"
+#include "game/items/itemlist.h"
+#include "lib/types.h"
+#include "lib/math/vector.h"
+#include "lib/savables.h"
+#include "lib/types/enum.h"
+#include "entity_types.h"
 
 // entity move type
 enum move_type : uint8_t
@@ -496,4 +496,4 @@ extern uint32_t &num_entities;
 // reference to max entities
 extern const uint32_t &max_entities;
 
-import "game/client.h";
+#include "game/client.h"

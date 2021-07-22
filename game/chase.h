@@ -1,7 +1,7 @@
 #pragma once
 
-import "config.h";
-import "entity_types.h";
+#include "config.h"
+#include "entity_types.h"
 
 void UpdateChaseCam(entity &ent);
 void ChaseNext(entity &ent);

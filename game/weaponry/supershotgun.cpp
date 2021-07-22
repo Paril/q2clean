@@ -1,11 +1,11 @@
-import "config.h";
-import "game/weaponry.h";
-import "game/entity.h";
-import "game/game.h";
-import "game/view.h";
-import "lib/math/vector.h";
-import "lib/math/random.h";
-import "game/ballistics/bullet.h";
+#include "config.h"
+#include "game/weaponry.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "game/view.h"
+#include "lib/math/vector.h"
+#include "lib/math/random.h"
+#include "game/ballistics/bullet.h"
 
 static void weapon_supershotgun_fire(entity &ent)
 {

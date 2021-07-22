@@ -1,11 +1,11 @@
-import "config.h";
-import "health.h";
-import "itemlist.h";
-import "lib/math.h";
-import "game/entity.h";
-import "game/game.h";
-import "game/spawn.h";
-import "entity.h";
+#include "config.h"
+#include "health.h"
+#include "itemlist.h"
+#include "lib/math.h"
+#include "game/entity.h"
+#include "game/game.h"
+#include "game/spawn.h"
+#include "entity.h"
 
 bool Pickup_Adrenaline(entity &ent, entity &other)
 {

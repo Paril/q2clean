@@ -1,8 +1,8 @@
 #pragma once
 
-import "lib/types.h";
-import "entity_types.h";
-import "lib/savables.h";
+#include "lib/types.h"
+#include "entity_types.h"
+#include "lib/savables.h"
 
 #ifdef SINGLE_PLAYER
 void monster_fire_bullet(entity &self, vector start, vector dir, int damage, int kick, int hspread, int vspread, monster_muzzleflash flashtype);

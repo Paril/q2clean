@@ -1,9 +1,9 @@
-import "config.h";
-import <random>;
+#include "config.h"
+#include <random>
 #include <ctime>
-import "lib/types.h";
-import "lib/math/vector.h";
-import "random.h";
+#include "lib/types.h"
+#include "lib/math/vector.h"
+#include "random.h"
 
 static std::mt19937 gen((uint32_t) time(nullptr));
 

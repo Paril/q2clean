@@ -1,7 +1,7 @@
 #pragma once
 
-import "lib/types.h";
-import "game/entity_types.h";
+#include "lib/types.h"
+#include "game/entity_types.h"
 
 // This constant is used in Q2 for movement
 constexpr int32_t STEPSIZE = 18;

@@ -1,18 +1,18 @@
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
-import "../entity.h";
-import "../game.h";
-import "../move.h";
-import "../ai.h";
-import "../monster.h";
-import "../misc.h";
-import "../spawn.h";
+#include "../entity.h"
+#include "../game.h"
+#include "../move.h"
+#include "../ai.h"
+#include "../monster.h"
+#include "../misc.h"
+#include "../spawn.h"
 
-import gi;
-import flash;
-import util;
-import "soldier_model.h";
+#include "lib/gi.h"
+#include "flash.h"
+#include "game/util.h"
+#include "soldier_model.h"
 
 static sound_index	sound_idle;
 static sound_index	sound_sight1;

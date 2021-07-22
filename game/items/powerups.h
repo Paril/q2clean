@@ -1,13 +1,13 @@
 #pragma once
 
-import "game/entity_types.h";
-import "itemlist.h";
+#include "game/entity_types.h"
+#include "itemlist.h"
 
 bool Pickup_Bandolier(entity &ent, entity &other);
 
 bool Pickup_Pack(entity &ent, entity &other);
 
-export void Use_Quad(entity &ent, const gitem_t &it);
+void Use_Quad(entity &ent, const gitem_t &it);
 
 void Use_Breather(entity &ent, const gitem_t &it);
 

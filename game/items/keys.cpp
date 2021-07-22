@@ -1,9 +1,10 @@
-import "config.h";
+#include "config.h"
 
 #if defined(SINGLE_PLAYER)
-import "keys.h";
-import "itemlist.h";
-import "game/entities.h";
+#include "keys.h"
+#include "itemlist.h"
+#include "game/entity.h"
+#include "game/game.h"
 
 bool Pickup_Key(entity &ent, entity &other)
 {

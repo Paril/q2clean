@@ -1,9 +1,9 @@
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
-import "trail.h";
-import "lib/gi.h";
-import "util.h";
+#include "trail.h"
+#include "lib/gi.h"
+#include "util.h"
 
 static constexpr int TRAIL_LENGTH = 8;
 

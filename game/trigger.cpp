@@ -1,14 +1,14 @@
-import "config.h";
-import "entity.h";
-import "trigger.h";
-import "spawn.h";
-import "game.h";
+#include "config.h"
+#include "entity.h"
+#include "trigger.h"
+#include "spawn.h"
+#include "game.h"
 
-import "lib/gi.h";
-import "game.h";
-import "util.h";
-import "lib/string/format.h";
-import "combat.h";
+#include "lib/gi.h"
+#include "game.h"
+#include "util.h"
+#include "lib/string/format.h"
+#include "combat.h"
 
 constexpr spawn_flag TRIGGER_MONSTER = (spawn_flag)1;
 constexpr spawn_flag TRIGGER_NOT_PLAYER = (spawn_flag)2;

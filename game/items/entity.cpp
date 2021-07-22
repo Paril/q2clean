@@ -1,14 +1,17 @@
-import "config.h";
-import "game/game.h";
-import "lib/savables.h";
-import "lib/protocol.h";
-import "lib/math/random.h";
-import "lib/math/vector.h";
-import "itemlist.h";
-import "health.h";
-import "game/util.h";
-import "game/entity.h";
-import "entity.h";
+#include "config.h"
+#include "game/game.h"
+#include "lib/savables.h"
+#include "lib/protocol.h"
+#include "lib/math/random.h"
+#include "lib/math/vector.h"
+#include "itemlist.h"
+#include "game/util.h"
+#include "game/entity.h"
+#include "entity.h"
+#include "lib/string/format.h"
+#include "health.h"
+#include "armor.h"
+#include "powerups.h"
 
 void DoRespawn(entity &item)
 {
@@ -60,7 +63,7 @@ void SetRespawn(entity &ent, float delay)
 	gi.linkentity(ent);
 }
 
-void Touch_Item(entity &ent, entity &other, vector plane, const surface &surf)
+void Touch_Item(entity &ent, entity &other, vector, const surface &)
 {
 	if (!other.is_client())
 		return;

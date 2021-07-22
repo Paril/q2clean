@@ -1,8 +1,8 @@
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
-import "game/entity_types.h";
-import "lib/math/vector.h";
+#include "game/entity_types.h"
+#include "lib/math/vector.h"
 
 /*
 =================

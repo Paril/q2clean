@@ -1,11 +1,11 @@
-import "config.h";
-import "entity.h";
-import "move.h";
-import "phys.h";
+#include "config.h"
+#include "entity.h"
+#include "move.h"
+#include "phys.h"
 
-import "lib/gi.h";
-import "game/util.h";
-import "lib/math/random.h";
+#include "lib/gi.h"
+#include "game/util.h"
+#include "lib/math/random.h"
 
 #ifdef SINGLE_PLAYER
 

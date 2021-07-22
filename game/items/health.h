@@ -1,5 +1,5 @@
-import "config.h";
-import "game/entity_types.h";
+#include "config.h"
+#include "game/entity_types.h"
 
 bool Pickup_Adrenaline(entity &ent, entity &other);
 

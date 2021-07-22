@@ -1,10 +1,10 @@
 #pragma once
 
-import "config.h";
-import "lib/string.h";
-import "lib/math/vector.h";
-import "lib/protocol.h";
-import "game/entity_types.h";
+#include "config.h"
+#include "lib/string.h"
+#include "lib/math/vector.h"
+#include "lib/protocol.h"
+#include "game/entity_types.h"
 
 void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damage, vector);
 

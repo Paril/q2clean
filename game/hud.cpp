@@ -1,15 +1,15 @@
-import <algorithm>;
-import "config.h";
-import "items/armor.h";
-import "entity.h";
-import "game.h";
-import "player.h";
-import "lib/gi.h";
-import "util.h";
-import "lib/math/random.h";
-import "lib/string/format.h";
-import "lib/types/dynarray.h";
-import "items/itemlist.h";
+#include <algorithm>
+#include "config.h"
+#include "items/armor.h"
+#include "entity.h"
+#include "game.h"
+#include "player.h"
+#include "lib/gi.h"
+#include "util.h"
+#include "lib/math/random.h"
+#include "lib/string/format.h"
+#include "lib/types/dynarray.h"
+#include "items/itemlist.h"
 
 void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 {

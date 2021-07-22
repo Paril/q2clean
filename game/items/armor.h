@@ -1,7 +1,7 @@
-import "config.h";
-import "itemlist.h";
-import "general.h";
-import "game/entity_types.h";
+#include "config.h"
+#include "itemlist.h"
+#include "general.h"
+#include "game/entity_types.h"
 
 gitem_id ArmorIndex(entity &ent);
 

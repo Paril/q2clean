@@ -1,8 +1,8 @@
 #pragma once
 
-import "config.h";
-import "game/entity_types.h";
-import "lib/math/vector.h";
+#include "config.h"
+#include "game/entity_types.h"
+#include "lib/math/vector.h"
 
 void Grenade_Explode(entity &ent);
 

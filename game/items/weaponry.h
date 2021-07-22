@@ -1,8 +1,8 @@
 #pragma once
 
-import "config.h";
-import "game/entity_types.h";
-import "itemlist.h";
+#include "config.h"
+#include "game/entity_types.h"
+#include "itemlist.h"
 
 bool Add_Ammo(entity &ent, const gitem_t &it, int32_t count);
 

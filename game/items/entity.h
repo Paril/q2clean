@@ -1,9 +1,9 @@
-import "config.h";
-import "lib/savables.h";
-import "game/entity_types.h";
-import "lib/math/vector.h";
-import "lib/protocol.h";
-import "itemlist.h";
+#include "config.h"
+#include "lib/savables.h"
+#include "game/entity_types.h"
+#include "lib/math/vector.h"
+#include "lib/protocol.h"
+#include "itemlist.h"
 
 // item spawnflags
 constexpr spawn_flag ITEM_TRIGGER_SPAWN = (spawn_flag) 0x00000001;

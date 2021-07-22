@@ -1,13 +1,13 @@
 #pragma once
 
-import "config.h";
-import "lib/math/vector.h";
+#include "config.h"
+#include "lib/math/vector.h"
 
 #ifdef SINGLE_PLAYER
 // this file is included in both the game dll and quake2,
 // the game needs it to source shot locations the client
 // needs it to position muzzle flashes
-export constexpr vector monster_flash_offset[] =
+constexpr vector monster_flash_offset[] =
 {
 // flash 0 is not used
 	{ 0.0f, 0.0f, 0.0f },

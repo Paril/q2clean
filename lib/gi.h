@@ -3,13 +3,13 @@
 // impl passed from engine.
 extern "C" struct game_import_impl;
 
-import "config.h";
-import "lib/string.h";
-import "lib/protocol.h";
-import "lib/types/dynarray.h";
-import "lib/math/vector.h";
-import "lib/types.h";
-import "game/entity_types.h";
+#include "config.h"
+#include "lib/string.h"
+#include "lib/protocol.h"
+#include "lib/types/dynarray.h"
+#include "lib/math/vector.h"
+#include "lib/types.h"
+#include "game/entity_types.h"
 
 struct game_import
 {

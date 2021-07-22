@@ -1,10 +1,10 @@
-import "config.h";
-import "util.h";
-import "lib/types/dynarray.h";
-import "combat.h";
-import "lib/math/random.h";
-import "lib/gi.h";
-import "game.h";
+#include "config.h"
+#include "util.h"
+#include "lib/types/dynarray.h"
+#include "combat.h"
+#include "lib/math/random.h"
+#include "lib/gi.h"
+#include "game.h"
 
 void G_InitEdict(entity &e)
 {

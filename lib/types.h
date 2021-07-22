@@ -1,7 +1,7 @@
 #pragma once 
 
-import <cinttypes>;
-import <cstddef>;
+#include <cinttypes>
+#include <cstddef>
 
 using int8_t = std::int8_t;
 using int16_t = std::int16_t;

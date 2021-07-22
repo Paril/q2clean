@@ -1,10 +1,10 @@
 #pragma once
 
-import <exception>;
-import "config.h";
-import "game.h";
-import "entity.h";
-import "lib/savables.h";
+#include <exception>
+#include "config.h"
+#include "game.h"
+#include "entity.h"
+#include "lib/savables.h"
 
 constexpr vector MOVEDIR_UP		= { 0, 0, 1 };
 constexpr vector MOVEDIR_DOWN	= { 0, 0, -1 };

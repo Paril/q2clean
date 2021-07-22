@@ -1,23 +1,23 @@
-import <fstream>;
+#include <fstream>
 
-import "config.h";
-import "lib/info.h";
+#include "config.h"
+#include "lib/info.h"
 
-import "lib/protocol.h";
-import "lib/gi.h";
-import "lib/string/format.h";
+#include "lib/protocol.h"
+#include "lib/gi.h"
+#include "lib/string/format.h"
 
-import "game/player.h";
-import "game/game.h";
-import "game/cmds.h";
-import "game/svcmds.h";
-import "game/spawn.h";
-import "game/items/itemlist.h";
-import "lib/savables.h";
-import "game/entity.h";
+#include "game/player.h"
+#include "game/game.h"
+#include "game/cmds.h"
+#include "game/svcmds.h"
+#include "game/spawn.h"
+#include "game/items/itemlist.h"
+#include "lib/savables.h"
+#include "game/entity.h"
 
 #define CJSON_HIDE_SYMBOLS
-import "debug/cJSON.h";
+#include "debug/cJSON.h"
 
 struct binary_serializer;
 struct json_serializer;

@@ -1,22 +1,23 @@
-import "config.h";
+#include "config.h"
 
 #ifdef SINGLE_PLAYER
-import "entity.h";
-import "game.h";
-import "move.h";
-import "ai.h";
+#include "entity.h"
+#include "game.h"
+#include "move.h"
+#include "ai.h"
 
-import "lib/gi.h";
-import "game/util.h";
-import "lib/math/random.h";
-import "lib/string/format.h";
-import "game/ballistics/bullet.h";
-import "game/ballistics/blaster.h";
-import "game/ballistics/grenade.h";
-import "game/ballistics/rocket.h";
-import "game/ballistics/rail.h";
-import "game/ballistics/bfg.h";
-import "combat.h";
+#include "lib/gi.h"
+#include "game/util.h"
+#include "lib/math/random.h"
+#include "lib/string/format.h"
+#include "game/ballistics/bullet.h"
+#include "game/ballistics/blaster.h"
+#include "game/ballistics/grenade.h"
+#include "game/ballistics/rocket.h"
+#include "game/ballistics/rail.h"
+#include "game/ballistics/bfg.h"
+#include "game/items/entity.h"
+#include "combat.h"
 
 //
 // monster weapons

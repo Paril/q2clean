@@ -1,23 +1,23 @@
 #pragma once
 
-import <memory>;
-import <cctype>;
-import <variant>;
-import <type_traits>;
+#include <memory>
+#include <cctype>
+#include <variant>
+#include <type_traits>
 
-import "lib/types.h";
-import "lib/types/allocator.h";
-import "lib/types/array.h";
-import "lib/math.h";
+#include "lib/types.h"
+#include "lib/types/allocator.h"
+#include "lib/types/array.h"
+#include "lib/math.h"
 
 // type name for a string literal
-export using stringlit = const char *;
+using stringlit = const char *;
 
 class stringref;
 
 // strings in Q2++ are immutable. this is to remain simple
 // and allow them to be collected automatically via a smart pointer.
-export class string
+class string
 {
 	std::shared_ptr<char[]> shared;
 	size_t slength;
@@ -138,14 +138,14 @@ public:
 };
 
 // faster strlen for strings
-export inline size_t strlen(const string &str)
+inline size_t strlen(const string &str)
 {
 	return str.length();
 }
 
 // stringref is a special wrapper to a string literal that can also
 // wrap string and keep it from expiring too early.
-export class stringref
+class stringref
 {
 	using variantref = std::variant<stringlit, string>;
 	variantref data;
@@ -201,14 +201,14 @@ public:
 	inline explicit operator bool() const { return slength && operator stringlit()[0]; }
 };
 
-export template<typename T>
+template<typename T>
 constexpr bool is_string_v = std::is_same_v<T, stringref> || std::is_same_v<T, string> || std::is_same_v<T, stringlit> || (std::is_array_v<T> && std::is_same_v<std::remove_extent_t<T>, char>);
 
-export template<typename T>
+template<typename T>
 constexpr bool is_string_not_literal_v = std::is_same_v<T, stringref> || std::is_same_v<T, string>;
 
 // copy string ref passed by argument into a new string
-export inline string::string(const stringref &ref) :
+inline string::string(const stringref &ref) :
 	shared(),
 	slength(ref.length())
 {
@@ -224,7 +224,7 @@ export inline string::string(const stringref &ref) :
 
 // copy substring ref passed by argument into a new string.
 // mainly internal; start/length must be validated before calling this
-export inline string::string(const stringref &sub, const size_t &start, const size_t &length) :
+inline string::string(const stringref &sub, const size_t &start, const size_t &length) :
 	shared(),
 	slength(length)
 {
@@ -238,11 +238,11 @@ export inline string::string(const stringref &sub, const size_t &start, const si
 		shared = std::shared_ptr<char[]>(nullptr);
 }
 
-export inline bool string::operator==(const stringref &lit) const { return *this == lit.ptr(); }
-export inline bool string::operator!=(const stringref &lit) const { return !(*this == lit); }
+inline bool string::operator==(const stringref &lit) const { return *this == lit.ptr(); }
+inline bool string::operator!=(const stringref &lit) const { return !(*this == lit); }
 
 // return index of substring in str, or -1
-export template<typename TA, typename TB, typename = std::enable_if_t<is_string_not_literal_v<TA> && is_string_v<TB>, TA>>
+template<typename TA, typename TB, typename = std::enable_if_t<is_string_not_literal_v<TA> && is_string_v<TB>, TA>>
 inline size_t strstr(const TA &str, const TB &substring)
 {
 	if (!str)
@@ -253,7 +253,7 @@ inline size_t strstr(const TA &str, const TB &substring)
 }
 
 // return index of substring in str, or -1
-export template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
 inline size_t strchr(const T &str, const char &subchar)
 {
 	if (!str)
@@ -264,7 +264,7 @@ inline size_t strchr(const T &str, const char &subchar)
 }
 
 // return substring of str
-export template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
 inline string substr(const T &str, const size_t &start, size_t length = -1)
 {
 	// string too big; return empty string
@@ -282,7 +282,7 @@ inline string substr(const T &str, const size_t &start, size_t length = -1)
 }
 
 // do concat!
-export inline string strconcat(const std::initializer_list<stringref> &args)
+inline string strconcat(const std::initializer_list<stringref> &args)
 {
 	if (!args.size())
 		return "";
@@ -312,7 +312,7 @@ export inline string strconcat(const std::initializer_list<stringref> &args)
 	return outstr;
 }
 
-export template<typename ...T>
+template<typename ...T>
 inline string strconcat(T... args)
 {
 	std::initializer_list<stringref> refs = { args... };
@@ -320,13 +320,13 @@ inline string strconcat(T... args)
 }
 
 // faster strlen for stringrefs
-export template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
 inline size_t strlen(const T &str)
 {
 	return str.length();
 }
 
-export template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
 inline double atof(const T &str)
 {
 	if (!str.ptr())
@@ -335,7 +335,7 @@ inline double atof(const T &str)
 	return atof(str.ptr());
 }
 
-export template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
 inline double atoi(const T &str)
 {
 	if (!str.ptr())
@@ -345,7 +345,7 @@ inline double atoi(const T &str)
 }
 
 // convert string to lowercase
-export template<typename T, typename = std::enable_if_t<is_string_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_v<T>, T>>
 inline string strlwr(const T &str)
 {
 	string s(str);
@@ -360,7 +360,7 @@ inline string strlwr(const T &str)
 }
 
 // convert string to uppercase
-export template<typename T, typename = std::enable_if_t<is_string_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_v<T>, T>>
 inline string strupr(const T &str)
 {
 	string s(str);
@@ -374,20 +374,20 @@ inline string strupr(const T &str)
 	return s;
 }
 
-export template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> &&is_string_v<TB>, TA>>
+template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> &&is_string_v<TB>, TA>>
 inline int32_t strcmp(const TA &a, const TB &b)
 {
 	return ::strcmp((stringlit) a, (stringlit) b);
 }
 
-export template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> &&is_string_v<TB>, TA>>
+template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> &&is_string_v<TB>, TA>>
 inline int32_t strncmp(const TA &a, const TB &b, const size_t &max_count)
 {
 	return ::strncmp((stringlit) a, (stringlit) b, max_count);
 }
 
 // case insensitive comparison (because stricmp/strnicmp is non-standard)
-export template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
+template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
 inline int32_t stricmp(const TA &a, const TB &b)
 {
 	stringlit al = (stringlit) a;
@@ -405,7 +405,7 @@ inline int32_t stricmp(const TA &a, const TB &b)
 }
 
 // case insensitive comparison (because stricmp/strnicmp is non-standard)
-export template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
+template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
 inline int32_t strnicmp(const TA &a, const TB &b, size_t n)
 {
 	if (!n)
@@ -426,14 +426,14 @@ inline int32_t strnicmp(const TA &a, const TB &b, size_t n)
 }
 
 // compatibility
-export template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
 inline bool strempty(const T &a)
 {
 	return !a;
 }
 
 // case insensitive ==
-export template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
+template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
 inline bool striequals(const TA &a, const TB &b)
 {
 	if (!a && !b)
@@ -458,7 +458,7 @@ inline bool striequals(const TA &a, const TB &b)
 
 // stringarray is a special type mainly used for interop,
 // but basically it's a static array of characters.
-export template<size_t size>
+template<size_t size>
 class stringarray : public array<char, size>
 {
 public:
@@ -509,7 +509,7 @@ Parse a token out of a string.
 Handles C and C++ comments.
 ==============
 */
-export inline string strtok(const stringref &data, size_t &start)
+inline string strtok(const stringref &data, size_t &start)
 {
 	size_t token_start = start, token_end;
 

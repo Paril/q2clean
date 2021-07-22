@@ -1,7 +1,7 @@
-import "config.h";
-import "gi.h";
-import "lib/string/format.h";
-import <cstdarg>;
+#include "config.h"
+#include "gi.h"
+#include "lib/string/format.h"
+#include <cstdarg>
 
 game_import gi;
 

@@ -1,15 +1,15 @@
-import <ctime>;
-import "config.h";
-import "entity.h";
-import "misc.h";
-import "game.h";
-import "spawn.h";
+#include <ctime>
+#include "config.h"
+#include "entity.h"
+#include "misc.h"
+#include "game.h"
+#include "spawn.h"
 
-import "lib/gi.h";
-import "game/util.h";
-import "lib/math/random.h";
-import "lib/string/format.h";
-import "combat.h";
+#include "lib/gi.h"
+#include "game/util.h"
+#include "lib/math/random.h"
+#include "lib/string/format.h"
+#include "combat.h"
 
 /*QUAKED func_group (0 0 0) ?
 Used to group brushes together just for editor convenience.
@@ -863,7 +863,7 @@ static void SP_func_explosive(entity &self)
 
 REGISTER_ENTITY(func_explosive, ET_FUNC_EXPLOSIVE);
 
-import "move.h";
+#include "move.h"
 
 /*QUAKED misc_explobox (0 .5 .8) (-16 -16 0) (16 16 40)
 Large exploding box.  You can override its mass (100),
@@ -976,7 +976,7 @@ static void(entity self) barrel_start =
 }
 #endif
 
-import "monster.h";
+#include "monster.h"
 
 static void SP_misc_explobox(entity &self)
 {
@@ -1312,7 +1312,7 @@ There must be a path for it to follow once it is activated.
 "speed"     How fast the Viper should fly
 */
 
-import "func.h";
+#include "func.h"
 
 void misc_viper_use(entity &self, entity &other, entity &cactivator)
 {

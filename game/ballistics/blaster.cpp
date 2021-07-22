@@ -1,12 +1,12 @@
-import "config.h";
-import "game/entity_types.h";
-import "lib/protocol.h";
-import "game/combat.h";
-import "lib/types.h";
-import "game/weaponry.h";
-import "game/ballistics.h";
-import "lib/gi.h";
-import "game/util.h";
+#include "config.h"
+#include "game/entity_types.h"
+#include "lib/protocol.h"
+#include "game/combat.h"
+#include "lib/types.h"
+#include "game/weaponry.h"
+#include "game/ballistics.h"
+#include "lib/gi.h"
+#include "game/util.h"
 
 constexpr spawn_flag BLASTER_IS_HYPER = (spawn_flag) 1;
 

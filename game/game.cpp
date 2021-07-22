@@ -1,18 +1,18 @@
-import "entity.h";
-import "player.h";
-import "phys.h";
-import "spawn.h";
+#include "entity.h"
+#include "player.h"
+#include "phys.h"
+#include "spawn.h"
 #ifdef SINGLE_PLAYER
-import "ai.h";
-import "monster.h";
+#include "ai.h"
+#include "monster.h"
 #endif
 
-import "lib/gi.h";
-import "game.h";
-import "util.h";
-import "hud.h";
-import "lib/string/format.h";
-import "view.h";
+#include "lib/gi.h"
+#include "game.h"
+#include "util.h"
+#include "hud.h"
+#include "lib/string/format.h"
+#include "view.h"
 
 constexpr stringlit GAMEVERSION = "clean";
 

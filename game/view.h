@@ -1,7 +1,7 @@
 #pragma once
 
-import "entity_types.h";
-import "game.h";
+#include "entity_types.h"
+#include "game.h"
 
 // view pitching times
 constexpr float DAMAGE_TIME = 0.5f;

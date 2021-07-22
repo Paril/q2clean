@@ -1,9 +1,9 @@
 #pragma once
 
-import <exception>;
+#include <exception>
 
-import "lib/types.h";
-import "lib/types/enum.h";
+#include "lib/types.h"
+#include "lib/types/enum.h"
 
 enum spawn_flag : uint32_t
 {

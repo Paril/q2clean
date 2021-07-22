@@ -1,13 +1,13 @@
 #pragma once
 
-import "config.h";
-import "entity_types.h";
-import "game.h";
-import "cmds.h";
-import "lib/types/enum.h";
-import "lib/math/vector.h";
+#include "config.h"
+#include "entity_types.h"
+#include "game.h"
+#include "cmds.h"
+#include "lib/types/enum.h"
+#include "lib/math/vector.h"
 #ifdef SINGLE_PLAYER
-import "monster.h"
+#include "monster.h"
 #endif
 
 /*
@@ -107,7 +107,7 @@ enum means_of_death : uint8_t
 	MOD_FRIENDLY_FIRE = 1 << 7
 };
 
-MAKE_ENUM_BITWISE(means_of_death, export);
+MAKE_ENUM_BITWISE(means_of_death);
 
 extern means_of_death meansOfDeath;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-import <type_traits>;
+#include <type_traits>
 
 // certain enums used in the code are bitwise. this allows bitwise
 // operators to work. stupid but functional.
