@@ -1,16 +1,16 @@
 import "config.h";
-#include "entity.h"
-#include "game.h"
-#include "spawn.h"
+import "entity.h";
+import "game.h";
+import "spawn.h";
 
-import gi;
-import game_locals;
-import util;
-import hud;
-import math.random;
-import string.format;
-import ballistics.blaster;
-import combat;
+import "lib/gi.h";
+import "game.h";
+import "util.h";
+import "hud.h";
+import "lib/math/random.h";
+import "lib/string/format.h";
+import "ballistics/blaster.h";
+import "combat.h";
 
 /*QUAKED target_temp_entity (1 0 0) (-8 -8 -8) (8 8 8)
 Fire an origin based temp entity event to the clients.

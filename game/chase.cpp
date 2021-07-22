@@ -1,9 +1,8 @@
 import "config.h";
-#include "entity.h"
-#include "chase.h"
-#include "game.h"
-
-import gi;
+import "entity.h";
+import "chase.h";
+import "game.h";
+import "lib/gi.h";
 
 void UpdateChaseCam(entity &ent)
 {

@@ -1,11 +1,9 @@
 #pragma once
 
 import "config.h";
-#include "entity.h"
+import "entity_types.h";
 
 #ifdef SINGLE_PLAYER
-import gi;
-
 bool FindTarget(entity &self);
 
 enum range_t : uint8_t

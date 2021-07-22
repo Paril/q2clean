@@ -1,7 +1,7 @@
 #pragma once
 
 import "config.h";
-#include "entity.h"
+import "entity_types.h";
 
 #ifdef SINGLE_PLAYER
 

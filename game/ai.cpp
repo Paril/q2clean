@@ -1,15 +1,15 @@
 import "config.h";
-#include "entity.h"
-#include "game.h"
-#include "move.h"
-#include "ai.h"
+import "entity.h";
+import "game.h";
+import "move.h";
+import "ai.h";
 
-import gi;
-import util;
-import math.random;
-import string.format;
+import "lib/gi.h";
+import "game/util.h";
+import "lib/math/random.h";
+import "lib/string/format.h";
 #ifdef SINGLE_PLAYER
-import player.trail;
+import "game/trail.h";
 #endif
 
 #ifdef SINGLE_PLAYER

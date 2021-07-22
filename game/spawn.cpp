@@ -1,17 +1,17 @@
 import "config.h";
-#include "entity.h"
-#include "spawn.h"
-#include "game.h"
-#include "player.h"
+import "entity.h";
+import "spawn.h";
+import "game.h";
+import "player.h";
 
-import gi;
-import game_locals;
-import util;
-import string.format;
+import "lib/gi.h";
+import "game.h";
+import "util.h";
+import "lib/string/format.h";
 #ifdef SINGLE_PLAYER
-import player.trail;
+import "trail.h";
 #endif
-import items.list;
+import "items/itemlist.h";
 
 static const registered_entity *registered_entities_head;
 

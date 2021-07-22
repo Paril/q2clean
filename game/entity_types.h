@@ -1,6 +1,6 @@
 #pragma once
 
-#include <exception>
+import <exception>;
 
 import "lib/types.h";
 import "lib/types/enum.h";

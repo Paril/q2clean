@@ -1,13 +1,13 @@
 import "config.h";
 
 #ifdef SINGLE_PLAYER
-#include "../entity.h"
-#include "../game.h"
-#include "../move.h"
-#include "../ai.h"
-#include "../monster.h"
-#include "../misc.h"
-#include "../spawn.h"
+import "../entity.h";
+import "../game.h";
+import "../move.h";
+import "../ai.h";
+import "../monster.h";
+import "../misc.h";
+import "../spawn.h";
 
 import gi;
 import flash;

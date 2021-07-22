@@ -670,8 +670,8 @@ STEPPING MOVEMENT
 ===============================================================================
 */
 
-#include "monster.h"
-#include "move.h"
+import "monster.h";
+import "move.h";
 
 /*
 =============

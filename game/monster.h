@@ -1,11 +1,10 @@
 #pragma once
 
-#include "../lib/types.h"
-#include "entity.h"
+import "lib/types.h";
+import "entity_types.h";
+import "lib/savables.h";
 
 #ifdef SINGLE_PLAYER
-import gi;
-
 void monster_fire_bullet(entity &self, vector start, vector dir, int damage, int kick, int hspread, int vspread, monster_muzzleflash flashtype);
 void monster_fire_shotgun(entity &self, vector start, vector aimdir, int damage, int kick, int hspread, int vspread, int count, monster_muzzleflash flashtype);
 void monster_fire_blaster(entity &self, vector start, vector dir, int damage, int speed, monster_muzzleflash flashtype, entity_effects effect);

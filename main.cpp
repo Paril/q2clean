@@ -1,20 +1,20 @@
-#include <fstream>
+import <fstream>;
 
 import "config.h";
-#include "lib/info.h"
+import "lib/info.h";
 
-import protocol;
-import gi;
-import string.format;
+import "lib/protocol.h";
+import "lib/gi.h";
+import "lib/string/format.h";
 
-#include "game/player.h"
-#include "game/game.h"
-#include "game/cmds.h"
-#include "game/svcmds.h"
-#include "game/spawn.h"
+import "game/player.h";
+import "game/game.h";
+import "game/cmds.h";
+import "game/svcmds.h";
+import "game/spawn.h";
 
 #define CJSON_HIDE_SYMBOLS
-#include "debug/cJSON.h"
+import "debug/cJSON.h";
 
 struct binary_serializer;
 struct json_serializer;

@@ -1,26 +1,26 @@
 import "config.h";
-#include "entity.h"
-#include "../lib/info.h"
-#include "game.h"
-#include "player.h"
-#include "chase.h"
-#include "cmds.h"
-#include "misc.h"
-#include "spawn.h"
+import "entity.h";
+import "../lib/info.h";
+import "game.h";
+import "player.h";
+import "chase.h";
+import "cmds.h";
+import "misc.h";
+import "spawn.h";
 
-import util;
-import game_locals;
-import hud;
-import protocol;
-import gi;
-import math.random;
-import string.format;
-import player.view;
+import "util.h";
+import "game.h";
+import "hud.h";
+import "lib/protocol.h";
+import "lib/gi.h";
+import "lib/math/random.h";
+import "lib/string/format.h";
+import "view.h";
 #ifdef SINGLE_PLAYER
-import player.trail;
+import "trail.h";
 #endif
-import weaponry;
-import combat;
+import "weaponry.h";
+import "combat.h";
 import "player_frames.h";
 
 #ifdef SINGLE_PLAYER

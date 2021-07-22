@@ -1,8 +1,8 @@
 import "config.h";
-#include "info.h"
+import "info.h";
 
-import protocol;
-import string.format;
+import "lib/protocol.h";
+import "lib/string/format.h";
 
 /*
 ===============

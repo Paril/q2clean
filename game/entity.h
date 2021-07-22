@@ -620,4 +620,4 @@ extern uint32_t &num_entities;
 // reference to max entities
 extern const uint32_t &max_entities;
 
-#include "game/client.h"
+import "game/client.h";
