@@ -1,5 +1,6 @@
 #pragma once
 
-#include "../lib/types.h"
+import "config.h";
+import "game/entity_types.h";
 
 void InitTrigger(entity &self);

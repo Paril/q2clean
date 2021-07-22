@@ -1,7 +1,6 @@
-#include "../lib/types.h"
+import "config.h";
 #include "entity.h"
 #include "trigger.h"
-#include "combat.h"
 #include "spawn.h"
 #include "game.h"
 
@@ -9,6 +8,7 @@ import gi;
 import game_locals;
 import util;
 import string.format;
+import combat;
 
 constexpr spawn_flag TRIGGER_MONSTER = (spawn_flag)1;
 constexpr spawn_flag TRIGGER_NOT_PLAYER = (spawn_flag)2;

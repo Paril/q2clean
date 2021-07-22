@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../lib/types.h"
+import "../lib/types.h";
+import "game/entity_types.h";
+import "lib/savables.h";
 
 void target_laser_think(entity &self);
 

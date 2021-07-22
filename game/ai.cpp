@@ -1,6 +1,5 @@
-#include "lib/types.h"
+import "config.h";
 #include "entity.h"
-#include "gweapon.h"
 #include "game.h"
 #include "move.h"
 #include "ai.h"

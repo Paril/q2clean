@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib/types.h"
+import "entity_types.h";
 
 bool OnSameTeam(entity &ent1, entity &ent2);
 

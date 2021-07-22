@@ -1,108 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="lib\allocator.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\entityref.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\info.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\math.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\types.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="game\chase.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\cmds.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\combat.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\func.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\game.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\client.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\entity.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\gweapon.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\items.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\m_player.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\misc.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\phys.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\player.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\spawn.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\spawn_flag.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\svcmds.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\target.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\trigger.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\config.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\move.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\monster.h">
-      <Filter>game</Filter>
-    </ClInclude>
-    <ClInclude Include="game\ai.h">
-      <Filter>game</Filter>
-    </ClInclude>
     <ClInclude Include="debug\cJSON.h">
       <Filter>debug</Filter>
     </ClInclude>
     <ClInclude Include="debug\cJSON_Utils.h">
       <Filter>debug</Filter>
     </ClInclude>
-    <ClInclude Include="lib\savables.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="game\m_infantry.h">
-      <Filter>game\monster</Filter>
-    </ClInclude>
-    <ClInclude Include="game\monster\soldier_model.h">
-      <Filter>game\monster</Filter>
+    <ClInclude Include="game\items\general.h">
+      <Filter>game\items</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="lib\allocator.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
     <ClCompile Include="lib\info.cpp">
       <Filter>lib</Filter>
     </ClCompile>
@@ -112,19 +22,10 @@
     <ClCompile Include="game\cmds.cpp">
       <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="game\combat.cpp">
-      <Filter>game</Filter>
-    </ClCompile>
     <ClCompile Include="game\func.cpp">
       <Filter>game</Filter>
     </ClCompile>
     <ClCompile Include="game\game.cpp">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\gweapon.cpp">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\items.cpp">
       <Filter>game</Filter>
     </ClCompile>
     <ClCompile Include="game\misc.cpp">
@@ -157,133 +58,341 @@
     <ClCompile Include="game\ai.cpp">
       <Filter>game</Filter>
     </ClCompile>
-    <ClCompile Include="game\trail.ixx">
-      <Filter>game</Filter>
-    </ClCompile>
     <ClCompile Include="debug\cJSON.c">
       <Filter>debug</Filter>
     </ClCompile>
     <ClCompile Include="debug\cJSON_Utils.c">
       <Filter>debug</Filter>
     </ClCompile>
-    <ClCompile Include="game\game_locals.ixx">
+    <ClCompile Include="game\hud.h">
       <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\util.ixx">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\hud.ixx">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\gi.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\protocol.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\random.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\string.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\string.format.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\savables.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\string.format.impl.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\dynarray.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\set.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\map.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="lib\vector.ixx">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="game\view.ixx">
-      <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="game\monster\flash.ixx">
-      <Filter>game\monster</Filter>
     </ClCompile>
     <ClCompile Include="game\monster\soldier.cpp">
       <Filter>game\monster</Filter>
     </ClCompile>
-    <ClCompile Include="game\items\armor.ixx">
-      <Filter>game\items</Filter>
-    </ClCompile>
-    <ClCompile Include="game\items\general.ixx">
+    <ClCompile Include="game\items\armor.h">
       <Filter>game\items</Filter>
     </ClCompile>
     <ClCompile Include="game\monster\infantry.cpp">
       <Filter>game\monster</Filter>
     </ClCompile>
-    <ClCompile Include="game\items\itemlist.impl.cpp">
+    <ClCompile Include="game\items\itemlist.cpp">
       <Filter>game\items</Filter>
     </ClCompile>
-    <ClCompile Include="game\items\itemlist.ixx">
+    <ClCompile Include="game\items\weaponry.h">
       <Filter>game\items</Filter>
     </ClCompile>
-    <ClCompile Include="game\items\weaponry.ixx">
+    <ClCompile Include="game\items\powerups.h">
       <Filter>game\items</Filter>
     </ClCompile>
-    <ClCompile Include="game\items\powerups.ixx">
+    <ClCompile Include="game\items\keys.h">
       <Filter>game\items</Filter>
     </ClCompile>
-    <ClCompile Include="game\items\keys.ixx">
-      <Filter>game\items</Filter>
-    </ClCompile>
-    <ClCompile Include="game\items\health.ixx">
+    <ClCompile Include="game\items\health.h">
       <Filter>game\items</Filter>
     </ClCompile>
     <ClCompile Include="game\ctf\grapple.ixx">
       <Filter>game\ctf</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\weaponry.ixx">
+    <ClCompile Include="game\weaponry\handgrenade.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\handgrenade.ixx">
+    <ClCompile Include="game\weaponry\rocketlauncher.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\handgrenade.impl.cpp">
+    <ClCompile Include="game\weaponry\hyperblaster.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\bfg.ixx">
+    <ClCompile Include="game\weaponry\railgun.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\grenadelauncher.ixx">
+    <ClCompile Include="game\weaponry\supershotgun.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\rocketlauncher.ixx">
+    <ClCompile Include="game\weaponry\shotgun.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\blaster.ixx">
+    <ClCompile Include="game\weaponry\machinegun.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\hyperblaster.ixx">
+    <ClCompile Include="game\combat.impl.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\allocator.cpp">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\soldier_model.h">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="config.h" />
+    <ClCompile Include="game\entity.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\entity.h">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\game.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\savables.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\entity_types.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\math\random.cpp">
+      <Filter>lib\math</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\string\format.cpp">
+      <Filter>lib\string</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\protocol.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\gi.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\trail.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\view.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\util.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\bullet.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\rail.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\hit.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\grenade.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\rocket.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\blaster.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\bfg.cpp">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\bfg.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\railgun.ixx">
+    <ClCompile Include="game\weaponry\blaster.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\supershotgun.ixx">
+    <ClCompile Include="game\weaponry\chaingun.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\shotgun.ixx">
+    <ClCompile Include="game\weaponry\grenadelauncher.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\chaingun.ixx">
+    <ClCompile Include="game\weaponry.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\math\vector.h">
+      <Filter>lib\math</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\math\random.h">
+      <Filter>lib\math</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\string\format.h">
+      <Filter>lib\string</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\allocator.h">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\array.h">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\dynarray.h">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\enum.h">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\map.h">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types\set.h">
+      <Filter>lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\gi.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\math.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\info.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\protocol.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\string.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\types.h">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\view.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\util.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\trigger.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\trail.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\target.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\svcmds.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\spawn.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\player_frames.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\player.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\phys.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\move.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\misc.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\func.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\combat.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\cmds.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\client.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\chase.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ai.h">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\bfg.h">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\weaponry\machinegun.ixx">
+    <ClCompile Include="game\weaponry\blaster.h">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\chaingun.h">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\grenadelauncher.h">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\handgrenade.h">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\flash.h">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\m_infantry.h">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\itemlist.h">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\bfg.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\blaster.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\bullet.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\grenade.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\hit.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\rail.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\rocket.h">
+      <Filter>game\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\armor.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\general.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\entity.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\health.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\hud.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\weaponry.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\powerups.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\keys.cpp">
+      <Filter>game\items</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\shotgun.cpp">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\supershotgun.cpp">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\rocketlauncher.cpp">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\railgun.cpp">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\machinegun.cpp">
+      <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\hyperblaster.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
   </ItemGroup>
@@ -311,6 +420,18 @@
     </Filter>
     <Filter Include="game\ctf">
       <UniqueIdentifier>{a479d034-7bb0-48fd-b734-5962391249ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\ballistics">
+      <UniqueIdentifier>{81310529-3eb9-42bd-83c9-b829eb772ee6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\math">
+      <UniqueIdentifier>{d54eb22f-50fe-456f-a3df-391aab6440e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\types">
+      <UniqueIdentifier>{0276ddc5-d603-4cb5-b0f2-a2101df2671d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\string">
+      <UniqueIdentifier>{7b380818-7dfe-44a7-8826-de5015ae0b4d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

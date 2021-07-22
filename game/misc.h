@@ -1,10 +1,13 @@
 #pragma once
 
-#include "../lib/types.h"
+import "config.h";
+import "lib/types.h";
+import "lib/string.h";
+import "lib/protocol.h";
+import "lib/math/random.h";
+import "game/entity_types.h";
 
-import math.random;
-
-inline vector VelocityForDamage(int damage)
+inline vector VelocityForDamage(int32_t damage)
 {
 	return randomv({ -100, -100, 200 }, { 100, 100, 300 }) * ((damage < 50) ? 0.7f : 1.2f);
 }

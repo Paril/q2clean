@@ -1,6 +1,7 @@
 #pragma once
 
-#include "lib/types.h"
+import "config.h";
+import "entity_types.h";
 
 void UpdateChaseCam(entity &ent);
 void ChaseNext(entity &ent);

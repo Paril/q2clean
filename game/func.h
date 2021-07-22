@@ -1,7 +1,9 @@
 #pragma once
 
-#include "lib/types.h"
-#include "spawn_flag.h"
+import "config.h";
+import "entity.h";
+import "lib/math/vector.h";
+import "lib/savables.h";
 
 constexpr spawn_flag PLAT_LOW_TRIGGER	= (spawn_flag)1;
 

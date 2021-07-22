@@ -1,4 +1,4 @@
-#include "lib/types.h"
+import "config.h";
 #include "entity.h"
 #include "chase.h"
 #include "game.h"

@@ -1,8 +1,7 @@
-#include "../lib/types.h"
+import "config.h";
 #include "entity.h"
 #include "misc.h"
 #include "game.h"
-#include "combat.h"
 #include "spawn.h"
 #include <ctime>
 
@@ -10,6 +9,7 @@ import gi;
 import util;
 import math.random;
 import string.format;
+import combat;
 
 /*QUAKED func_group (0 0 0) ?
 Used to group brushes together just for editor convenience.

@@ -1,13 +1,12 @@
-#include "../lib/types.h"
-#include "entity.h"
-#include "game.h"
-#include "phys.h"
-
-import gi;
-import util;
-import dynarray;
-import set;
-import string.format;
+import "config.h";
+import "entity.h";
+import "game.h";
+import "phys.h";
+import "lib/gi.h";
+import "game/util.h";
+import "lib/types/dynarray.h";
+import "lib/types/set.h";
+import "lib/string/format.h";
 
 /*
 

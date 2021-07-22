@@ -1,4 +1,4 @@
-#include "../lib/types.h"
+import "config.h";
 
 void ServerCommand()
 {

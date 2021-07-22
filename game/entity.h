@@ -1,12 +1,14 @@
 #pragma once
 
-#include "lib/types.h"
-#include "spawn_flag.h"
-#include "items.h"
-
-import protocol;
-import string;
-import items.list;
+import "config.h";
+import "lib/protocol.h";
+import "lib/string.h";
+import "game/items/itemlist.h";
+import "lib/types.h";
+import "lib/math/vector.h";
+import "lib/savables.h";
+import "lib/types/enum.h";
+import "entity_types.h";
 
 // entity type; this is to replace classname comparisons. Every entity spawnable by
 // classnames must have their own ID. You can assign IDs to other entities if you're

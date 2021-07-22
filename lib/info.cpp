@@ -1,4 +1,4 @@
-#include "types.h"
+import "config.h";
 #include "info.h"
 
 import protocol;

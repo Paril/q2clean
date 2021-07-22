@@ -1,7 +1,7 @@
 #pragma once
 
-import gi;
-import string;
+import "lib/gi.h";
+import "lib/string.h";
 
 constexpr bool isprint(const char &c)
 {

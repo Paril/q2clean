@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../lib/types.h"
+import "config.h";
 #include "entity.h"
 
 #ifdef SINGLE_PLAYER

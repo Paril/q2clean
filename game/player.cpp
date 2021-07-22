@@ -1,14 +1,12 @@
-#include "../lib/types.h"
+import "config.h";
 #include "entity.h"
 #include "../lib/info.h"
-#include "combat.h"
 #include "game.h"
 #include "player.h"
 #include "chase.h"
 #include "cmds.h"
 #include "misc.h"
 #include "spawn.h"
-#include "m_player.h"
 
 import util;
 import game_locals;
@@ -22,6 +20,8 @@ import player.view;
 import player.trail;
 #endif
 import weaponry;
+import combat;
+import "player_frames.h";
 
 #ifdef SINGLE_PLAYER
 //

@@ -1,24 +1,25 @@
-#include "entity.h"
-#include "player.h"
-#include "phys.h"
-#include "spawn.h"
-#include "game.h"
+import "entity.h";
+import "player.h";
+import "phys.h";
+import "spawn.h";
 #ifdef SINGLE_PLAYER
-#include "ai.h"
-#include "monster.h"
+import "ai.h";
+import "monster.h";
 #endif
 
-import gi;
-import game_locals;
-import util;
-import hud;
-import string.format;
-import player.view;
+import "lib/gi.h";
+import "game.h";
+import "util.h";
+import "hud.h";
+import "lib/string/format.h";
+import "view.h";
 
 constexpr stringlit GAMEVERSION = "clean";
 
 spawn_temp st;
 level_locals level;
+
+game_locals game;
 
 // global cvars
 #ifdef SINGLE_PLAYER

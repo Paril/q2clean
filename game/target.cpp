@@ -1,8 +1,6 @@
-#include "../lib/types.h"
+import "config.h";
 #include "entity.h"
 #include "game.h"
-#include "combat.h"
-#include "gweapon.h"
 #include "spawn.h"
 
 import gi;
@@ -11,6 +9,8 @@ import util;
 import hud;
 import math.random;
 import string.format;
+import ballistics.blaster;
+import combat;
 
 /*QUAKED target_temp_entity (1 0 0) (-8 -8 -8) (8 8 8)
 Fire an origin based temp entity event to the clients.

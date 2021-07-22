@@ -1,11 +1,44 @@
 #pragma once
 
-#include "lib/types.h"
+import "config.h";
+import "lib/types.h";
+import "lib/string.h";
+import "lib/math/vector.h";
+import "lib/types/enum.h";
+import "entity_types.h";
+import "lib/protocol.h";
 
-import string;
-import math.vector;
+// default server FPS
+constexpr gtime		BASE_FRAMERATE = 10;
+// the amount of time, in s, that a single frame lasts for
+constexpr float		BASE_1_FRAMETIME = 1.0f / BASE_FRAMERATE;
+// the amount of time, in ms, that a single frame lasts for
+constexpr gtime		BASE_FRAMETIME = (gtime) (BASE_1_FRAMETIME * 1000);
+// the amount of time, in s, that a single frame lasts for
+constexpr float		BASE_FRAMETIME_1000 = BASE_1_FRAMETIME;
+// the amount of time, in s, that a single frame lasts for
+constexpr float		FRAMETIME = BASE_1_FRAMETIME;
 
 // Contains some constants and structures that are integral to game states.
+
+// extended features
+enum game_features : uint32_t
+{
+	GMF_CLIENTNUM = 1 << 0,
+	GMF_PROPERINUSE = 1 << 1,
+	GMF_MVDSPEC = 1 << 2,
+	GMF_WANT_ALL_DISCONNECTS = 1 << 3,
+
+	GMF_ENHANCED_SAVEGAMES = 1 << 10,
+	GMF_VARIABLE_FPS = 1 << 11,
+	GMF_EXTRA_USERINFO = 1 << 12,
+	GMF_IPV6_ADDRESS_AWARE = 1 << 13
+};
+
+MAKE_ENUM_BITWISE(game_features);
+
+// features this game supports
+constexpr game_features G_FEATURES = (GMF_CLIENTNUM | GMF_PROPERINUSE | GMF_WANT_ALL_DISCONNECTS | GMF_ENHANCED_SAVEGAMES);
 
 // dmflags.value flags
 enum dm_flags : uint32_t
@@ -52,8 +85,6 @@ constexpr int32_t DEFAULT_SHOTGUN_HSPREAD	= 1000;
 constexpr int32_t DEFAULT_SHOTGUN_VSPREAD	= 500;
 constexpr int32_t DEFAULT_SHOTGUN_COUNT		= 12;
 constexpr int32_t DEFAULT_SSHOTGUN_COUNT	= 20;
-
-import protocol;
 
 extern sound_index snd_fry;
 extern model_index sm_meat_index;
@@ -188,6 +219,48 @@ struct level_locals
 };
 
 extern level_locals level;
+
+// game.serverflags values
+enum cross_server_flags : uint8_t
+{
+	SFL_CROSS_TRIGGER_1 = 1 << 0,
+	SFL_CROSS_TRIGGER_2 = 1 << 1,
+	SFL_CROSS_TRIGGER_3 = 1 << 2,
+	SFL_CROSS_TRIGGER_4 = 1 << 3,
+	SFL_CROSS_TRIGGER_5 = 1 << 4,
+	SFL_CROSS_TRIGGER_6 = 1 << 5,
+	SFL_CROSS_TRIGGER_7 = 1 << 6,
+	SFL_CROSS_TRIGGER_8 = 1 << 7,
+
+	SFL_CROSS_TRIGGER_MASK = 0xff
+};
+
+MAKE_ENUM_BITWISE(cross_server_flags);
+
+struct game_locals
+{
+#ifdef SINGLE_PLAYER
+	string	helpmessage1;
+	string	helpmessage2;
+	// flash F1 icon if non 0, play sound; increment only if 1, 2, or 3
+	uint8_t	helpchanged;
+
+	// cross level triggers
+	cross_server_flags	serverflags;
+
+	bool	autosaved;
+#endif
+
+	// can't store spawnpoint in level, because
+	// it would get overwritten by the savegame restore.
+	// needed for coop respawns
+	string		spawnpoint;
+
+	// store latched cvars here that we want to get at often
+	uint32_t	maxclients;
+};
+
+extern game_locals game;
 
 /*
 ============

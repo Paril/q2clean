@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../lib/types.h"
-#include "entity.h"
+import "game/entity.h";
+import "lib/string.h";
 
 using spawn_func = void(*)(entity &);
 

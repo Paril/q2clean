@@ -19,104 +19,199 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="config.h" />
     <ClInclude Include="debug\cJSON.h" />
     <ClInclude Include="debug\cJSON_Utils.h" />
-    <ClInclude Include="game\ai.h" />
-    <ClInclude Include="game\chase.h" />
-    <ClInclude Include="game\cmds.h" />
-    <ClInclude Include="game\combat.h" />
-    <ClInclude Include="game\config.h" />
-    <ClInclude Include="game\func.h" />
-    <ClInclude Include="game\game.h" />
-    <ClInclude Include="game\client.h" />
-    <ClInclude Include="game\entity.h" />
-    <ClInclude Include="game\gweapon.h" />
-    <ClCompile Include="game\ctf\grapple.ixx" />
-    <ClCompile Include="game\hud.ixx">
+    <ClCompile Include="game\ai.h" />
+    <ClCompile Include="game\ballistics.h" />
+    <ClCompile Include="game\chase.h" />
+    <ClCompile Include="game\cmds.h" />
+    <ClCompile Include="game\ballistics.cpp" />
+    <ClCompile Include="game\ballistics\bfg.cpp" />
+    <ClCompile Include="game\ballistics\blaster.cpp" />
+    <ClCompile Include="game\ballistics\bullet.cpp" />
+    <ClCompile Include="game\ballistics\grenade.cpp" />
+    <ClCompile Include="game\ballistics\hit.cpp" />
+    <ClCompile Include="game\ballistics\rail.cpp" />
+    <ClCompile Include="game\ballistics\rocket.cpp" />
+    <ClCompile Include="game\entity_types.h" />
+    <ClCompile Include="game\func.h" />
+    <ClCompile Include="game\game.h" />
+    <ClCompile Include="game\client.h" />
+    <ClCompile Include="game\entity.h" />
+    <ClCompile Include="game\ballistics\bfg.h" />
+    <ClCompile Include="game\ballistics\blaster.h" />
+    <ClCompile Include="game\ballistics\bullet.h" />
+    <ClCompile Include="game\ballistics\grenade.h" />
+    <ClCompile Include="game\ballistics\hit.h" />
+    <ClCompile Include="game\ballistics\rail.h" />
+    <ClCompile Include="game\ballistics\rocket.h" />
+    <ClCompile Include="game\combat.impl.cpp" />
+    <ClCompile Include="game\combat.h" />
+    <ClCompile Include="game\ctf\grapple.ixx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\hud.cpp" />
+    <ClCompile Include="game\hud.h">
       <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClInclude Include="game\items.h" />
-    <ClInclude Include="game\misc.h" />
-    <ClInclude Include="game\monster.h" />
-    <ClInclude Include="game\monster\soldier_model.h" />
-    <ClInclude Include="game\move.h" />
-    <ClInclude Include="game\m_infantry.h" />
-    <ClInclude Include="game\m_player.h" />
-    <ClInclude Include="game\phys.h" />
-    <ClInclude Include="game\player.h" />
-    <ClInclude Include="game\spawn.h" />
-    <ClInclude Include="game\spawn_flag.h" />
-    <ClInclude Include="game\svcmds.h" />
-    <ClInclude Include="game\target.h" />
-    <ClInclude Include="game\trigger.h" />
-    <ClCompile Include="game\items\armor.ixx" />
-    <ClCompile Include="game\items\general.ixx" />
-    <ClCompile Include="game\items\health.ixx" />
-    <ClCompile Include="game\items\itemlist.impl.cpp" />
-    <ClCompile Include="game\items\itemlist.ixx" />
-    <ClCompile Include="game\items\keys.ixx" />
-    <ClCompile Include="game\items\powerups.ixx" />
-    <ClCompile Include="game\items\weaponry.ixx" />
-    <ClCompile Include="game\monster\flash.ixx" />
-    <ClCompile Include="game\monster\infantry.cpp">
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</PreprocessToFile>
+    <ClCompile Include="game\items\armor.cpp" />
+    <ClCompile Include="game\items\entity.cpp" />
+    <ClCompile Include="game\items\general.cpp" />
+    <ClCompile Include="game\items\health.cpp" />
+    <ClCompile Include="game\items\keys.cpp" />
+    <ClCompile Include="game\items\powerups.cpp" />
+    <ClCompile Include="game\items\weaponry.cpp" />
+    <ClCompile Include="game\misc.h" />
+    <ClCompile Include="game\monster.h" />
+    <ClCompile Include="game\items\entity.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="game\monster\soldier_model.h" />
+    <ClCompile Include="game\monster\m_infantry.h" />
+    <ClCompile Include="game\move.h" />
+    <ClCompile Include="game\player_frames.h" />
+    <ClCompile Include="game\phys.h" />
+    <ClCompile Include="game\player.h" />
+    <ClCompile Include="game\spawn.h" />
+    <ClCompile Include="game\svcmds.h" />
+    <ClCompile Include="game\target.h" />
+    <ClCompile Include="game\trigger.h" />
+    <ClCompile Include="game\items\armor.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClInclude Include="game\items\general.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClInclude>
+    <ClCompile Include="game\items\health.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\items\itemlist.cpp" />
+    <ClCompile Include="game\items\itemlist.h" />
+    <ClCompile Include="game\items\keys.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\items\powerups.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\items\weaponry.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\monster\flash.h" />
+    <ClCompile Include="game\monster\infantry.cpp" />
     <ClCompile Include="game\monster\soldier.cpp" />
-    <ClCompile Include="game\util.ixx">
+    <ClCompile Include="game\trail.cpp" />
+    <ClCompile Include="game\util.h">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="lib\allocator.h" />
-    <ClCompile Include="game\weaponry\bfg.ixx" />
-    <ClCompile Include="game\weaponry\blaster.ixx" />
-    <ClCompile Include="game\weaponry\chaingun.ixx" />
-    <ClCompile Include="game\weaponry\grenadelauncher.ixx" />
-    <ClCompile Include="game\weaponry\handgrenade.impl.cpp" />
-    <ClCompile Include="game\weaponry\handgrenade.ixx" />
-    <ClCompile Include="game\weaponry\hyperblaster.ixx" />
-    <ClCompile Include="game\weaponry\machinegun.ixx" />
-    <ClCompile Include="game\weaponry\railgun.ixx" />
-    <ClCompile Include="game\weaponry\rocketlauncher.ixx" />
-    <ClCompile Include="game\weaponry\shotgun.ixx" />
-    <ClCompile Include="game\weaponry\supershotgun.ixx" />
-    <ClCompile Include="game\weaponry\weaponry.ixx" />
-    <ClCompile Include="lib\savables.ixx">
+    <ClCompile Include="game\util.cpp" />
+    <ClCompile Include="game\view.cpp" />
+    <ClCompile Include="game\weaponry.h" />
+    <ClCompile Include="game\weaponry\bfg.h" />
+    <ClCompile Include="game\weaponry.cpp" />
+    <ClCompile Include="game\weaponry\bfg.cpp" />
+    <ClCompile Include="game\weaponry\blaster.h" />
+    <ClCompile Include="game\weaponry\blaster.cpp" />
+    <ClCompile Include="game\weaponry\chaingun.h" />
+    <ClCompile Include="game\weaponry\chaingun.cpp" />
+    <ClCompile Include="game\weaponry\grenadelauncher.h" />
+    <ClCompile Include="game\weaponry\grenadelauncher.cpp" />
+    <ClCompile Include="game\weaponry\handgrenade.cpp" />
+    <ClCompile Include="game\weaponry\handgrenade.h" />
+    <ClCompile Include="game\weaponry\hyperblaster.cpp" />
+    <ClCompile Include="game\weaponry\hyperblaster.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\machinegun.cpp" />
+    <ClCompile Include="game\weaponry\machinegun.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\railgun.cpp" />
+    <ClCompile Include="game\weaponry\railgun.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\rocketlauncher.cpp" />
+    <ClCompile Include="game\weaponry\rocketlauncher.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\shotgun.cpp" />
+    <ClCompile Include="game\weaponry\shotgun.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="game\weaponry\supershotgun.cpp" />
+    <ClCompile Include="game\weaponry\supershotgun.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="lib\math.h" />
+    <ClCompile Include="lib\math\random.h" />
+    <ClCompile Include="lib\gi.cpp" />
+    <ClCompile Include="lib\math\random.cpp" />
+    <ClCompile Include="lib\math\vector.h" />
+    <ClCompile Include="lib\gi.h">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="lib\dynarray.ixx">
-      <FileType>Document</FileType>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Default</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Default</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Default</CompileAs>
-    </ClCompile>
-    <ClInclude Include="lib\entityref.h" />
-    <ClCompile Include="lib\gi.ixx">
+    <ClCompile Include="lib\info.h" />
+    <ClCompile Include="lib\protocol.cpp" />
+    <ClCompile Include="lib\savables.h" />
+    <ClCompile Include="lib\string.h">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClInclude Include="lib\info.h" />
-    <ClCompile Include="lib\map.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClInclude Include="lib\math.h" />
-    <ClCompile Include="lib\random.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClInclude Include="lib\savables.h" />
-    <ClCompile Include="lib\set.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClCompile Include="lib\string.format.impl.cpp" />
-    <ClCompile Include="lib\string.format.ixx" />
-    <ClCompile Include="lib\string.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
-    <ClInclude Include="lib\types.h" />
-    <ClCompile Include="lib\vector.ixx">
-      <FileType>Document</FileType>
-    </ClCompile>
+    <ClCompile Include="lib\string\format.h" />
+    <ClCompile Include="lib\types.h" />
+    <ClCompile Include="lib\string\format.cpp" />
+    <ClCompile Include="lib\types\allocator.cpp" />
+    <ClCompile Include="lib\types\allocator.h" />
+    <ClCompile Include="lib\types\array.h" />
+    <ClCompile Include="lib\types\dynarray.h" />
+    <ClCompile Include="lib\types\map.h" />
+    <ClCompile Include="lib\types\set.h" />
+    <ClCompile Include="lib\types\enum.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="debug\cJSON.c" />
@@ -124,12 +219,8 @@
     <ClCompile Include="game\ai.cpp" />
     <ClCompile Include="game\chase.cpp" />
     <ClCompile Include="game\cmds.cpp" />
-    <ClCompile Include="game\combat.cpp" />
     <ClCompile Include="game\func.cpp" />
     <ClCompile Include="game\game.cpp" />
-    <ClCompile Include="game\game_locals.ixx" />
-    <ClCompile Include="game\gweapon.cpp" />
-    <ClCompile Include="game\items.cpp" />
     <ClCompile Include="game\misc.cpp" />
     <ClCompile Include="game\monster.cpp" />
     <ClCompile Include="game\move.cpp" />
@@ -138,12 +229,11 @@
     <ClCompile Include="game\spawn.cpp" />
     <ClCompile Include="game\svcmds.cpp" />
     <ClCompile Include="game\target.cpp" />
-    <ClCompile Include="game\trail.ixx" />
+    <ClCompile Include="game\trail.h" />
     <ClCompile Include="game\trigger.cpp" />
-    <ClCompile Include="game\view.ixx" />
-    <ClCompile Include="lib\allocator.cpp" />
+    <ClCompile Include="game\view.h" />
     <ClCompile Include="lib\info.cpp" />
-    <ClCompile Include="lib\protocol.ixx" />
+    <ClCompile Include="lib\protocol.h" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -245,6 +335,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -271,6 +362,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -297,6 +389,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -323,6 +416,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
+      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

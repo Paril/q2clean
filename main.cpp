@@ -1,6 +1,6 @@
 #include <fstream>
 
-#include "lib/types.h"
+import "config.h";
 #include "lib/info.h"
 
 import protocol;

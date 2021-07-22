@@ -1,19 +1,18 @@
 module;
 
-#include "lib/types.h"
+export module ctf.grapple;
+
+import "config.h";
 
 #ifdef HOOK_CODE
 
-#include "game/entity.h"
-#include "game/game.h"
-#include "game/phys.h"
-#include "game/combat.h"
-
-export module ctf.grapple;
-
+import "game/entity.h";
+import "game/game.h";
+import "game/phys.h";
 import gi;
 import weaponry;
 import util;
+import combat;
 
 constexpr int GRAPPLE_SPEED = 650; // speed of grapple in flight
 constexpr int GRAPPLE_PULL_SPEED = 650;	// speed player is pulled at

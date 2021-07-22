@@ -1,14 +1,14 @@
-#include "lib/types.h"
+import "config.h";
 #include "entity.h"
 #include "func.h"
 #include "game.h"
-#include "combat.h"
 #include "spawn.h"
 
 import gi;
 import util;
 import math.random;
 import string.format;
+import combat;
 
 /*
 =========================================================

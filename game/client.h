@@ -1,10 +1,10 @@
 #pragma once
 
-#include "items.h"
-
-import gi;
-import string;
-import items.list;
+import "lib/types.h";
+import "lib/gi.h";
+import "lib/string.h";
+import "game/items/itemlist.h";
+import "game/entity_types.h";
 
 // handedness values
 enum handedness : uint8_t

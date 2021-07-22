@@ -1,8 +1,7 @@
-#include "../lib/types.h"
+import "config.h";
 
 #ifdef SINGLE_PLAYER
 #include "entity.h"
-#include "gweapon.h"
 #include "game.h"
 #include "move.h"
 #include "ai.h"
@@ -11,6 +10,13 @@ import gi;
 import util;
 import math.random;
 import string.format;
+import ballistics.bullet;
+import ballistics.blaster;
+import ballistics.grenade;
+import ballistics.rocket;
+import ballistics.rail;
+import ballistics.bfg;
+import combat;
 
 //
 // monster weapons

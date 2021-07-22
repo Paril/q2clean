@@ -1,5 +1,24 @@
 #pragma once
-#include "lib/types.h"
+
+import "config.h";
+import "entity_types.h";
+import "game.h";
+import "cmds.h";
+import "lib/types/enum.h";
+import "lib/math/vector.h";
+#ifdef SINGLE_PLAYER
+import "monster.h"
+#endif
+
+/*
+============
+CanDamage
+
+Returns true if the inflictor can directly damage the target.  Used for
+explosions and melee attacks.
+============
+*/
+bool CanDamage(entity &targ, entity &inflictor);
 
 // damage flags
 enum damage_flags : uint16_t
@@ -10,8 +29,8 @@ enum damage_flags : uint16_t
 	DAMAGE_ENERGY = 1 << 2,			// damage is from an energy based weapon
 	DAMAGE_NO_KNOCKBACK = 1 << 3,	// do not affect velocity, just view angles
 	DAMAGE_BULLET = 1 << 4,			// damage is from a bullet (used for ricochets)
-	DAMAGE_NO_PROTECTION =  1 << 5	// armor, shields, invulnerability, and godmode have no effect
-	
+	DAMAGE_NO_PROTECTION = 1 << 5	// armor, shields, invulnerability, and godmode have no effect
+
 #ifdef GROUND_ZERO
 	, DAMAGE_DESTROY_ARMOR = 1 << 6,// damage is done to armor and health.
 	DAMAGE_NO_REG_ARMOR = 1 << 7,	// damage skips regular armor
@@ -58,7 +77,7 @@ enum means_of_death : uint8_t
 	MOD_TRIGGER_HURT,
 	MOD_HIT,
 	MOD_TARGET_BLASTER,
-	
+
 #ifdef THE_RECKONING
 	MOD_RIPPER,
 	MOD_PHALANX,
@@ -85,24 +104,14 @@ enum means_of_death : uint8_t
 #endif
 
 	// bitflag
-	MOD_FRIENDLY_FIRE	= 1 << 7
+	MOD_FRIENDLY_FIRE = 1 << 7
 };
 
-MAKE_ENUM_BITWISE(means_of_death);
+MAKE_ENUM_BITWISE(means_of_death, export);
 
 extern means_of_death meansOfDeath;
 
-/*
-============
-CanDamage
-
-Returns true if the inflictor can directly damage the target.  Used for
-explosions and melee attacks.
-============
-*/
-bool CanDamage(entity &targ, entity &inflictor);
-
-bool CheckTeamDamage(means_of_death mod = MOD_NONE);
+bool CheckTeamDamage(means_of_death mod [[maybe_unused]]);
 
 /*
 ============
@@ -120,6 +129,7 @@ damage      amount of damage being inflicted
 knockback   force to be applied against targ as a result of the damage
 
 dflags      these flags are used to control how T_Damage works
+mod         the means of death to be displayed on death
 ============
 */
 void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vector point, vector normal, int32_t damage, int32_t knockback, damage_flags dflags, means_of_death mod);
