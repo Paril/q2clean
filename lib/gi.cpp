@@ -1,6 +1,7 @@
 import "config.h";
 import "gi.h";
 import "lib/string/format.h";
+import <cstdarg>;
 
 game_import gi;
 

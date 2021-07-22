@@ -1,7 +1,3 @@
-module;
-
-export module ctf.grapple;
-
 import "config.h";
 
 #ifdef HOOK_CODE
@@ -9,10 +5,10 @@ import "config.h";
 import "game/entity.h";
 import "game/game.h";
 import "game/phys.h";
-import gi;
-import weaponry;
-import util;
-import combat;
+import "lib/gi.h";
+import "game/weaponry.h";
+import "game/util.h";
+import "game/combat.h";
 
 constexpr int GRAPPLE_SPEED = 650; // speed of grapple in flight
 constexpr int GRAPPLE_PULL_SPEED = 650;	// speed player is pulled at
@@ -46,7 +42,7 @@ static void GrappleReset(entity &self)
 	G_FreeEdict(self);
 }
 
-export void GrapplePlayerReset(entity &ent)
+void GrapplePlayerReset(entity &ent)
 {
 	if (ent.is_client() && ent.client->grapple.has_value())
 		GrappleReset(ent.client->grapple);
@@ -141,7 +137,7 @@ static void GrappleDrawCable(entity &self)
 }
 
 // pull the player toward the grapple
-export void GrapplePull(entity &self)
+void GrapplePull(entity &self)
 {
 	vector hookdir, v;
 	float vlen;
@@ -295,7 +291,7 @@ static void Weapon_Grapple_Fire(entity &ent)
 	ent.client->ps.gunframe++;
 }
 
-export void CTFWeapon_Grapple(entity &ent)
+void CTFWeapon_Grapple(entity &ent)
 {
 	// if the the attack button is still down, stay in the firing frame
 	if ((ent.client->buttons & BUTTON_ATTACK) &&
@@ -336,7 +332,7 @@ export void CTFWeapon_Grapple(entity &ent)
 #endif
 
 #ifdef OFFHAND_HOOK
-export void GrappleCmd(entity &ent)
+void GrappleCmd(entity &ent)
 {
 	string cmd = strlwr(gi.argv(1));
 

@@ -1,5 +1,6 @@
 import "armor.h";
 import "game/entity.h";
+import "entity.h";
 
 gitem_id ArmorIndex(entity &ent)
 {

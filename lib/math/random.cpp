@@ -1,6 +1,6 @@
 import "config.h";
 import <random>;
-import <ctime>;
+#include <ctime>
 import "lib/types.h";
 import "lib/math/vector.h";
 import "random.h";

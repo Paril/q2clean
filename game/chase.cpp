@@ -3,6 +3,7 @@ import "entity.h";
 import "chase.h";
 import "game.h";
 import "lib/gi.h";
+import "game.h";
 
 void UpdateChaseCam(entity &ent)
 {
@@ -105,8 +106,6 @@ void UpdateChaseCam(entity &ent)
 		gi.unicast(ent, false);
 	}
 }
-
-import game_locals;
 
 void ChaseNext(entity &ent)
 {

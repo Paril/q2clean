@@ -1,7 +1,7 @@
 #pragma once
 
 /*@@ { "macro": "SINGLE_PLAYER", "desc": "Enable single-player support. This includes monsters, save/load, and any code related to making AI/single player work properly." } @@*/
-//#define SINGLE_PLAYER
+#define SINGLE_PLAYER
 
 /*@@ { "macro": "CTF", "desc": "Enable CTF support. This includes the techs/flags, the \"ctf\" cvar, and other gamemode-specific changes to make CTF work.", "requires": [ "PMENU", "GRAPPLE" ] } @@*/
 //#define CTF

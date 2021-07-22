@@ -7,9 +7,6 @@
     <ClInclude Include="debug\cJSON_Utils.h">
       <Filter>debug</Filter>
     </ClInclude>
-    <ClInclude Include="game\items\general.h">
-      <Filter>game\items</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -91,7 +88,7 @@
     <ClCompile Include="game\items\health.h">
       <Filter>game\items</Filter>
     </ClCompile>
-    <ClCompile Include="game\ctf\grapple.ixx">
+    <ClCompile Include="game\ctf\grapple.h">
       <Filter>game\ctf</Filter>
     </ClCompile>
     <ClCompile Include="game\weaponry\handgrenade.cpp">
@@ -394,6 +391,12 @@
     </ClCompile>
     <ClCompile Include="game\weaponry\hyperblaster.cpp">
       <Filter>game\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ballistics\grapple.cpp">
+      <Filter>game\ctf</Filter>
+    </ClCompile>
+    <ClCompile Include="game\items\general.h">
+      <Filter>game\items</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
