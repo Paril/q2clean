@@ -18,6 +18,10 @@
 #include "view.h"
 #ifdef SINGLE_PLAYER
 #include "trail.h"
+
+#ifdef GROUND_ZERO
+#include "func.h"
+#endif
 #endif
 #include "weaponry.h"
 #include "combat.h"
@@ -39,23 +43,24 @@
 
 static void SP_FixCoopSpots(entity &self)
 {
-	entityref spot = world;
-
-	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_START)).has_value())
+	for (entity &spot : G_IterateEquals<&entity::type>(ET_INFO_PLAYER_START))
 	{
-		if (!spot->targetname)
+		if (!spot.targetname)
 			continue;
-		vector d = self.s.origin - spot->s.origin;
+
+		vector d = self.s.origin - spot.s.origin;
+
 		if (VectorLength(d) < 384)
 		{
-			if (!striequals(self.targetname, spot->targetname))
-				self.targetname = spot->targetname;
+			if (!striequals(self.targetname, spot.targetname))
+				self.targetname = spot.targetname;
+
 			return;
 		}
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(SP_FixCoopSpots);
+static REGISTER_SAVABLE_FUNCTION(SP_FixCoopSpots);
 
 // now if that one wasn't ugly enough for you then try this one on for size
 // some maps don't have any coop spots at all, so we need to create them
@@ -97,7 +102,7 @@ static void SP_CreateCoopSpots(entity &)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(SP_CreateCoopSpots);
+static REGISTER_SAVABLE_FUNCTION(SP_CreateCoopSpots);
 
 #endif
 /*QUAKED info_player_start (1 0 0) (-16 -16 -24) (16 16 32)
@@ -112,13 +117,13 @@ static void SP_info_player_start(entity &self [[maybe_unused]])
 	if (level.mapname == "security")
 	{
 		// invoke one of our gross, ugly, disgusting hacks
-		self.think = SP_CreateCoopSpots_savable;
+		self.think = SAVABLE(SP_CreateCoopSpots);
 		self.nextthink = level.framenum + 1;
 	}
 #endif
 }
 
-REGISTER_ENTITY(info_player_start, ET_INFO_PLAYER_START);
+REGISTER_ENTITY(INFO_PLAYER_START, info_player_start);
 
 /*QUAKED info_player_deathmatch (1 0 1) (-16 -16 -24) (16 16 32)
 potential spawning position for deathmatch games
@@ -136,7 +141,7 @@ static void SP_info_player_deathmatch(entity &self)
 	SP_misc_teleporter_dest(self);
 }
 
-REGISTER_ENTITY(info_player_deathmatch, ET_INFO_PLAYER_DEATHMATCH);
+REGISTER_ENTITY(INFO_PLAYER_DEATHMATCH, info_player_deathmatch);
 
 #ifdef SINGLE_PLAYER
 /*QUAKED info_player_coop (1 0 1) (-16 -16 -24) (16 16 32)
@@ -166,12 +171,12 @@ static void SP_info_player_coop(entity &self)
 		level.mapname == "strike")
 	{
 		// invoke one of our gross, ugly, disgusting hacks
-		self.think = SP_FixCoopSpots_savable;
+		self.think = SAVABLE(SP_FixCoopSpots);
 		self.nextthink = level.framenum + 1;
 	}
 }
 
-REGISTER_ENTITY(info_player_coop, ET_INFO_PLAYER_COOP);
+REGISTER_ENTITY(INFO_PLAYER_COOP, info_player_coop);
 
 #endif
 /*QUAKED info_player_intermission (1 0 1) (-16 -16 -24) (16 16 32)
@@ -182,22 +187,23 @@ static void SP_info_player_intermission(entity &)
 {
 }
 
-REGISTER_ENTITY(info_player_intermission, ET_INFO_PLAYER_INTERMISSION);
+REGISTER_ENTITY(INFO_PLAYER_INTERMISSION, info_player_intermission);
 
 #if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
 /*QUAKED info_player_coop_lava (1 0 1) (-16 -16 -24) (16 16 32)
 potential spawning position for coop games on rmine2 where lava level
 needs to be checked
 */
-API_FUNC static void(entity self) SP_info_player_coop_lava =
+static void SP_info_player_coop_lava(entity &self)
 {
-	if (!coop.intVal)
+	if (!coop)
 	{
 		G_FreeEdict (self);
 		return;
 	}
 }
 
+static REGISTER_ENTITY(INFO_PLAYER_COOP_LAVA, info_player_coop_lava);
 #endif
 //=======================================================================
 
@@ -206,7 +212,7 @@ static void player_pain(entity &, entity &, float, int)
 	// player pain is handled at the end of the frame in P_DamageFeedback
 }
 
-REGISTER_SAVABLE_FUNCTION(player_pain);
+static REGISTER_SAVABLE_FUNCTION(player_pain);
 
 enum gender_id : uint8_t
 {
@@ -500,10 +506,10 @@ static void TossClientWeapon(entity &self)
 		)
 		it = nullptr;
 
-	const bool quad = ((dm_flags)dmflags & DF_QUAD_DROP) && (self.client->quad_framenum > (level.framenum + 10));
+	const bool quad = (dmflags & DF_QUAD_DROP) && (self.client->quad_framenum > (level.framenum + 10));
 		
 #ifdef THE_RECKONING
-	const bool quadfire = (dmflags.intVal & DF_QUADFIRE_DROP) && (self.client.quadfire_framenum > (level.framenum + 10));
+	const bool quadfire = (dmflags & DF_QUADFIRE_DROP) && (self.client->quadfire_framenum > (level.framenum + 10));
 #endif
 
 	float spread;
@@ -532,22 +538,22 @@ static void TossClientWeapon(entity &self)
 		self.client->v_angle[YAW] -= spread;
 		drop.spawnflags |= DROPPED_PLAYER_ITEM;
 
-		drop.touch = Touch_Item_savable;
+		drop.touch = SAVABLE(Touch_Item);
 		drop.nextthink = self.client->quad_framenum;
-		drop.think = G_FreeEdict_savable;
+		drop.think = SAVABLE(G_FreeEdict);
 	}
 	
 #ifdef THE_RECKONING
 	if (quadfire)
 	{
-		self.client.v_angle[YAW] += spread;
-		entity drop = Drop_Item (self, FindItemByClassname ("item_quadfire"));
-		self.client.v_angle[YAW] -= spread;
+		self.client->v_angle[YAW] += spread;
+		entity &drop = Drop_Item (self, GetItemByIndex(ITEM_QUADFIRE));
+		self.client->v_angle[YAW] -= spread;
 		drop.spawnflags |= DROPPED_PLAYER_ITEM;
 
-		drop.touch = Touch_Item;
-		drop.nextthink = self.client.quadfire_framenum;
-		drop.think = G_FreeEdict;
+		drop.touch = SAVABLE(Touch_Item);
+		drop.nextthink = self.client->quadfire_framenum;
+		drop.think = SAVABLE(G_FreeEdict);
 	}
 #endif
 }
@@ -568,7 +574,7 @@ static void LookAtKiller(entity &self, entity &inflictor, entity &attacker)
 }
 
 #ifdef HOOK_CODE
-import ctf.grapple;
+#include "game/ctf/grapple.h"
 #endif
 
 #ifdef CTF
@@ -660,12 +666,12 @@ void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damag
 	self.client->breather_framenum = 0;
 	self.client->enviro_framenum = 0;
 #ifdef THE_RECKONING
-	self.client.quadfire_framenum = 0;
+	self.client->quadfire_framenum = 0;
 #endif
 	self.flags &= ~FL_POWER_ARMOR;
 	
 #ifdef GROUND_ZERO
-	self.client.double_framenum = 0;
+	self.client->double_framenum = 0;
 
 	// if we've been killed by the tracker, GIB!
 	if ((meansOfDeath & ~MOD_FRIENDLY_FIRE) == MOD_TRACKER)
@@ -736,7 +742,7 @@ void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damag
 	gi.linkentity(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(player_die);
+static REGISTER_SAVABLE_FUNCTION(player_die);
 
 //=======================================================================
 
@@ -828,16 +834,15 @@ static void InitClientResp(entity &ent)
 #ifdef SINGLE_PLAYER
 void SaveClientData()
 {
-	for (uint32_t i = 0; i < game.maxclients; i++)
+	for (entity &ent : entity_range(1, game.maxclients))
 	{
-		entity &ent = itoe(1 + i);
-
 		if (!ent.inuse)
 			continue;
 
 		ent.client->pers.health = ent.health;
 		ent.client->pers.max_health = ent.max_health;
 		ent.client->pers.savedFlags = (ent.flags & (FL_GODMODE | FL_NOTARGET | FL_POWER_ARMOR));
+
 		if (coop)
 			ent.client->pers.score = ent.client->resp.score;
 	}
@@ -848,6 +853,7 @@ static void FetchClientEntData(entity &ent)
 	ent.health = ent.client->pers.health;
 	ent.max_health = ent.client->pers.max_health;
 	ent.flags |= ent.client->pers.savedFlags;
+
 	if (coop)
 		ent.client->resp.score = ent.client->pers.score;
 }
@@ -872,13 +878,10 @@ float PlayersRangeFromSpot(entity &spot)
 {
 	float bestplayerdistance = FLT_MAX;
 
-	for (uint32_t n = 1; n <= game.maxclients; n++)
+	for (entity &player : entity_range(1, game.maxclients))
 	{
-		entity &player = itoe(n);
-
 		if (!player.inuse)
 			continue;
-
 		if (player.health <= 0)
 			continue;
 
@@ -971,7 +974,7 @@ entityref SelectFarthestDeathmatchSpawnPoint()
 
 static entityref SelectDeathmatchSpawnPoint()
 {
-	if ((dm_flags)dmflags & DF_SPAWN_FARTHEST)
+	if (dmflags & DF_SPAWN_FARTHEST)
 		return SelectFarthestDeathmatchSpawnPoint();
 	else
 		return SelectRandomDeathmatchSpawnPoint();
@@ -979,79 +982,73 @@ static entityref SelectDeathmatchSpawnPoint()
 
 #ifdef SINGLE_PLAYER
 #ifdef GROUND_ZERO
-static entity(entity ent) SelectLavaCoopSpawnPoint =
+static entityref SelectLavaCoopSpawnPoint()
 {
 	float lavatop = -FLT_MAX;
-	entity highestlava = world;
+	entityref highestlava;
 
 	// first, find the highest lava
 	// remember that some will stop moving when they've filled their
 	// areas...
-	entity lava = world;
-	while ((lava = G_Find (lava, classname, "func_door")))
+	entityref lava;
+	while ((lava = G_FindEquals<&entity::type>(lava, ET_FUNC_DOOR)).has_value())
 	{
-		vector center = (lava.absmax + lava.absmin) * 0.5f;
+		vector center = (lava->absmax + lava->absmin) * 0.5f;
 
-		if (lava.spawnflags & 2 && (gi.pointcontents(center) & MASK_WATER))
+		if ((lava->spawnflags & WATER_SMART) && (gi.pointcontents(center) & MASK_WATER))
 		{
-			if (lava.absmax[2] > lavatop)
+			if (lava->absmax[2] > lavatop)
 			{
-				lavatop = lava.absmax[2];
+				lavatop = lava->absmax[2];
 				highestlava = lava;
 			}
 		}
 	}
 
 	// if we didn't find ANY lava, then return NULL
-	if !(highestlava)
-		return world;
+	if (!highestlava.has_value())
+		return null_entity;
 
 	// find the top of the lava and include a small margin of error (plus bbox size)
-	lavatop = highestlava.absmax[2] + 64;
+	lavatop = highestlava->absmax[2] + 64;
 
 	// find all the lava spawn points and store them in spawnPoints[]
-	entity spot = world;
+	entityref spot;
 	int numPoints = 0;
-	entity spawnPoints[64] = { 0 };
+	dynarray<entityref> spawnPoints;
 
-	while ((spot = G_Find (spot, classname, "info_player_coop_lava")))
-	{
-		if (numPoints == 64)
-			break;
-
-		spawnPoints[numPoints++] = spot;
-	}
+	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_COOP_LAVA)).has_value())
+		spawnPoints.push_back(spot);
 
 	if (numPoints < 1)
 		return world;
 
 	// walk up the sorted list and return the lowest, open, non-lava spawn point
-	spot = world;
 	float lowest = FLT_MAX;
-	entity pointWithLeastLava = world;
+	entityref pointWithLeastLava;
 
 	for (int index = 0; index < numPoints; index++)
 	{
-		if (spawnPoints[index].s.origin[2] < lavatop)
+		if (spawnPoints[index]->s.origin[2] < lavatop)
 			continue;
 
 		if (PlayersRangeFromSpot(spawnPoints[index]) > 32)
 		{
-			if (spawnPoints[index].s.origin[2] < lowest)
+			if (spawnPoints[index]->s.origin[2] < lowest)
 			{
 				// save the last point
 				pointWithLeastLava = spawnPoints[index];
-				lowest = spawnPoints[index].s.origin[2];
+				lowest = spawnPoints[index]->s.origin[2];
 			}
 		}
 	}
 
 	// FIXME - better solution????
 	// well, we may telefrag someone, but oh well...
-	if (pointWithLeastLava)
+	if (pointWithLeastLava.has_value())
 		return pointWithLeastLava;
 
-	return world;
+	return null_entity;
 }
 #endif
 
@@ -1060,7 +1057,7 @@ static entityref SelectCoopSpawnPoint(entity &ent)
 #ifdef GROUND_ZERO
 	// rogue hack, but not too gross...
 	if (!stricmp(level.mapname, "rmine2p") || !stricmp(level.mapname, "rmine2"))
-		return SelectLavaCoopSpawnPoint (ent);
+		return SelectLavaCoopSpawnPoint();
 #endif
 
 	int index = ent.s.number - 1;
@@ -1069,22 +1066,21 @@ static entityref SelectCoopSpawnPoint(entity &ent)
 	if (!index)
 		return null_entity;
 
-	entityref spot = world;
-
 	// assume there are four coop spots at each spawnpoint
-	while ((spot = G_FindEquals<&entity::type>(spot, ET_INFO_PLAYER_COOP)).has_value())
+	for (entity &spot : G_IterateEquals<&entity::type>(ET_INFO_PLAYER_COOP))
 	{
-		if (stricmp(game.spawnpoint, spot->targetname) == 0)
+		if (striequals(game.spawnpoint, spot.targetname))
 		{
 			// this is a coop spawn point for one of the clients here
 			index--;
+
 			if (!index)
 				return spot;        // this is it
 		}
 	}
 
-
-	return spot;
+	// nope
+	return null_entity;
 }
 #endif
 
@@ -1146,11 +1142,8 @@ void InitBodyQue()
 {
 	level.body_que = 0;
 
-	for (int32_t i = 0; i < BODY_QUEUE_SIZE; i++)
-	{
-		entity &ent = G_Spawn();
-		ent.type = ET_BODYQUEUE;
-	}
+	for (size_t i = 0; i < BODY_QUEUE_SIZE; i++)
+		G_Spawn();
 }
 
 static void body_die(entity &self, entity &, entity &, int32_t damage, vector)
@@ -1166,7 +1159,7 @@ static void body_die(entity &self, entity &, entity &, int32_t damage, vector)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(body_die);
+static REGISTER_SAVABLE_FUNCTION(body_die);
 
 static void CopyToBodyQue(entity &ent)
 {
@@ -1206,7 +1199,7 @@ static void CopyToBodyQue(entity &ent)
 	body.movetype = ent.movetype;
 	body.groundentity = ent.groundentity;
 	
-	body.die = body_die_savable;
+	body.die = SAVABLE(body_die);
 	body.takedamage = true;
 	
 	gi.linkentity(body);
@@ -1264,13 +1257,13 @@ static void spectator_respawn(entity &ent)
 		}
 
 		// count spectators
-		uint32_t i, numspec;
+		uint32_t numspec = 0;
 
-		for (i = 1, numspec = 0; i <= game.maxclients; i++)
-			if (itoe(i).inuse && itoe(i).client->pers.spectator)
+		for (entity &e : entity_range(1, game.maxclients))
+			if (e.inuse && e.client->pers.spectator)
 				numspec++;
 
-		if (numspec >= (uint32_t)maxspectators)
+		if (numspec >= maxspectators)
 		{
 			gi.cprintf(ent, PRINT_HIGH, "Server spectator limit is full.");
 			ent.client->pers.spectator = false;
@@ -1412,14 +1405,13 @@ void PutClientInServer(entity &ent)
 	ent.movetype = MOVETYPE_WALK;
 	ent.viewheight = 22;
 	ent.inuse = true;
-	ent.type = ET_PLAYER;
 	ent.mass = 200;
 	ent.solid = SOLID_BBOX;
 	ent.deadflag = DEAD_NO;
 	ent.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
 	ent.clipmask = MASK_PLAYERSOLID;
-	ent.pain = player_pain_savable;
-	ent.die = player_die_savable;
+	ent.pain = SAVABLE(player_pain);
+	ent.die = SAVABLE(player_die);
 	ent.waterlevel = 0;
 	ent.watertype = CONTENTS_NONE;
 	ent.flags &= ~FL_NO_KNOCKBACK;
@@ -1486,13 +1478,12 @@ void PutClientInServer(entity &ent)
 #if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
 	// my tribute to cash's level-specific hacks. I hope I live
 	// up to his trailblazing cheese.
-	if (!deathmatch.intVal && level.mapname == "rboss")
+	if (!deathmatch && level.mapname == "rboss")
 	{
 		// if you get on to rboss in single player or coop, ensure
 		// the player has the nuke key. (not in DM)
-		gitem_t *it = FindItem("Antimatter Bomb");
-		ent.client.pers.selected_item = it->id;
-		ent.client.pers.inventory[ent.client.pers.selected_item] = 1;
+		ent.client->pers.selected_item = ITEM_ANTIMATTER_BOMB;
+		ent.client->pers.inventory[ITEM_ANTIMATTER_BOMB] = 1;
 	}
 #endif
 
@@ -1645,18 +1636,14 @@ bool ClientConnect(entity &ent, string &userinfo)
 			return false;
 		}
 
-		uint32_t i, numspec;
+		uint32_t numspec = 0;
 		
 		// count spectators
-		for (i = numspec = 0; i < game.maxclients; i++)
-		{
-			entity &e = itoe(i + 1);
-			
+		for (entity &e : entity_range(1, game.maxclients))
 			if (e.inuse && e.client->pers.spectator)
 				numspec++;
-		}
 
-		if (numspec >= (uint32_t)maxspectators)
+		if (numspec >= maxspectators)
 		{
 			Info_SetValueForKey(userinfo, "rejmsg", "Server spectator limit is full.");
 			return false;
@@ -1746,7 +1733,6 @@ void ClientDisconnect(entity &ent)
 	ent.s.effects = EF_NONE;
 	ent.solid = SOLID_NOT;
 	ent.inuse = false;
-	ent.type = ET_DISCONNECTED_PLAYER;
 	ent.client->pers.connected = false;
 }
 
@@ -1794,7 +1780,7 @@ void ClientThink(entity &ent, const usercmd &ucmd)
 			ent.client->ps.pmove.pm_type = PM_NORMAL;
 
 #ifdef GROUND_ZERO
-		ent.client.ps.pmove.gravity = (int16_t)sv_gravity * ent.gravity;
+		ent.client->ps.pmove.gravity = (int16_t)sv_gravity * ent.gravity;
 #else
 		ent.client->ps.pmove.gravity = (int16_t)sv_gravity;
 #endif
@@ -1928,12 +1914,9 @@ void ClientThink(entity &ent, const usercmd &ucmd)
 	}
 
 	// update chase cam if being followed
-	for (uint32_t i = 1; i <= game.maxclients; i++)
-	{
-		entity &other = itoe(i);
+	for (entity &other : entity_range(1, game.maxclients))
 		if (other.inuse && other.client->chase_target == ent)
 			UpdateChaseCam(other);
-	}
 };
 
 /*
@@ -1991,7 +1974,7 @@ void ClientBeginServerFrame(entity &ent)
 #ifdef SINGLE_PLAYER
 				deathmatch && 
 #endif
-				((dm_flags)dmflags & DF_FORCE_RESPAWN)))
+				(dmflags & DF_FORCE_RESPAWN)))
 			{
 				respawn(ent);
 				ent.client->latched_buttons = BUTTON_NONE;

@@ -25,6 +25,10 @@ enum gitem_flags : uint16_t
 #endif
 	IT_POWERUP = 1 << 8,
 
+	// special values for health styles
+	IT_HEALTH_IGNORE_MAX = 1 << 9,
+	IT_HEALTH_TIMED = 1 << 10,
+
 #ifdef SINGLE_PLAYER
 	IT_WEAPON_MASK = IT_WEAPON | IT_STAY_COOP
 #else
@@ -58,14 +62,6 @@ enum ammo_id : uint8_t
 	AMMO_TOTAL
 };
 
-#define MARKER_START(n) \
-	n, \
-	marker_##n = n - 1
-
-#define MARKER_END(n) \
-	marker_##n, \
-	n = marker_##n - 1
-
 // you have a max of MAX_ITEMS items to list here
 enum gitem_id : uint8_t
 {
@@ -78,8 +74,6 @@ enum gitem_id : uint8_t
 
 	ITEM_POWER_SCREEN,
 	ITEM_POWER_SHIELD,
-
-	MARKER_START(ITEM_WEAPONS_FIRST),
 
 #ifdef GRAPPLE
 	ITEM_GRAPPLE,
@@ -120,10 +114,8 @@ enum gitem_id : uint8_t
 #endif
 	ITEM_BFG,
 #ifdef GROUND_ZERO
-	ITEM_DISINTEGRATOR,
+	ITEM_DISRUPTOR,
 #endif
-
-	MARKER_END(ITEM_WEAPONS_LAST),
 
 	ITEM_SHELLS,
 	ITEM_BULLETS,
@@ -186,6 +178,13 @@ enum gitem_id : uint8_t
 #endif
 
 	ITEM_HEALTH,
+	ITEM_HEALTH_SMALL,
+	ITEM_HEALTH_LARGE,
+	ITEM_HEALTH_MEGA,
+
+#ifdef THE_RECKONING
+	ITEM_FOODCUBE,
+#endif
 
 	ITEM_TOTAL
 };
@@ -259,12 +258,7 @@ private:
 public:
 	// initialize an empty reference
 	itemref();
-
-	// initialize an empty reference
-	inline itemref(std::nullptr_t) :
-		itemref()
-	{
-	}
+	itemref(std::nullptr_t);
 
 	// initialize a reference to a specific item
 	inline itemref(const gitem_t &ref) :

@@ -31,7 +31,7 @@ void weapon_grenade_fire(entity &ent, bool held)
 	speed = (int32_t) (GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER));
 	fire_grenade2(ent, start, forward, damage, speed, timer, radius, held);
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 
 	ent.client->grenade_framenum = (gtime) (level.framenum + 1.0f * BASE_FRAMERATE);

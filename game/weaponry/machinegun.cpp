@@ -7,6 +7,7 @@
 #include "lib/math/random.h"
 #include "game/player_frames.h"
 #include "game/ballistics/bullet.h"
+#include "machinegun.h"
 
 static void Machinegun_Fire(entity &ent)
 {
@@ -81,7 +82,7 @@ static void Machinegun_Fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 
 	ent.client->anim_priority = ANIM_ATTACK;
@@ -99,5 +100,5 @@ static void Machinegun_Fire(entity &ent)
 
 void Weapon_Machinegun(entity &ent)
 {
-	Weapon_Generic(ent, 3, 5, 45, 49, { 23, 45 }, { 4, 5 }, Machinegun_Fire);
+	Weapon_Generic(ent, 3, 5, 45, 49, G_IsAnyFrame<23, 45>, G_IsAnyFrame<4, 5>, Machinegun_Fire);
 }

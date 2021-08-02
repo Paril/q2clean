@@ -10,9 +10,15 @@
 #include "lib/string/format.h"
 #ifdef SINGLE_PLAYER
 #include "trail.h"
+#ifdef ROGUE_AI
+#include "game/rogue/ai.h"
+#endif
 #endif
 #include "items/itemlist.h"
 #include "game/items/entity.h"
+#include "game/statusbar.h"
+#include "game/func.h"
+#include "game/trigger.h"
 
 static const registered_entity *registered_entities_head;
 
@@ -22,12 +28,20 @@ static const registered_entity *registered_entities_head;
 	registered_entities_head = &ent;
 }
 
-using spawn_deserializer = bool(*)(const string &input, void *output);
+stringlit FindClassnameFromEntityType(const entity_type &type)
+{
+	for (auto e = registered_entities_head; e; e = e->next)
+		if (e->type.is_exact(type))
+			return e->classname;
+
+	return nullptr;
+}
+
+using spawn_deserializer = bool(*)(const string &input, void *obj);
 
 struct spawn_field
 {
 	stringlit			key;
-	size_t				offset;
 	spawn_deserializer	func;
 	bool				is_temp;
 };
@@ -71,73 +85,83 @@ static stringref strip_newlines(string input)
 }
 
 template<typename T>
-static bool deserialize(const string &input, void *output)
+concept is_string_like = std::is_same_v<T, string> || std::is_same_v<T, stringref>;
+
+template<is_string_like T>
+static bool deserialize(const string &input, T &output)
 {
-	T *out = (T *)output;
+	output = strip_newlines(input);
+	return true;
+}
 
-	if constexpr(std::is_same_v<T, string> || std::is_same_v<T, stringref>)
+template<typename T> requires std::is_integral_v<T>
+static bool deserialize(const string &input, T &output)
+{
+	char *endptr;
+
+	if constexpr(std::is_unsigned_v<T>)
 	{
-		*out = strip_newlines(input);
-		return true;
-	}
-	else if constexpr(std::is_integral_v<T> || std::is_enum_v<T>)
-	{
-		char *endptr;
-
-		if constexpr(std::is_unsigned_v<T>)
-		{
-			if constexpr(sizeof(T) > 4)
-				*out = (T)strtoull(input.ptr(), (char **)&endptr, 10);
-			else
-				*out = (T)strtoul(input.ptr(), (char **)&endptr, 10);
-		}
-		else
-		{
-			if constexpr(sizeof(T) > 4)
-				*out = (T)strtoll(input.ptr(), (char **)&endptr, 10);
-			else
-				*out = (T)strtol(input.ptr(), (char **)&endptr, 10);
-		}
-
-		return endptr;
-	}
-	else if constexpr(std::is_floating_point_v<T>)
-	{
-		char *endptr;
-
 		if constexpr(sizeof(T) > 4)
-			*out = (T)strtod(input.ptr(), (char **)&endptr);
+			output = (T)strtoull(input.ptr(), (char **)&endptr, 10);
 		else
-			*out = (T)strtof(input.ptr(), (char **)&endptr);
-
-		return endptr;
-	}
-	else if constexpr(std::is_same_v<T, vector>)
-	{
-		char *endptr = (char *)input.ptr();
-
-		for (size_t i = 0; i < 3; i++)
-		{
-			(*out)[i] = strtof(endptr, (char **)&endptr);
-
-			if (!endptr)
-				return false;
-		}
-
-		return true;
+			output = (T)strtoul(input.ptr(), (char **)&endptr, 10);
 	}
 	else
-		static_assert(false, "dunno how to deserialize this");
+	{
+		if constexpr(sizeof(T) > 4)
+			output = (T)strtoll(input.ptr(), (char **)&endptr, 10);
+		else
+			output = (T)strtol(input.ptr(), (char **)&endptr, 10);
+	}
+
+	return endptr;
+}
+
+template<typename T> requires std::is_enum_v<T>
+static bool deserialize(const string &input, T &output)
+{
+	return deserialize(input, (std::underlying_type_t<T> &) output);
+}
+
+template<typename T>
+concept is_floating_like = std::is_floating_point_v<T>;
+
+template<is_floating_like T>
+static bool deserialize(const string &input, T &output)
+{
+	char *endptr;
+
+	if constexpr(sizeof(T) > 4)
+		output = (T)strtod(input.ptr(), (char **)&endptr);
+	else
+		output = (T)strtof(input.ptr(), (char **)&endptr);
+
+	return endptr;
+}
+
+static bool deserialize(const string &input, vector &output)
+{
+	char *endptr = (char *)input.ptr();
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		output[i] = strtof(endptr, (char **)&endptr);
+
+		if (!endptr)
+			return false;
+	}
+
+	return true;
 }
 
 #define SPAWN_EFIELD_NAMED(name, field) \
-	{ name, offsetof(entity, field), deserialize<decltype(entity::field)>, false }
+	{ name, [](const string &input, void *obj) { return deserialize(input, ((entity *) obj)->field); }, false }
 
 #define SPAWN_EFIELD(name) \
 	SPAWN_EFIELD_NAMED(#name, name)
 
 #define SPAWN_TFIELD_NAMED(name, field) \
-	{ name, offsetof(spawn_temp, field), deserialize<decltype(spawn_temp::field)>, true }
+	{ name, [](const string &input, void *obj) { return deserialize(input, ((spawn_temp *) obj)->field); }, true }
 
 #define SPAWN_TFIELD(name) \
 	SPAWN_TFIELD_NAMED(#name, name)
@@ -175,7 +199,7 @@ constexpr spawn_field spawn_fields[] =
 	SPAWN_EFIELD_NAMED("origin", s.origin),
 	SPAWN_EFIELD_NAMED("angles", s.angles),
 	SPAWN_EFIELD_NAMED("angle", s.angles.y),
-	{ "light" },
+	{ "light", nullptr, false },
 
 	// spawntemp fields
 	SPAWN_TFIELD(classname),
@@ -207,7 +231,7 @@ static bool ED_ParseField(const string &key, const string &value, entity &ent)
 			continue;
 
 		if (field.func)
-			field.func(value, (field.is_temp ? (uint8_t *)&st : (uint8_t *)&ent) + field.offset);
+			field.func(value, field.is_temp ? (void *) &st : (void *) &ent);
 
 		return true;
 	}
@@ -262,7 +286,7 @@ constexpr spawn_flag SPAWNFLAG_NOT_MEDIUM	= (spawn_flag)0x00000200;
 constexpr spawn_flag SPAWNFLAG_NOT_HARD		= (spawn_flag)0x00000400;
 #endif
 constexpr spawn_flag SPAWNFLAG_NOT_DEATHMATCH	= (spawn_flag)0x00000800;
-#ifdef SINGLE_PLAYER
+#if defined(SINGLE_PLAYER) && defined(GROUND_ZERO)
 constexpr spawn_flag SPAWNFLAG_NOT_COOP		= (spawn_flag)0x00001000;
 #endif
 constexpr spawn_flag SPAWNFLAG_NOT_MASK		= (spawn_flag)0x00001F00; // mask of all of the NOT_ flags
@@ -274,32 +298,31 @@ void PreSpawnEntities()
 #endif
 }
 
-/*
-===============
-ED_CallSpawn
-
-Finds the spawn function for the entity and calls it
-===============
-*/
 bool ED_CallSpawn(entity &ent)
 {
+	// if we have a type, call it immediately
+	if (ent.type)
+	{
+		ent.type->spawn->func(ent);
+		return true;
+	}
+
+	// no type, so determine it from classname
 	if (!st.classname)
 	{
-		gi.dprintf("ED_CallSpawn: NULL classname\n");
+		gi.dprintf("%s: NULL classname\n", __func__);
 		G_FreeEdict(ent);
 		return false;
 	}
 	
 #ifdef GROUND_ZERO
-	ent.gravityVector = MOVEDIR_DOWN;
-
 	// FIXME: dis succ
-	if (ent.classname == "weapon_nailgun")
-		ent.classname = FindItem("ETF Rifle")->classname;
-	if (ent.classname == "ammo_nails")
-		ent.classname = FindItem("Flechettes")->classname;
-	if (ent.classname == "weapon_heatbeam")
-		ent.classname = FindItem("Plasma Beam")->classname;
+	if (st.classname == "weapon_nailgun")
+		st.classname = GetItemByIndex(ITEM_ETF_RIFLE).classname;
+	if (st.classname == "ammo_nails")
+		st.classname = GetItemByIndex(ITEM_FLECHETTES).classname;
+	if (st.classname == "weapon_heatbeam")
+		st.classname = GetItemByIndex(ITEM_PLASMA_BEAM).classname;
 #endif
 	
 	// check item spawn functions
@@ -316,12 +339,11 @@ bool ED_CallSpawn(entity &ent)
 		if (striequals(spawn->classname, st.classname))
 		{
 			ent.type = spawn->type;
-			spawn->func(ent);
-			return true;
+			return ED_CallSpawn(ent);
 		}
 	}
 
-	gi.dprintf("%s doesn't have a spawn function\n", st.classname.ptr());
+	gi.dprintf("%s: %s doesn't have a spawn function\n", __func__, st.classname.ptr());
 	G_FreeEdict(ent);
 	return false;
 }
@@ -474,7 +496,8 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 		skill_level = 0;
 	if (skill_level > 3)
 		skill_level = 3;
-	if ((int32_t)skill != skill_level)
+
+	if (skill != skill_level)
 		gi.cvar_forceset("skill", itos(skill_level));
 #endif
 
@@ -490,7 +513,7 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 	{
 		string token = strtok(entities, entities_offset);
 		
-		if (entities_offset == -1)
+		if (entities_offset == (size_t) -1)
 			break;
 
 		if (token != "{")
@@ -509,10 +532,10 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 			ent->spawnflags &= ~SPAWNFLAG_NOT_HARD;
 #endif
 		// remove things (except the world) from different skill levels or deathmatch
-		if (ent != world)
+		if (!ent.is_world())
 		{
 #ifdef SINGLE_PLAYER
-			if ((int32_t)deathmatch)
+			if (deathmatch)
 			{
 #endif
 				if (ent->spawnflags & SPAWNFLAG_NOT_DEATHMATCH)
@@ -526,7 +549,7 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 			else
 			{
 #ifdef GROUND_ZERO
-				if (coop.intVal && (ent.spawnflags & SPAWNFLAG_NOT_COOP))
+				if (coop && (ent->spawnflags & SPAWNFLAG_NOT_COOP))
 				{
 					G_FreeEdict (ent);	
 					inhibit++;
@@ -554,7 +577,7 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 			inhibit++;
 #ifdef GROUND_ZERO
 		else
-			ent.s.renderfx |= RF_IR_VISIBLE;
+			ent->s.renderfx |= RF_IR_VISIBLE;
 #endif
 	
 		ClearSpawnTemp();
@@ -569,8 +592,8 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 
 	PlayerTrail_Init();
 
-#ifdef GROUND_ZERO
-	if (!deathmatch.intVal)
+#ifdef ROGUE_AI
+	if (!deathmatch)
 		InitHintPaths();
 #endif
 #endif
@@ -579,152 +602,6 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 	CTFSpawn();
 #endif
 }
-
-#ifdef SINGLE_PLAYER
-//===================================================================
-
-static const string single_statusbar =
-"yb -24 "
-
-// health
-"xv 0 "
-"hnum "
-"xv 50 "
-"pic 0 "
-
-// ammo
-"if 2 "
-"   xv  100 "
-"   anum "
-"   xv  150 "
-"   pic 2 "
-"endif "
-
-// armor
-"if 4 "
-"   xv  200 "
-"   rnum "
-"   xv  250 "
-"   pic 4 "
-"endif "
-
-// selected item
-"if 6 "
-"   xv  296 "
-"   pic 6 "
-"endif "
-
-"yb -50 "
-
-// picked up item
-"if 7 "
-"   xv  0 "
-"   pic 7 "
-"   xv  26 "
-"   yb  -42 "
-"   stat_string 8 "
-"   yb  -50 "
-"endif "
-
-// timer
-"if 9 "
-"   xv  262 "
-"   num 2   10 "
-"   xv  296 "
-"   pic 9 "
-"endif "
-
-//  help / weapon icon
-"if 11 "
-"   xv  148 "
-"   pic 11 "
-"endif "
-;
-#endif
-
-// for stringifying stat in static strings
-#define STRINGIFY(s) #s
-#define STRINGIFY2(s) STRINGIFY(s)
-#define STAT(s) STRINGIFY2(STAT_##s)
-
-static stringlit dm_statusbar =
-"yb -24 "
-
-// health
-"xv 0 "
-	"hnum "
-"xv 50 "
-	"pic " STAT(HEALTH_ICON) " "
-
-// ammo
-"if " STAT(AMMO_ICON) " "
-	"xv 100 "
-		"anum "
-	"xv 150 "
-		"pic " STAT(AMMO_ICON) " "
-"endif "
-
-// armor
-"if " STAT(ARMOR_ICON) " "
-	"xv 200 "
-		"rnum "
-	"xv 250 "
-		"pic " STAT(ARMOR_ICON) " "
-"endif "
-
-// selected item
-"if " STAT(SELECTED_ICON) " "
-	"xv 296 "
-		"pic " STAT(SELECTED_ICON) " "
-"endif "
-
-"yb -50 "
-
-// picked up item
-"if " STAT(PICKUP_ICON) " "
-	"xv 0 "
-		"pic " STAT(PICKUP_ICON) " "
-	"xv 26 "
-	"yb -42 "
-		"stat_string " STAT(PICKUP_STRING) " "
-	"yb  -50 "
-"endif "
-
-// timer
-"if " STAT(TIMER_ICON) " "
-	"xv 246 "
-		"num 2 " STAT(TIMER) " "
-	"xv 296 "
-		"pic " STAT(TIMER_ICON) " "
-"endif "
-
-//  help / weapon icon
-"if " STAT(HELPICON) " "
-	"xv 148 "
-		"pic " STAT(HELPICON) " "
-"endif "
-
-//  frags
-"xr -50 "
-"yt 2 "
-	"num 3 " STAT(FRAGS) " "
-
-// spectator
-"if " STAT(SPECTATOR) " "
-	"xv 0 "
-	"yb -58 "
-		"string2 \"SPECTATOR MODE\" "
-"endif "
-
-// chase camera
-"if " STAT(CHASE) " "
-	"xv 0 "
-	"yb -68 "
-		"string \"Chasing\" "
-	"xv 64 "
-		"stat_string " STAT(CHASE) " "
-"endif "
-;
 
 /*QUAKED worldspawn (0 0 0) ?
 
@@ -778,20 +655,12 @@ static void SP_worldspawn(entity &ent)
 	gi.configstring(CS_MAXCLIENTS, va("%i", game.maxclients));
 
 	// status bar program
-#ifdef SINGLE_PLAYER
-	if (!(int32_t)deathmatch)
-		gi.configstring(CS_STATUSBAR, single_statusbar);
-	else
-#endif
+	gi.configstring(CS_STATUSBAR, G_GetStatusBar());
+
 #ifdef CTF
-	if (ctf.intVal)
-	{
-		gi.configstring(CS_STATUSBAR, ctf_statusbar);
+	if (ctf)
 		CTFPrecache();
-	}
-	else
 #endif
-		gi.configstring(CS_STATUSBAR, dm_statusbar);
 
 	// help icon for statusbar
 	gi.imageindex("i_help");
@@ -924,4 +793,4 @@ static void SP_worldspawn(entity &ent)
 	gi.configstring((config_string)(CS_LIGHTS + 63), "a");
 }
 
-REGISTER_ENTITY(worldspawn, ET_WORLDSPAWN);
+static REGISTER_ENTITY(WORLDSPAWN, worldspawn);

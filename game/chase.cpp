@@ -157,10 +157,8 @@ void ChasePrev(entity &ent)
 
 void GetChaseTarget(entity &ent)
 {
-	for (uint32_t i = 1; i <= game.maxclients; i++)
+	for (entity &other : entity_range(1, game.maxclients))
 	{
-		entity &other = itoe(i);
-		
 		if (other.inuse && !other.client->resp.spectator)
 		{
 			ent.client->chase_target = other;

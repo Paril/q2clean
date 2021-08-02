@@ -6,6 +6,11 @@
 #include "game/ballistics/grenade.h"
 #include "game/entity.h"
 #include "game/game.h"
+#include "grenadelauncher.h"
+
+#ifdef GROUND_ZERO
+#include "game/rogue/ballistics/prox.h"
+#endif
 
 static void weapon_grenadelauncher_fire(entity &ent)
 {
@@ -13,7 +18,7 @@ static void weapon_grenadelauncher_fire(entity &ent)
 	vector	forward, right;
 	vector	start;
 #ifdef GROUND_ZERO
-	bool	is_prox = ent.client.pers.weapon->id == ITEM_PROX_LAUNCHER;
+	bool	is_prox = ent.client->pers.weapon->id == ITEM_PROX_LAUNCHER;
 	int32_t	damage = is_prox ? 90 : 120;
 #else
 	int32_t	damage = 120;
@@ -49,11 +54,11 @@ static void weapon_grenadelauncher_fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 }
 
 void Weapon_GrenadeLauncher(entity &ent)
 {
-	Weapon_Generic(ent, 5, 16, 59, 64, { 34, 51, 59 }, { 6 }, weapon_grenadelauncher_fire);
+	Weapon_Generic(ent, 5, 16, 59, 64, G_IsAnyFrame<34, 51, 59>, G_IsAnyFrame<6>, weapon_grenadelauncher_fire);
 }

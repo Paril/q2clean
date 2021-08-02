@@ -4,6 +4,7 @@
 
 #include "lib/types.h"
 #include "lib/types/enum.h"
+#include "lib/string.h"
 
 enum spawn_flag : uint32_t
 {
@@ -65,6 +66,11 @@ public:
 		return !!_ptr;
 	}
 
+	constexpr entity &or_default(entity &def) const
+	{
+		return has_value() ? *_ptr : def;
+	}
+
 	// check if this entityref holds the same reference as another entityref
 	constexpr bool operator==(const entityref &rhs) const { return _ptr == rhs._ptr; }
 
@@ -98,6 +104,14 @@ public:
 	}
 
 	// can be converted to an actual entity& implicitly
+	constexpr operator entity &()
+	{
+		if (!has_value())
+			throw invalid_entityref();
+		return *_ptr;
+	}
+
+	// can be converted to an actual entity& implicitly
 	constexpr operator entity &() const
 	{
 		if (!has_value())
@@ -107,6 +121,21 @@ public:
 
 	// can be converted to an actual entity& implicitly
 	constexpr operator const entity &() const
+	{
+		if (!has_value())
+			throw invalid_entityref();
+		return *_ptr;
+	}
+
+	// dereference
+	constexpr entity &operator*()
+	{
+		if (!has_value())
+			throw invalid_entityref();
+		return *_ptr;
+	}
+
+	constexpr entity &operator*() const
 	{
 		if (!has_value())
 			throw invalid_entityref();
@@ -125,138 +154,96 @@ public:
 		return _ptr;
 	}
 
+	constexpr bool is_world() const;
+
 	// this is explicitly marked as deleted to aid in QC porting.
 	// in QC, the bool operand on an entity returns false if the
 	// entity is "world". Because Quake II has the concept of a
 	// "null" entity, this may be ambiguous and cause issues during
 	// porting. you will have to be explicit as to what you want to
 	// to: if you wish to see if *any* entity is being held, use e.has_value().
-	// if you wish to mimic the behavior of QC, use e.has_value() && e->is_world().
+	// if you wish to mimic the behavior of QC, use e.is_world().
 	constexpr explicit operator bool() = delete;
 };
 
 constexpr entityref null_entity;
 
-// entity type; this is to replace classname comparisons. Every entity spawnable by
-// classnames must have their own ID. You can assign IDs to other entities if you're
-// wanting to search for them, or anything like that.
-enum entity_type : uint32_t
+// special type to denote entities and register types that need run-time checking.
+// most entities don't need a custom ID. Entities can also "inherit" a parent type,
+// which allows for a very loose inheritence structure for comparison (for instance,
+// func_plat2 can inherit func_plat, which means that those .type comparisons to ET_FUNC_PLAT
+// will match both of them).
+struct entity_type
 {
-	// entity doesn't have a type assigned
-	ET_UNKNOWN,
+private:
+	static void register_et(entity_type *type);
 
-	// freed entity
-	ET_FREED,
+	entity_type(const entity_type &) = delete;
+	entity_type(entity_type &&) = delete;
 
-	// items spawned in the world
-	ET_ITEM,
+public:
+	stringlit const id;
+	const struct registered_entity *const spawn = nullptr;
+	const entity_type *next = nullptr;
+	const entity_type *parent = nullptr;
 
-	// special values for run-time entities
-	ET_BODYQUEUE,
-	ET_BLASTER_BOLT,
-	ET_GRENADE,
-	ET_HANDGRENADE,
-	ET_ROCKET,
-	ET_BFG_BLAST,
-	ET_DEBRIS,
-	ET_PLAYER,
-	ET_DISCONNECTED_PLAYER,
-	ET_DELAYED_USE,
+	constexpr entity_type() : id("temp")
+	{
+	}
 
-	// spawnable entities
-	ET_FUNC_PLAT,
-	ET_FUNC_ROTATING,
-	ET_FUNC_BUTTON,
-	ET_FUNC_DOOR,
-	ET_FUNC_DOOR_ROTATING,
-	ET_FUNC_KILLBOX,
-	ET_FUNC_TRAIN,
-	ET_TRIGGER_ELEVATOR,
-	ET_FUNC_TIMER,
-	ET_FUNC_CONVEYOR,
-	ET_FUNC_GROUP,
-	ET_FUNC_AREAPORTAL,
-	ET_PATH_CORNER,
-	ET_INFO_NOTNULL,
-	ET_LIGHT,
-	ET_FUNC_WALL,
-	ET_FUNC_OBJECT,
-	ET_MISC_BLACKHOLE,
-	ET_MISC_EASTERTANK,
-	ET_MISC_EASTERCHICK,
-	ET_MISC_EASTERCHICK2,
-	ET_MONSTER_COMMANDER_BODY,
-	ET_MISC_BANNER,
-	ET_MISC_VIPER,
-	ET_MISC_BIGVIPER,
-	ET_MISC_VIPER_BOMB,
-	ET_MISC_STROGG_SHIP,
-	ET_MISC_SATELLITE_DISH,
-	ET_LIGHT_MINE1,
-	ET_LIGHT_MINE2,
-	ET_MISC_GIB_ARM,
-	ET_MISC_GIB_LEG,
-	ET_MISC_GIB_HEAD,
-	ET_TARGET_CHARACTER,
-	ET_TARGET_STRING,
-	ET_FUNC_CLOCK,
-	ET_MISC_TELEPORTER,
-	ET_MISC_TELEPORTER_DEST,
-	ET_INFO_PLAYER_START,
-	ET_INFO_PLAYER_DEATHMATCH,
-	ET_INFO_PLAYER_INTERMISSION,
-	ET_WORLDSPAWN,
-	ET_TARGET_TEMP_ENTITY,
-	ET_TARGET_SPEAKER,
-	ET_TARGET_EXPLOSION,
-	ET_TARGET_CHANGELEVEL,
-	ET_TARGET_SPLASH,
-	ET_TARGET_SPAWNER,
-	ET_TARGET_BLASTER,
-	ET_TARGET_LASER,
-	ET_TARGET_EARTHQUAKE,
-	ET_TRIGGER_MULTIPLE,
-	ET_TRIGGER_ONCE,
-	ET_TRIGGER_RELAY,
-	ET_TRIGGER_COUNTER,
-	ET_TRIGGER_ALWAYS,
-	ET_TRIGGER_PUSH,
-	ET_TRIGGER_HURT,
-	ET_TRIGGER_GRAVITY,
+	constexpr entity_type(stringlit id) : id(id)
+	{
+		register_et(this);
+	}
 
-#ifdef SINGLE_PLAYER
-	ET_INFO_PLAYER_COOP,
+	constexpr entity_type(stringlit id, const entity_type &parent) :
+		id(id),
+		parent(&parent)
+	{
+		register_et(this);
+	}
 
-	ET_TARGET_HELP,
-	ET_TARGET_SECRET,
-	ET_TARGET_GOAL,
-	ET_TARGET_CROSSLEVEL_TRIGGER,
-	ET_TARGET_CROSSLEVEL_TARGET,
-	ET_TARGET_LIGHTRAMP,
-	ET_TARGET_ACTOR,
+	constexpr bool operator==(const entity_type &rhs) const
+	{
+		// check whole inheritence chain
+		for (const entity_type *e = this; e; e = e->parent)
+			if (e == &rhs)
+				return true;
+		return false;
+	}
 
-	ET_TRIGGER_KEY,
-	ET_TRIGGER_MONSTERJUMP,
+	constexpr bool operator!=(const entity_type &rhs) const
+	{
+		return !(*this == rhs);
+	}
 
-	ET_PLAYER_NOISE,
-	ET_PLAYER_TRAIL,
+	constexpr bool is_exact(const entity_type &rhs) const
+	{
+		return this == &rhs;
+	}
+};
 
-	ET_POINT_COMBAT,
-	ET_FUNC_EXPLOSIVE,
-	ET_MISC_EXPLOBOX,
-	ET_MISC_DEADSOLDIER,
+// special entity type that maps to an unknown entity.
+// it's also used as the head of the entity type list.
+extern entity_type ET_UNKNOWN;
 
-	ET_MONSTER_SOLDIER_LIGHT,
-	ET_MONSTER_SOLDIER,
-	ET_MONSTER_SOLDIER_SS,
-	ET_MONSTER_MEDIC,
-	ET_MONSTER_TANK,
-	ET_MONSTER_SUPERTANK,
-	ET_MONSTER_MAKRON,
-	ET_MONSTER_JORG,
-#endif
+// simple wrapper to an entity_type-or-unknown
+struct entity_type_ref
+{
+	const entity_type *type;
 
-	// special index for all entity types. save games use this
-	// to check for compatibility.
-	ET_TOTAL
+	constexpr entity_type_ref() : type(&ET_UNKNOWN) { }
+	constexpr entity_type_ref(const entity_type &type) : type(&type) { }
+
+	constexpr const entity_type *operator->() const { return type; }
+
+	constexpr operator bool() const { return type != &ET_UNKNOWN; }
+
+	constexpr bool operator==(const entity_type_ref &rhs) const { return *type == *rhs.type; }
+	constexpr bool operator!=(const entity_type_ref &rhs) const { return *type != *rhs.type; }
+
+	constexpr bool operator==(const entity_type &rhs) const { return *type == rhs; }
+	constexpr bool operator!=(const entity_type &rhs) const { return *type != rhs; }
+
+	constexpr operator const entity_type &() const { return *type; }
 };

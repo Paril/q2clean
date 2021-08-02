@@ -10,6 +10,7 @@
 #include "lib/string/format.h"
 #include "lib/types/dynarray.h"
 #include "items/itemlist.h"
+#include "hud.h"
 
 void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 {
@@ -30,10 +31,8 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 	stringlit tag;
 
 	// sort the clients by score
-	for (uint32_t i = 0; i < game.maxclients; i++)
+	for (entity &cl_ent : entity_range(1, game.maxclients))
 	{
-		entity &cl_ent = itoe(1 + i);
-
 		if (!cl_ent.inuse || cl_ent.client->resp.spectator)
 			continue;
 
@@ -129,16 +128,16 @@ void MoveClientToIntermission(entity &ent)
 	ent.client->grenade_framenum = 0;
 
 #ifdef THE_RECKONING
-	ent.client.quadfire_framenum = 0;
-	ent.client.trap_blew_up = false;
-	ent.client.trap_framenum = 0;
+	ent.client->quadfire_framenum = 0;
+	ent.client->trap_blew_up = false;
+	ent.client->trap_framenum = 0;
 #endif
 
 #ifdef GROUND_ZERO
-	ent.client.ps.rdflags &= ~RDF_IRGOGGLES;		// PGM
-	ent.client.ir_framenum = 0;					// PGM
-	ent.client.nuke_framenum = 0;					// PMM
-	ent.client.double_framenum = 0;				// PMM
+	ent.client->ps.rdflags &= ~RDF_IRGOGGLES;		// PGM
+	ent.client->ir_framenum = 0;					// PGM
+	ent.client->nuke_framenum = 0;					// PMM
+	ent.client->double_framenum = 0;				// PMM
 #endif
 
 	ent.viewheight = 0;
@@ -179,9 +178,8 @@ void BeginIntermission(entity &targ)
 #endif
 
 	// respawn any dead clients
-	for (uint32_t i = 0; i < game.maxclients; i++)
+	for (entity &cl : entity_range(1, game.maxclients))
 	{
-		entity &cl = itoe(1 + i);
 		if (!cl.inuse)
 			continue;
 		if (cl.health <= 0)
@@ -192,21 +190,16 @@ void BeginIntermission(entity &targ)
 	level.changemap = targ.map;
 
 #ifdef SINGLE_PLAYER
-	if (strstr(level.changemap, "*") != -1)
+	if (strstr(level.changemap, "*") != (size_t) -1)
 	{
 		if (coop)
 		{
-			for (uint32_t i = 0; i < game.maxclients; i++)
-			{
-				entity &cl = itoe(1 + i);
-				if (!cl.inuse)
-					continue;
-
+			for (entity &cl : entity_range(1, game.maxclients))
 				// strip players of all keys between units
-				for (auto &it : item_list())
-					if (it.flags & IT_KEY)
-						cl.client->pers.inventory[it.id] = 0;
-			}
+				if (cl.inuse)
+					for (auto &it : item_list())
+						if (it.flags & IT_KEY)
+							cl.client->pers.inventory[it.id] = 0;
 		}
 	}
 	else
@@ -248,12 +241,9 @@ void BeginIntermission(entity &targ)
 	level.intermission_angle = ent->s.angles;
 
 	// move all clients to the intermission point
-	for (uint32_t i = 0; i < game.maxclients; i++)
-	{
-		entity &cl = itoe(1 + i);
+	for (entity &cl : entity_range(1, game.maxclients))
 		if (cl.inuse)
 			MoveClientToIntermission(cl);
-	}
 }
 
 /*
@@ -306,27 +296,12 @@ Draw help computer.
 */
 static void HelpComputer(entity &ent)
 {
-	string	str;
-	stringlit	sk;
+	constexpr stringlit skills[] = { "easy", "medium", "hard", "hard+" };
 
-	switch ((int32_t) skill)
-	{
-	case 0:
-		sk = "easy";
-		break;
-	case 1:
-		sk = "medium";
-		break;
-	case 2:
-		sk = "hard";
-		break;
-	default:
-		sk = "hard+";
-		break;
-	}
+	stringlit sk = skills[clamp((int32_t) skill, 0, 3)];
 
 	// send the layout
-	str = va("xv 32 yv 8 picn help "             // background
+	string str = va("xv 32 yv 8 picn help "             // background
 		"xv 202 yv 12 string2 \"%s\" "      // skill
 		"xv 0 yv 24 cstring2 \"%s\" "       // level name
 		"xv 0 yv 54 cstring2 \"%s\" "       // help 1
@@ -461,17 +436,17 @@ void G_SetStats(entity &ent)
 	}
 #ifdef THE_RECKONING
 	// RAFAEL
-	else if (ent.client.quadfire_framenum > level.framenum)
+	else if (ent.client->quadfire_framenum > level.framenum)
 	{
-		ent.client.ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_quadfire");
-		ent.client.ps.stats[STAT_TIMER] = (ent.client.quadfire_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_quadfire");
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->quadfire_framenum - level.framenum) / 10;
 	}
 #endif
 #ifdef GROUND_ZERO
-	else if (ent.client.double_framenum > level.framenum)
+	else if (ent.client->double_framenum > level.framenum)
 	{
-		ent.client.ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_double");
-		ent.client.ps.stats[STAT_TIMER] = (ent.client.double_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_double");
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->double_framenum - level.framenum) / 10;
 	}
 #endif
 	else if (ent.client->invincible_framenum > level.framenum)
@@ -490,10 +465,10 @@ void G_SetStats(entity &ent)
 		ent.client->ps.stats[STAT_TIMER] = (ent.client->breather_framenum - level.framenum) / 10;
 	}
 #ifdef GROUND_ZERO
-	else if (ent.client.ir_framenum > level.framenum)
+	else if (ent.client->ir_framenum > level.framenum)
 	{
-		ent.client.ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_ir");
-		ent.client.ps.stats[STAT_TIMER] = (ent.client.ir_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_ir");
+		ent.client->ps.stats[STAT_TIMER] = (ent.client->ir_framenum - level.framenum) / 10;
 	}
 #endif
 	else
@@ -583,11 +558,11 @@ void G_SetSpectatorStats(entity &ent)
 
 void G_CheckChaseStats(entity &ent)
 {
-	for (uint32_t i = 1; i <= game.maxclients; i++)
+	for (entity &cl : entity_range(1, game.maxclients))
 	{
-		entity &cl = itoe(i);
 		if (!cl.inuse || cl.client->chase_target != ent)
 			continue;
+
 		cl.client->ps.stats = ent.client->ps.stats;
 		G_SetSpectatorStats(cl);
 	}

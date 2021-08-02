@@ -5,6 +5,9 @@
 #include "powerups.h"
 #include "lib/math.h"
 #include "entity.h"
+#ifdef THE_RECKONING
+#include "game/xatrix/items.h"
+#endif
 
 inline void AdjustAmmoMax(entity &other, const ammo_id &ammo, const int32_t &new_max)
 {
@@ -66,7 +69,7 @@ bool Pickup_Pack(entity &ent, entity &other)
 	AddAndCapAmmo(other, GetItemByIndex(ITEM_ROCKETS));
 	AddAndCapAmmo(other, GetItemByIndex(ITEM_SLUGS));
 #ifdef THE_RECKONING
-	AddAndCapAmmo(other, FindItem("Mag Slug"));
+	AddAndCapAmmo(other, GetItemByIndex(ITEM_MAGSLUG));
 #endif
 #ifdef GROUND_ZERO
 	AddAndCapAmmo(other, FindItem("Flechettes"));
@@ -150,18 +153,12 @@ void Use_Silencer(entity &ent, const gitem_t &it)
 	ent.client->silencer_shots += 30;
 }
 
-#ifdef THE_RECKONING
-use_func Use_QuadFire;
-
-gtime quad_fire_drop_timeout_hack;
-#endif
-
 bool Pickup_Powerup(entity &ent, entity &other)
 {
 #ifdef SINGLE_PLAYER
 	const int32_t &quantity = other.client->pers.inventory[ent.item->id];
 
-	if (((int32_t) skill == 1 && quantity >= 2) || ((int32_t) skill >= 2 && quantity >= 1))
+	if ((skill == 1 && quantity >= 2) || (skill >= 2 && quantity >= 1))
 		return false;
 
 	if (coop && (ent.item->flags & IT_STAY_COOP) && quantity > 0)
@@ -177,7 +174,7 @@ bool Pickup_Powerup(entity &ent, entity &other)
 		if (!(ent.spawnflags & DROPPED_ITEM))
 			SetRespawn(ent, ent.item->quantity);
 
-		if (((dm_flags) dmflags & DF_INSTANT_ITEMS) || ((ent.item->use == Use_Quad
+		if ((dmflags & DF_INSTANT_ITEMS) || ((ent.item->use == Use_Quad
 #ifdef THE_RECKONING
 			|| ent.item->use == Use_QuadFire
 #endif
@@ -189,7 +186,7 @@ bool Pickup_Powerup(entity &ent, entity &other)
 					quad_drop_timeout_hack = ent.nextthink - level.framenum;
 #ifdef THE_RECKONING
 				else if (ent.item->use == Use_QuadFire)
-					quad_drop_timeout_hack = ent.nextthink - level.framenum;
+					quad_fire_drop_timeout_hack = ent.nextthink - level.framenum;
 #endif
 			}
 

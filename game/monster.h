@@ -2,7 +2,7 @@
 
 #include "lib/types.h"
 #include "entity_types.h"
-#include "lib/savables.h"
+#include "savables.h"
 
 #ifdef SINGLE_PLAYER
 void monster_fire_bullet(entity &self, vector start, vector dir, int damage, int kick, int hspread, int vspread, monster_muzzleflash flashtype);
@@ -22,8 +22,6 @@ void M_FliesOn(entity &self);
 DECLARE_SAVABLE_FUNCTION(M_FliesOn);
 
 void M_FlyCheck(entity &self);
-
-DECLARE_SAVABLE_FUNCTION(M_FlyCheck);
 
 void M_CheckGround(entity &ent);
 
@@ -67,4 +65,13 @@ void walkmonster_start(entity &self);
 void flymonster_start(entity &self);
 
 void swimmonster_start(entity &self);
+
+#ifdef GROUND_ZERO
+void stationarymonster_start(entity &self);
+#endif
+
+#ifdef ROGUE_AI
+void cleanupHealTarget(entity &ent);
+#endif
+
 #endif

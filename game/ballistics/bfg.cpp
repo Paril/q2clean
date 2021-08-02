@@ -8,21 +8,17 @@
 #include "lib/gi.h"
 #include "game/util.h"
 #include "game/cmds.h"
+#include "game/misc.h"
+#include "bfg.h"
 
-void bfg_explode(entity &self)
+static void bfg_explode(entity &self)
 {
-	entityref	ent;
-	float	points;
-	vector	v;
-	float	dist;
-
 	if (self.s.frame == 0)
 	{
 		// the BFG effect
-		ent = world;
-		while ((ent = findradius(ent, self.s.origin, self.dmg_radius)).has_value())
+		for (entity &ent : G_IterateRadius(self.s.origin, self.dmg_radius))
 		{
-			if (!ent->takedamage)
+			if (!ent.takedamage)
 				continue;
 			if (ent == self.owner)
 				continue;
@@ -31,31 +27,30 @@ void bfg_explode(entity &self)
 			if (!CanDamage(ent, self.owner))
 				continue;
 
-			v = ent->mins + ent->maxs;
-			v = ent->s.origin + (0.5f * v);
+			vector v = ent.s.origin + ent.bounds.center();
 			v = self.s.origin - v;
-			dist = VectorLength(v);
-			points = self.radius_dmg * (1.0f - sqrt(dist / self.dmg_radius));
+			float dist = VectorLength(v);
+			float points = self.radius_dmg * (1.0f - sqrt(dist / self.dmg_radius));
 			if (ent == self.owner)
 				points *= 0.5f;
 
 			gi.WriteByte(svc_temp_entity);
 			gi.WriteByte(TE_BFG_EXPLOSION);
-			gi.WritePosition(ent->s.origin);
-			gi.multicast(ent->s.origin, MULTICAST_PHS);
-			T_Damage(ent, self, self.owner, self.velocity, ent->s.origin, vec3_origin, (int) points, 0, DAMAGE_ENERGY, MOD_BFG_EFFECT);
+			gi.WritePosition(ent.s.origin);
+			gi.multicast(ent.s.origin, MULTICAST_PHS);
+			T_Damage(ent, self, self.owner, self.velocity, ent.s.origin, vec3_origin, (int32_t) points, 0, DAMAGE_ENERGY, MOD_BFG_EFFECT);
 		}
 	}
 
 	self.nextthink = level.framenum + 1;
 	self.s.frame++;
 	if (self.s.frame == 5)
-		self.think = G_FreeEdict_savable;
+		self.think = SAVABLE(G_FreeEdict);
 }
 
-REGISTER_SAVABLE_FUNCTION(bfg_explode);
+static REGISTER_SAVABLE_FUNCTION(bfg_explode);
 
-void bfg_touch(entity &self, entity &other, vector normal, const surface &surf)
+static void bfg_touch(entity &self, entity &other, vector normal, const surface &surf)
 {
 	if (other == self.owner)
 		return;
@@ -78,14 +73,14 @@ void bfg_touch(entity &self, entity &other, vector normal, const surface &surf)
 
 	gi.sound(self, CHAN_VOICE, gi.soundindex("weapons/bfg_.x1b.wav"), 1, ATTN_NORM, 0);
 	self.solid = SOLID_NOT;
-	self.touch = 0;
+	self.touch = nullptr;
 	self.s.origin += ((-1 * FRAMETIME) * self.velocity);
 	self.velocity = vec3_origin;
 	self.s.modelindex = gi.modelindex("sprites/s_bfg3.sp2");
 	self.s.frame = 0;
 	self.s.sound = SOUND_NONE;
 	self.s.effects &= ~EF_ANIM_ALLFAST;
-	self.think = bfg_explode_savable;
+	self.think = SAVABLE(bfg_explode);
 	self.nextthink = level.framenum + 1;
 	self.enemy = other;
 
@@ -95,30 +90,22 @@ void bfg_touch(entity &self, entity &other, vector normal, const surface &surf)
 	gi.multicast(self.s.origin, MULTICAST_PVS);
 }
 
-REGISTER_SAVABLE_FUNCTION(bfg_touch);
+static REGISTER_SAVABLE_FUNCTION(bfg_touch);
 
-void bfg_think(entity &self)
+static void bfg_think(entity &self)
 {
-	entityref	ent;
-	entityref	ignore;
-	vector	point;
-	vector	dir;
-	vector	start;
-	vector	end;
-	trace	tr;
 #ifdef SINGLE_PLAYER
-	int	dmg;
+	int32_t dmg;
 
 	if (!deathmatch)
 		dmg = 10;
 	else
 		dmg = 5;
 #else
-	const int dmg = 5;
+	const int32_t dmg = 5;
 #endif
 
-	ent = world;
-	while ((ent = findradius(ent, self.s.origin, 256)).has_value())
+	for (entity &ent : G_IterateRadius(self.s.origin, 256))
 	{
 		if (ent == self)
 			continue;
@@ -126,15 +113,15 @@ void bfg_think(entity &self)
 		if (ent == self.owner)
 			continue;
 
-		if (!ent->takedamage)
+		if (!ent.takedamage)
 			continue;
 
-		if (!(ent->svflags & SVF_MONSTER) && !ent->is_client()
+		if (!(ent.svflags & SVF_MONSTER) && !ent.is_client()
 #ifdef SINGLE_PLAYER
-			&& ent->type != ET_MISC_EXPLOBOX
+			&& ent.type != ET_MISC_EXPLOBOX
 #endif
 #ifdef GROUND_ZERO
-			&& !(ent.svflags & SVF_DAMAGEABLE)
+			&& !(ent.flags & FL_DAMAGEABLE)
 #endif
 			)
 			continue;
@@ -142,14 +129,16 @@ void bfg_think(entity &self)
 		if (OnSameTeam(self, ent))
 			continue;
 
-		point = ent->absmin + (0.5f * ent->size);
-
-		dir = point - self.s.origin;
+		vector point = ent.absbounds.center();
+		vector dir = point - self.s.origin;
 		VectorNormalize(dir);
 
-		ignore = self;
-		start = self.s.origin;
-		end = start + (2048 * dir);
+		entityref ignore = self;
+		vector start = self.s.origin;
+		vector end = start + (2048 * dir);
+
+		trace tr;
+
 		while (1)
 		{
 			tr = gi.traceline(start, end, ignore, CONTENTS_SOLID | CONTENTS_MONSTER | CONTENTS_DEADMONSTER);
@@ -164,7 +153,7 @@ void bfg_think(entity &self)
 			// if we hit something that's not a monster or player we're done
 			if (!(tr.ent.svflags & SVF_MONSTER) && !tr.ent.is_client()
 #ifdef GROUND_ZERO
-				&& !(tr.ent.svflags & SVF_DAMAGEABLE)
+				&& !(tr.ent.flags & FL_DAMAGEABLE)
 #endif
 				)
 			{
@@ -192,7 +181,7 @@ void bfg_think(entity &self)
 	self.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(bfg_think);
+static REGISTER_SAVABLE_FUNCTION(bfg_think);
 
 void fire_bfg(entity &self, vector start, vector dir, int32_t damage, int32_t speed, float damage_radius)
 {
@@ -204,22 +193,17 @@ void fire_bfg(entity &self, vector start, vector dir, int32_t damage, int32_t sp
 	bfg.clipmask = MASK_SHOT;
 	bfg.solid = SOLID_BBOX;
 	bfg.s.effects |= EF_BFG | EF_ANIM_ALLFAST;
-	bfg.mins = vec3_origin;
-	bfg.maxs = vec3_origin;
 	bfg.s.modelindex = gi.modelindex("sprites/s_bfg1.sp2");
 	bfg.owner = self;
-	bfg.touch = bfg_touch_savable;
+	bfg.touch = SAVABLE(bfg_touch);
 	bfg.nextthink = level.framenum + BASE_FRAMERATE * 8000 / speed;
-	bfg.think = G_FreeEdict_savable;
+	bfg.think = SAVABLE(G_FreeEdict);
 	bfg.radius_dmg = damage;
 	bfg.dmg_radius = damage_radius;
-	bfg.type = ET_BFG_BLAST;
 	bfg.s.sound = gi.soundindex("weapons/bfg__l1a.wav");
 
-	bfg.think = bfg_think_savable;
+	bfg.think = SAVABLE(bfg_think);
 	bfg.nextthink = level.framenum + 1;
-	bfg.teammaster = bfg;
-	bfg.teamchain = world;
 
 #ifdef SINGLE_PLAYER
 	if (self.is_client())

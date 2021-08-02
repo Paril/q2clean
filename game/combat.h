@@ -29,14 +29,17 @@ enum damage_flags : uint16_t
 	DAMAGE_ENERGY = 1 << 2,			// damage is from an energy based weapon
 	DAMAGE_NO_KNOCKBACK = 1 << 3,	// do not affect velocity, just view angles
 	DAMAGE_BULLET = 1 << 4,			// damage is from a bullet (used for ricochets)
-	DAMAGE_NO_PROTECTION = 1 << 5	// armor, shields, invulnerability, and godmode have no effect
+	DAMAGE_NO_PROTECTION = 1 << 5,	// armor, shields, invulnerability, and godmode have no effect
 
 #ifdef GROUND_ZERO
-	, DAMAGE_DESTROY_ARMOR = 1 << 6,// damage is done to armor and health.
+	DAMAGE_DESTROY_ARMOR = 1 << 6,	// damage is done to armor and health.
 	DAMAGE_NO_REG_ARMOR = 1 << 7,	// damage skips regular armor
-	DAMAGE_NO_POWER_ARMOR = 1 << 8	// damage skips power armor
+	DAMAGE_NO_POWER_ARMOR = 1 << 8,	// damage skips power armor
+	DAMAGE_NO_RADIUS_HALF = 1 << 9, // no damage halving for self-radius damage
 #endif
 };
+
+MAKE_ENUM_BITWISE(damage_flags);
 
 // means of death
 enum means_of_death : uint8_t
@@ -139,4 +142,4 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 T_RadiusDamage
 ============
 */
-void T_RadiusDamage(entity &inflictor, entity &attacker, float damage, entityref ignore, float radius, means_of_death mod);
+void T_RadiusDamage(entity &inflictor, entity &attacker, float damage, entityref ignore, float radius, means_of_death mod, damage_flags dflags = DAMAGE_RADIUS);

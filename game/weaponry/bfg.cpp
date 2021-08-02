@@ -6,6 +6,7 @@
 #include "game/ballistics/bfg.h"
 #include "game/entity.h"
 #include "game/game.h"
+#include "bfg.h"
 
 static void weapon_bfg_fire(entity &ent)
 {
@@ -69,11 +70,11 @@ static void weapon_bfg_fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index] -= 50;
 }
 
 void Weapon_BFG(entity &ent)
 {
-	Weapon_Generic(ent, 8, 32, 55, 58, { 39, 45, 50, 55 }, { 9, 17 }, weapon_bfg_fire);
+	Weapon_Generic(ent, 8, 32, 55, 58, G_IsAnyFrame<39, 45, 50, 55>, G_IsAnyFrame<9, 17>, weapon_bfg_fire);
 }

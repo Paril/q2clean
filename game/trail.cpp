@@ -22,10 +22,7 @@ void PlayerTrail_Init()
 		return;
 
 	for (n = 0; n < TRAIL_LENGTH; n++)
-	{
 		trail[n] = G_Spawn();
-		trail[n]->type = ET_PLAYER_TRAIL;
-	}
 
 	trail_head = 0;
 	trail_active = true;

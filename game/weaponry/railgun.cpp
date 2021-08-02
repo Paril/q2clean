@@ -6,6 +6,7 @@
 #include "lib/math/vector.h"
 #include "lib/math/random.h"
 #include "game/ballistics/rail.h"
+#include "railgun.h"
 
 static void weapon_railgun_fire(entity &ent)
 {
@@ -56,11 +57,11 @@ static void weapon_railgun_fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 }
 
 void Weapon_Railgun(entity &ent)
 {
-	Weapon_Generic(ent, 3, 18, 56, 61, { 56 }, { 4 }, weapon_railgun_fire);
+	Weapon_Generic(ent, 3, 18, 56, 61, G_IsAnyFrame<56>, G_IsAnyFrame<4>, weapon_railgun_fire);
 }

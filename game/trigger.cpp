@@ -9,6 +9,7 @@
 #include "util.h"
 #include "lib/string/format.h"
 #include "combat.h"
+#include "game/ballistics/grenade.h"
 
 constexpr spawn_flag TRIGGER_MONSTER = (spawn_flag)1;
 constexpr spawn_flag TRIGGER_NOT_PLAYER = (spawn_flag)2;
@@ -34,7 +35,7 @@ static void multi_wait(entity &ent)
 	ent.nextthink = 0;
 }
 
-REGISTER_SAVABLE_FUNCTION(multi_wait);
+static REGISTER_SAVABLE_FUNCTION(multi_wait);
 
 // the trigger was just activated
 // ent.activator should be set to the activator so it can be held through a delay
@@ -48,16 +49,16 @@ static void multi_trigger(entity &ent)
 
 	if (ent.wait > 0)
 	{
-		ent.think = multi_wait_savable;
+		ent.think = SAVABLE(multi_wait);
 		ent.nextthink = level.framenum + (gtime)(ent.wait * BASE_FRAMERATE);
 	}
 	else
 	{
 		// we can't just remove (self) here, because this is a touch function
 		// called while looping through area links...
-		ent.touch = 0;
+		ent.touch = nullptr;
 		ent.nextthink = level.framenum + 1;
-		ent.think = G_FreeEdict_savable;
+		ent.think = SAVABLE(G_FreeEdict);
 	}
 }
 
@@ -82,7 +83,7 @@ static void Use_Multi(entity &ent, entity &, entity &cactivator)
 #endif
 }
 
-REGISTER_SAVABLE_FUNCTION(Use_Multi);
+static REGISTER_SAVABLE_FUNCTION(Use_Multi);
 
 static void Touch_Multi(entity &self, entity &other, vector, const surface &)
 {
@@ -112,7 +113,7 @@ static void Touch_Multi(entity &self, entity &other, vector, const surface &)
 	multi_trigger(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(Touch_Multi);
+static REGISTER_SAVABLE_FUNCTION(Touch_Multi);
 
 /*QUAKED trigger_multiple (.5 .5 .5) ? MONSTER NOT_PLAYER TRIGGERED
 Variable sized repeatable trigger.  Must be targeted at one or more entities.
@@ -128,11 +129,11 @@ set "message" to text string
 static void trigger_enable(entity &self, entity &, entity &)
 {
 	self.solid = SOLID_TRIGGER;
-	self.use = Use_Multi_savable;
+	self.use = SAVABLE(Use_Multi);
 	gi.linkentity(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_enable);
+static REGISTER_SAVABLE_FUNCTION(trigger_enable);
 
 static void SP_trigger_multiple(entity &ent)
 {
@@ -145,7 +146,7 @@ static void SP_trigger_multiple(entity &ent)
 
 	if (!ent.wait)
 		ent.wait = 0.2f;
-	ent.touch = Touch_Multi_savable;
+	ent.touch = SAVABLE(Touch_Multi);
 	ent.movetype = MOVETYPE_NONE;
 	ent.svflags |= SVF_NOCLIENT;
 
@@ -157,12 +158,12 @@ static void SP_trigger_multiple(entity &ent)
 #endif
 	{
 		ent.solid = SOLID_NOT;
-		ent.use = trigger_enable_savable;
+		ent.use = SAVABLE(trigger_enable);
 	}
 	else
 	{
 		ent.solid = SOLID_TRIGGER;
-		ent.use = Use_Multi_savable;
+		ent.use = SAVABLE(Use_Multi);
 	}
 
 	if (ent.s.angles)
@@ -172,7 +173,7 @@ static void SP_trigger_multiple(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(trigger_multiple, ET_TRIGGER_MULTIPLE);
+static REGISTER_ENTITY(TRIGGER_MULTIPLE, trigger_multiple);
 
 /*QUAKED trigger_once (.5 .5 .5) ? x x TRIGGERED
 Triggers once, then removes itself.
@@ -206,7 +207,7 @@ static void SP_trigger_once(entity &ent)
 	SP_trigger_multiple(ent);
 }
 
-REGISTER_ENTITY(trigger_once, ET_TRIGGER_ONCE);
+REGISTER_ENTITY(TRIGGER_ONCE, trigger_once);
 
 /*QUAKED trigger_relay (.5 .5 .5) (-8 -8 -8) (8 8 8)
 This fixed size trigger cannot be touched, it can only be fired by other events.
@@ -216,14 +217,14 @@ static void trigger_relay_use(entity &self, entity &, entity &cactivator)
 	G_UseTargets(self, cactivator);
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_relay_use);
+static REGISTER_SAVABLE_FUNCTION(trigger_relay_use);
 
 static void SP_trigger_relay(entity &self)
 {
-	self.use = trigger_relay_use_savable;
+	self.use = SAVABLE(trigger_relay_use);
 }
 
-REGISTER_ENTITY(trigger_relay, ET_TRIGGER_RELAY);
+static REGISTER_ENTITY(TRIGGER_RELAY, trigger_relay);
 
 #ifdef SINGLE_PLAYER
 /*
@@ -268,12 +269,9 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 				if (cactivator.client->pers.power_cubes & (1 << cube))
 					break;
 
-			for (uint32_t player = 1; player <= game.maxclients; player++)
+			for (entity &ent : entity_range(1, game.maxclients))
 			{
-				entity &ent = itoe(player);
 				if (!ent.inuse)
-					continue;
-				if (!ent.is_client())
 					continue;
 				if (ent.client->pers.power_cubes & (1 << cube))
 				{
@@ -284,15 +282,9 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 		}
 		else
 		{
-			for (uint32_t player = 1; player <= game.maxclients; player++)
-			{
-				entity &ent = itoe(player);
-				if (!ent.inuse)
-					continue;
-				if (!ent.is_client())
-					continue;
-				ent.client->pers.inventory[index] = 0;
-			}
+			for (entity &ent : entity_range(1, game.maxclients))
+				if (ent.inuse)
+					ent.client->pers.inventory[index] = 0;
 		}
 	}
 	else
@@ -300,10 +292,10 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 
 	G_UseTargets(self, cactivator);
 
-	self.use = 0;
+	self.use = nullptr;
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_key_use);
+static REGISTER_SAVABLE_FUNCTION(trigger_key_use);
 
 static void SP_trigger_key(entity &self)
 {
@@ -330,10 +322,10 @@ static void SP_trigger_key(entity &self)
 	gi.soundindex("misc/keytry.wav");
 	gi.soundindex("misc/keyuse.wav");
 
-	self.use = trigger_key_use_savable;
+	self.use = SAVABLE(trigger_key_use);
 }
 
-REGISTER_ENTITY(trigger_key, ET_TRIGGER_KEY);
+static REGISTER_ENTITY(TRIGGER_KEY, trigger_key);
 #endif
 
 /*
@@ -381,7 +373,7 @@ static void trigger_counter_use(entity &self, entity &, entity &cactivator)
 	multi_trigger(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_counter_use);
+static REGISTER_SAVABLE_FUNCTION(trigger_counter_use);
 
 static void SP_trigger_counter(entity &self)
 {
@@ -389,10 +381,10 @@ static void SP_trigger_counter(entity &self)
 	if (!self.count)
 		self.count = 2;
 
-	self.use = trigger_counter_use_savable;
+	self.use = SAVABLE(trigger_counter_use);
 }
 
-REGISTER_ENTITY(trigger_counter, ET_TRIGGER_COUNTER);
+static REGISTER_ENTITY(TRIGGER_COUNTER, trigger_counter);
 
 /*
 ==============================================================================
@@ -413,7 +405,7 @@ static void SP_trigger_always(entity &ent)
 	G_UseTargets(ent, ent);
 }
 
-REGISTER_ENTITY(trigger_always, ET_TRIGGER_ALWAYS);
+static REGISTER_ENTITY(TRIGGER_ALWAYS, trigger_always);
 
 /*
 ==============================================================================
@@ -423,15 +415,17 @@ trigger_push
 ==============================================================================
 */
 
-constexpr spawn_flag PUSH_ONCE = (spawn_flag)1;
-constexpr spawn_flag PUSH_START_OFF = (spawn_flag)2;
-constexpr spawn_flag PUSH_SILENT = (spawn_flag)4;
+constexpr spawn_flag PUSH_ONCE = (spawn_flag) 1;
+#ifdef GROUND_ZERO
+constexpr spawn_flag PUSH_START_OFF = (spawn_flag) 2;
+constexpr spawn_flag PUSH_SILENT = (spawn_flag) 4;
+#endif
 
 static sound_index windsound;
 
 static void trigger_push_touch(entity &self, entity &other, vector, const surface &)
 {
-	if (other.type == ET_GRENADE || other.type == ET_HANDGRENADE)
+	if (other.type == ET_GRENADE)
 		other.velocity = self.movedir * (self.speed * 10);
 	else if (other.health > 0)
 	{
@@ -457,10 +451,10 @@ static void trigger_push_touch(entity &self, entity &other, vector, const surfac
 		G_FreeEdict(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_push_touch);
+static REGISTER_SAVABLE_FUNCTION(trigger_push_touch);
 
 #ifdef GROUND_ZERO
-static void(entity self, entity other, entity cactivator) trigger_push_use =
+static void trigger_push_use(entity &self, entity &, entity &)
 {
 	if (self.solid == SOLID_NOT)
 		self.solid = SOLID_TRIGGER;
@@ -468,17 +462,18 @@ static void(entity self, entity other, entity cactivator) trigger_push_use =
 		self.solid = SOLID_NOT;
 	gi.linkentity (self);
 }
+
+static REGISTER_SAVABLE_FUNCTION(trigger_push_use);
 #endif
 
 #ifdef THE_RECKONING
-static void(entity self) trigger_effect =
-{
-	vector	origin;
-	int	i;
+#include "lib/math/random.h"
 
-	origin = self.absmin + (self.size * 0.5);
+static void trigger_effect(entity &self)
+{
+	vector origin = self.absmin + (self.size * 0.5f);
 	
-	for (i=0; i<10; i++)
+	for (int32_t i = 0; i < 10; i++)
 	{
 		origin[2] += (self.speed * 0.01f) * (i + random());
 		gi.WriteByte (svc_temp_entity);
@@ -486,29 +481,31 @@ static void(entity self) trigger_effect =
 		gi.WriteByte (1);
 		gi.WritePosition (origin);
 		gi.WriteDir (vec3_origin);
-		gi.WriteByte (0x74 + (Q_rand()&7));
+		gi.WriteByte (0x74 + (Q_rand() & 7));
 		gi.multicast (self.s.origin, MULTICAST_PVS);
 	}
 }
 
-static void(entity self) trigger_push_active;
+static void trigger_push_active(entity &self);
 
-static void(entity self) trigger_push_inactive =
+static REGISTER_SAVABLE_FUNCTION(trigger_push_active);
+
+static void trigger_push_inactive(entity &self)
 {
 	if (self.delay > level.time)
-	{
 		self.nextthink = level.framenum + 1;
-	}
 	else
 	{
-		self.touch = trigger_push_touch_savable;
-		self.think = trigger_push_active;
+		self.touch = SAVABLE(trigger_push_touch);
+		self.think = SAVABLE(trigger_push_active);
 		self.nextthink = level.framenum + 1;
 		self.delay = self.nextthink + self.wait;  
 	}
 }
 
-static void(entity self) trigger_push_active =
+static REGISTER_SAVABLE_FUNCTION(trigger_push_inactive);
+
+static void trigger_push_active(entity &self)
 {
 	if (self.delay > level.time)
 	{
@@ -517,8 +514,8 @@ static void(entity self) trigger_push_active =
 	}
 	else
 	{
-		self.touch = 0;
-		self.think = trigger_push_inactive;
+		self.touch = nullptr;
+		self.think = SAVABLE(trigger_push_inactive);
 		self.nextthink = level.framenum + 1;
 		self.delay = self.nextthink + self.wait;  
 	}
@@ -533,12 +530,12 @@ static void SP_trigger_push(entity &self)
 {
 	InitTrigger(self);
 	windsound = gi.soundindex("misc/windfly.wav");
-	self.touch = trigger_push_touch_savable;
+	self.touch = SAVABLE(trigger_push_touch);
 	
 #ifdef GROUND_ZERO
 	if (self.targetname)		// toggleable
 	{
-		self.use = trigger_push_use;
+		self.use = SAVABLE(trigger_push_use);
 		if (self.spawnflags & PUSH_START_OFF)
 			self.solid = SOLID_NOT;
 	}
@@ -550,9 +547,9 @@ static void SP_trigger_push(entity &self)
 	if (self.spawnflags & 2)
 	{
 		if (!self.wait)
-			self.wait = 10f;
+			self.wait = 10.f;
   
-		self.think = trigger_push_active;
+		self.think = SAVABLE(trigger_push_active);
 		self.nextthink = level.framenum + 1;
 		self.delay = self.nextthink + self.wait;
 	}
@@ -563,7 +560,7 @@ static void SP_trigger_push(entity &self)
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(trigger_push, ET_TRIGGER_PUSH);
+static REGISTER_ENTITY(TRIGGER_PUSH, trigger_push);
 
 /*
 ==============================================================================
@@ -602,10 +599,10 @@ static void hurt_use(entity &self, entity &, entity &)
 	gi.linkentity(self);
 
 	if (!(self.spawnflags & HURT_TOGGLE))
-		self.use = 0;
+		self.use = nullptr;
 }
 
-REGISTER_SAVABLE_FUNCTION(hurt_use);
+static REGISTER_SAVABLE_FUNCTION(hurt_use);
 
 static void hurt_touch(entity &self, entity &other, vector, const surface &)
 {
@@ -634,14 +631,14 @@ static void hurt_touch(entity &self, entity &other, vector, const surface &)
 	T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, self.dmg, self.dmg, dflags, MOD_TRIGGER_HURT);
 }
 
-REGISTER_SAVABLE_FUNCTION(hurt_touch);
+static REGISTER_SAVABLE_FUNCTION(hurt_touch);
 
 static void SP_trigger_hurt(entity &self)
 {
 	InitTrigger(self);
 
 	self.noise_index = gi.soundindex("world/electro.wav");
-	self.touch = hurt_touch_savable;
+	self.touch = SAVABLE(hurt_touch);
 
 	if (!self.dmg)
 		self.dmg = 5;
@@ -652,12 +649,12 @@ static void SP_trigger_hurt(entity &self)
 		self.solid = SOLID_TRIGGER;
 
 	if (self.spawnflags & HURT_TOGGLE)
-		self.use = hurt_use_savable;
+		self.use = SAVABLE(hurt_use);
 
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(trigger_hurt, ET_TRIGGER_HURT);
+static REGISTER_ENTITY(TRIGGER_HURT, trigger_hurt);
 
 /*
 ==============================================================================
@@ -674,7 +671,7 @@ gravity for the level.
 */
 
 #ifdef GROUND_ZERO
-static void(entity self, entity other, entity cactivator) trigger_gravity_use =
+static void trigger_gravity_use(entity &self, entity &, entity &)
 {
 	if (self.solid == SOLID_NOT)
 		self.solid = SOLID_TRIGGER;
@@ -682,6 +679,11 @@ static void(entity self, entity other, entity cactivator) trigger_gravity_use =
 		self.solid = SOLID_NOT;
 	gi.linkentity (self);
 }
+
+static REGISTER_SAVABLE_FUNCTION(trigger_gravity_use);
+
+static constexpr spawn_flag GRAVITY_TOGGLE = (spawn_flag) 1;
+static constexpr spawn_flag GRAVITY_START_OFF = (spawn_flag) 2;
 #endif
 
 static void trigger_gravity_touch(entity &self, entity &other, vector, const surface &)
@@ -689,7 +691,7 @@ static void trigger_gravity_touch(entity &self, entity &other, vector, const sur
 	other.gravity = self.gravity;
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_gravity_touch);
+static REGISTER_SAVABLE_FUNCTION(trigger_gravity_touch);
 
 static void SP_trigger_gravity(entity &self)
 {
@@ -704,21 +706,21 @@ static void SP_trigger_gravity(entity &self)
 	self.gravity = (float)atof(st.gravity);
 	
 #ifdef GROUND_ZERO
-	if(self.spawnflags & 1)				// TOGGLE
-		self.use = trigger_gravity_use;
+	if(self.spawnflags & GRAVITY_TOGGLE)
+		self.use = SAVABLE(trigger_gravity_use);
 
-	if(self.spawnflags & 2)				// START_OFF
+	if(self.spawnflags & GRAVITY_START_OFF)
 	{
-		self.use = trigger_gravity_use;
+		self.use = SAVABLE(trigger_gravity_use);
 		self.solid = SOLID_NOT;
 	}
 #endif
 	
-	self.touch = trigger_gravity_touch_savable;
+	self.touch = SAVABLE(trigger_gravity_touch);
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(trigger_gravity, ET_TRIGGER_GRAVITY);
+static REGISTER_ENTITY(TRIGGER_GRAVITY, trigger_gravity);
 
 #ifdef SINGLE_PLAYER
 /*
@@ -754,7 +756,7 @@ static void trigger_monsterjump_touch(entity &self, entity &other, vector, const
 	other.velocity.z = self.movedir.z;
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_monsterjump_touch);
+static REGISTER_SAVABLE_FUNCTION(trigger_monsterjump_touch);
 
 static void SP_trigger_monsterjump(entity &self)
 {
@@ -765,9 +767,9 @@ static void SP_trigger_monsterjump(entity &self)
 	if (self.s.angles[YAW] == 0)
 		self.s.angles[YAW] = 360.f;
 	InitTrigger(self);
-	self.touch = trigger_monsterjump_touch_savable;
+	self.touch = SAVABLE(trigger_monsterjump_touch);
 	self.movedir.z = (float)st.height;
 }
 
-REGISTER_ENTITY(trigger_monsterjump, ET_TRIGGER_MONSTERJUMP);
+static REGISTER_ENTITY(TRIGGER_MONSTERJUMP, trigger_monsterjump);
 #endif

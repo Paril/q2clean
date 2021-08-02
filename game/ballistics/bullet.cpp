@@ -3,6 +3,7 @@
 #include "lib/math/random.h"
 #include "game/weaponry.h"
 #include "game/combat.h"
+#include "bullet.h"
 
 /*
 =================
@@ -11,7 +12,7 @@ fire_lead
 This is an internal support routine used for bullet/pellet based weapons.
 =================
 */
-void fire_lead(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread, means_of_death mod)
+static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread, means_of_death mod)
 {
 	trace	tr;
 	vector	dir;

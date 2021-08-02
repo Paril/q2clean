@@ -18,6 +18,11 @@
 #include "game/ballistics/bfg.h"
 #include "game/items/entity.h"
 #include "combat.h"
+#include "misc.h"
+
+#ifdef GROUND_ZERO
+#include "game/xatrix/monster/fixbot.h"
+#endif
 
 //
 // monster weapons
@@ -111,7 +116,7 @@ void M_FliesOn(entity &self)
 		return;
 	self.s.effects |= EF_FLIES;
 	self.s.sound = gi.soundindex("infantry/inflies1.wav");
-	self.think = M_FliesOff_savable;
+	self.think = SAVABLE(M_FliesOff);
 	self.nextthink = level.framenum + 60 * BASE_FRAMERATE;
 }
 
@@ -125,11 +130,9 @@ void M_FlyCheck(entity &self)
 	if (random() > 0.5f)
 		return;
 
-	self.think = M_FliesOn_savable;
+	self.think = SAVABLE(M_FliesOn);
 	self.nextthink = level.framenum + (gtime)random(5.f * BASE_FRAMERATE, 15.f * BASE_FRAMERATE);
 }
-
-REGISTER_SAVABLE_FUNCTION(M_FlyCheck);
 
 void M_CheckGround(entity &ent)
 {
@@ -139,7 +142,7 @@ void M_CheckGround(entity &ent)
 	if (ent.flags & (FL_SWIM | FL_FLY))
 		return;
 
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	if ((ent.velocity.z * ent.gravityVector.z) < -100)		// PGM
 #else
 	if (ent.velocity.z > 100)
@@ -152,7 +155,7 @@ void M_CheckGround(entity &ent)
 // if the hull point one-quarter unit down is solid the entity is on ground
 	point.x = ent.s.origin[0];
 	point.y = ent.s.origin[1];
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	point.z = ent.s.origin[2] + (0.25f * ent.gravityVector[2]);	//PGM
 #else
 	point.z = ent.s.origin[2] - 0.25f;
@@ -161,7 +164,7 @@ void M_CheckGround(entity &ent)
 	tr = gi.trace(ent.s.origin, ent.mins, ent.maxs, point, ent, MASK_MONSTERSOLID);
 
 	// check steepness
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	if ((ent.gravityVector[2] < 0 ? (tr.normal[2] < 0.7f) : (tr.normal[2] > -0.7f)) && !tr.startsolid)
 #else
 	if (tr.normal[2] < 0.7f && !tr.startsolid)
@@ -287,7 +290,7 @@ void M_droptofloor(entity &ent)
 	vector	end;
 	trace	tr;
 
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	float grav = 1.0f - ent.gravityVector[2];
 	ent.s.origin[2] += 1 * grav;
 	end = ent.s.origin;
@@ -367,9 +370,19 @@ void M_SetEffects(entity &ent)
 #endif
 }
 
+#ifdef ROGUE_AI
+void cleanupHealTarget(entity &ent)
+{
+	ent.monsterinfo.healer = 0;
+	ent.takedamage = true;
+	ent.monsterinfo.aiflags &= ~AI_RESURRECTING;
+	M_SetEffects (ent);
+}
+#endif
+
 static void M_MoveFrame(entity &self)
 {
-	mmove_t *move = self.monsterinfo.currentmove;
+	const mmove_t *move = self.monsterinfo.currentmove;
 	self.nextthink = level.framenum + 1;
 
 	if ((self.monsterinfo.nextframe) && (self.monsterinfo.nextframe >= move->firstframe) && (self.monsterinfo.nextframe <= move->lastframe)) {
@@ -403,7 +416,7 @@ static void M_MoveFrame(entity &self)
 
 	int index = self.s.frame - move->firstframe;
 	
-	mframe_t &frame = move->frame[index];
+	const mframe_t &frame = move->frames[index];
 	
 	if (frame.aifunc) {
 		if (!(self.monsterinfo.aiflags & AI_HOLD_FRAME))
@@ -471,35 +484,44 @@ static void monster_triggered_spawn(entity &self)
 
 #ifdef THE_RECKONING
 	// RAFAEL
-	if (self.classname == "monster_fixbot")
+	if (self.type == ET_MONSTER_FIXBOT)
 	{
 		if ((self.spawnflags & 16) || (self.spawnflags & 8) || (self.spawnflags & 4))
 		{
-			self.enemy = world;
+			self.enemy = null_entity;
 			return;
 		}
 	}
 #endif
 
 	if (self.enemy.has_value() && !(self.spawnflags & 1) && !(self.enemy->flags & FL_VISIBLE_MASK))
-		FoundTarget(self);
+	{
+#ifdef GROUND_ZERO
+		if (!(self.enemy->flags & FL_DISGUISED))
+#endif
+			FoundTarget(self);
+#ifdef GROUND_ZERO
+		else
+			self.enemy = null_entity;
+#endif
+	}
 	else
-		self.enemy = world;
+		self.enemy = null_entity;
 }
 
-REGISTER_SAVABLE_FUNCTION(monster_triggered_spawn);
+static REGISTER_SAVABLE_FUNCTION(monster_triggered_spawn);
 
 static void monster_triggered_spawn_use(entity &self, entity &, entity &cactivator)
 {
 	// we have a one frame delay here so we don't telefrag the guy who activated us
-	self.think = monster_triggered_spawn_savable;
+	self.think = SAVABLE(monster_triggered_spawn);
 	self.nextthink = level.framenum + 1;
 	if (cactivator.is_client())
 		self.enemy = cactivator;
-	self.use = monster_use_savable;
+	self.use = SAVABLE(monster_use);
 }
 
-REGISTER_SAVABLE_FUNCTION(monster_triggered_spawn_use);
+static REGISTER_SAVABLE_FUNCTION(monster_triggered_spawn_use);
 
 static void monster_triggered_start(entity &self)
 {
@@ -507,9 +529,8 @@ static void monster_triggered_start(entity &self)
 	self.movetype = MOVETYPE_NONE;
 	self.svflags |= SVF_NOCLIENT;
 	self.nextthink = 0;
-	self.use = monster_triggered_spawn_use_savable;
+	self.use = SAVABLE(monster_triggered_spawn_use);
 }
-
 
 void monster_death_use(entity &self)
 {
@@ -555,16 +576,15 @@ static bool monster_start(entity &self)
 	self.s.renderfx |= RF_FRAMELERP;
 	self.takedamage = true;
 	self.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
-	self.use = monster_use_savable;
+	self.use = SAVABLE(monster_use);
 	self.max_health = self.health;
 	self.clipmask = MASK_MONSTERSOLID;
 
-	self.s.skinnum = 0;
 	self.deadflag = DEAD_NO;
 	self.svflags &= ~SVF_DEADMONSTER;
 
 	if (!self.monsterinfo.checkattack)
-		self.monsterinfo.checkattack = M_CheckAttack_savable;
+		self.monsterinfo.checkattack = SAVABLE(M_CheckAttack);
 	self.s.old_origin = self.s.origin;
 
 	if (st.item)
@@ -583,10 +603,12 @@ static bool monster_start(entity &self)
 		self.s.frame = first + (Q_rand() % (last - first + 1));
 	}
 
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	// PMM - get this so I don't have to do it in all of the monsters
 	self.monsterinfo.base_height = self.maxs[2];
+#endif
 
+#ifdef GROUND_ZERO
 	// PMM - clear these
 	self.monsterinfo.quad_framenum = 0;
 	self.monsterinfo.double_framenum = 0;
@@ -606,14 +628,11 @@ static void monster_start_go(entity &self)
 	// check for target to combat_point and change to combattarget
 	if (self.target)
 	{
-		bool	notcombat;
-		bool	fixup;
-		entityref ctarget = world;
-		notcombat = false;
-		fixup = false;
-		while ((ctarget = G_FindFunc<&entity::targetname>(ctarget, self.target, striequals)).has_value())
+		bool notcombat = false, fixup = false;
+
+		for (entity &ctarget : G_IterateFunc<&entity::targetname>(self.target, striequals))
 		{
-			if (ctarget->type == ET_POINT_COMBAT)
+			if (ctarget.type == ET_POINT_COMBAT)
 			{
 				self.combattarget = self.target;
 				fixup = true;
@@ -630,18 +649,16 @@ static void monster_start_go(entity &self)
 
 	// validate combattarget
 	if (self.combattarget)
-	{
-		entityref	ctarget = world;
-		while ((ctarget = G_FindFunc<&entity::targetname>(ctarget, self.combattarget, striequals)).has_value())
-			if (ctarget->type != ET_POINT_COMBAT)
+		for (entity &ctarget : G_IterateFunc<&entity::targetname>(self.combattarget, striequals))
+			if (ctarget.type != ET_POINT_COMBAT)
 				gi.dprintf("%i at (%s) has a bad combattarget %s : %i at (%s)\n",
 						   self.type, vtos(self.s.origin).ptr(),
-						   self.combattarget.ptr(), ctarget->type, vtos(ctarget->s.origin).ptr());
-	}
+						   self.combattarget.ptr(), ctarget.type, vtos(ctarget.s.origin).ptr());
 
 	if (self.target)
 	{
 		self.goalentity = self.movetarget = G_PickTarget(self.target);
+
 		if (!self.movetarget.has_value())
 		{
 			gi.dprintf("%i can't find target %s at %s\n", self.type, self.target.ptr(), vtos(self.s.origin).ptr());
@@ -658,7 +675,7 @@ static void monster_start_go(entity &self)
 		}
 		else
 		{
-			self.goalentity = self.movetarget = world;
+			self.goalentity = self.movetarget = null_entity;
 			self.monsterinfo.pause_framenum = INT_MAX;
 			self.monsterinfo.stand(self);
 		}
@@ -669,10 +686,12 @@ static void monster_start_go(entity &self)
 		self.monsterinfo.stand(self);
 	}
 
-	self.think = monster_think_savable;
+	self.think = SAVABLE(monster_think);
 	self.nextthink = level.framenum + 1;
 }
 
+// temp
+static entity_type ET_MONSTER_STALKER;
 
 static void walkmonster_start_go(entity &self)
 {
@@ -689,7 +708,7 @@ static void walkmonster_start_go(entity &self)
 
 #ifdef GROUND_ZERO
 	// PMM - stalkers are too short for this
-	if (self.classname == "monster_stalker")
+	if (self.type == ET_MONSTER_STALKER)
 		self.viewheight = 15;
 	else
 #endif
@@ -701,11 +720,11 @@ static void walkmonster_start_go(entity &self)
 		monster_triggered_start(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(walkmonster_start_go);
+static REGISTER_SAVABLE_FUNCTION(walkmonster_start_go);
 
 void walkmonster_start(entity &self)
 {
-	self.think = walkmonster_start_go_savable;
+	self.think = SAVABLE(walkmonster_start_go);
 	monster_start(self);
 }
 
@@ -724,12 +743,12 @@ static void flymonster_start_go(entity &self)
 		monster_triggered_start(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(flymonster_start_go);
+static REGISTER_SAVABLE_FUNCTION(flymonster_start_go);
 
 void flymonster_start(entity &self)
 {
 	self.flags |= FL_FLY;
-	self.think = flymonster_start_go_savable;
+	self.think = SAVABLE(flymonster_start_go);
 	monster_start(self);
 }
 
@@ -745,19 +764,19 @@ static void swimmonster_start_go(entity &self)
 		monster_triggered_start(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(swimmonster_start_go);
+static REGISTER_SAVABLE_FUNCTION(swimmonster_start_go);
 
 void swimmonster_start(entity &self)
 {
 	self.flags |= FL_SWIM;
-	self.think = swimmonster_start_go_savable;
+	self.think = SAVABLE(swimmonster_start_go);
 	monster_start(self);
 }
 
 #ifdef GROUND_ZERO
-static void(entity self) stationarymonster_start_go;
+static void stationarymonster_start_go(entity &self);
 
-void(entity self) stationarymonster_triggered_spawn =
+static void stationarymonster_triggered_spawn(entity &self)
 {
 	KillBox (self);
 
@@ -768,39 +787,43 @@ void(entity self) stationarymonster_triggered_spawn =
 	gi.linkentity (self);
 
 	// FIXME - why doesn't this happen with real monsters?
-	self.spawnflags &= ~2;
+	self.spawnflags &= (spawn_flag) ~2;
 
-	stationarymonster_start_go (self);
+	stationarymonster_start_go(self);
 
-	if (self.enemy && !(self.spawnflags & 1) && !(self.enemy.flags & FL_NOTARGET | FL_DISGUISED))
+	if (self.enemy.has_value() && !(self.spawnflags & (spawn_flag)1) && !(self.enemy->flags & FL_NOTARGET | FL_DISGUISED))
 		FoundTarget (self);
 	else
 		self.enemy = 0;
 }
 
-static void(entity self, entity other, entity cactivator) stationarymonster_triggered_spawn_use =
+static REGISTER_SAVABLE_FUNCTION(stationarymonster_triggered_spawn);
+
+static void stationarymonster_triggered_spawn_use(entity &self, entity &, entity &cactivator)
 {
 	// we have a one frame delay here so we don't telefrag the guy who activated us
-	self.think = stationarymonster_triggered_spawn;
+	self.think = SAVABLE(stationarymonster_triggered_spawn);
 	self.nextthink = level.framenum + 1;
-	if (cactivator.is_client)
+	if (cactivator.is_client())
 		self.enemy = cactivator;
-	self.use = monster_use;
+	self.use = SAVABLE(monster_use);
 }
 
-void(entity self) stationarymonster_triggered_start =
+static REGISTER_SAVABLE_FUNCTION(stationarymonster_triggered_spawn_use);
+
+static void stationarymonster_triggered_start(entity &self)
 {
 	self.solid = SOLID_NOT;
 	self.movetype = MOVETYPE_NONE;
 	self.svflags |= SVF_NOCLIENT;
 	self.nextthink = 0;
-	self.use = stationarymonster_triggered_spawn_use;
+	self.use = SAVABLE(stationarymonster_triggered_spawn_use);
 }
 
-static void(entity self) stationarymonster_start_go =
+static void stationarymonster_start_go(entity &self)
 {
 	if (!self.yaw_speed)
-		self.yaw_speed = 20f;
+		self.yaw_speed = 20.f;
 
 	monster_start_go (self);
 
@@ -808,9 +831,11 @@ static void(entity self) stationarymonster_start_go =
 		stationarymonster_triggered_start (self);
 }
 
-void(entity self) stationarymonster_start =
+static REGISTER_SAVABLE_FUNCTION(stationarymonster_start_go);
+
+void stationarymonster_start(entity &self)
 {
-	self.think = stationarymonster_start_go;
+	self.think = SAVABLE(stationarymonster_start_go);
 	monster_start (self);
 }
 #endif

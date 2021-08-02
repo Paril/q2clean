@@ -24,7 +24,6 @@
     <ClInclude Include="debug\cJSON_Utils.h" />
     <ClInclude Include="game\ai.h" />
     <ClInclude Include="game\ballistics.h" />
-    <ClCompile Include="game\ballistics\grapple.cpp" />
     <ClInclude Include="game\chase.h" />
     <ClInclude Include="game\cmds.h" />
     <ClCompile Include="game\ballistics.cpp" />
@@ -47,14 +46,17 @@
     <ClInclude Include="game\ballistics\hit.h" />
     <ClInclude Include="game\ballistics\rail.h" />
     <ClInclude Include="game\ballistics\rocket.h" />
-    <ClCompile Include="game\combat.impl.cpp" />
+    <ClCompile Include="game\combat.cpp" />
     <ClInclude Include="game\combat.h" />
     <ClInclude Include="game\ctf\grapple.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
+    <ClCompile Include="game\ctf\grapple.cpp" />
+    <ClCompile Include="game\entity_types.cpp" />
     <ClCompile Include="game\hud.cpp" />
+    <ClInclude Include="game\game_types.h" />
     <ClInclude Include="game\hud.h">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
@@ -75,13 +77,42 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="game\monster\berserk_model.h" />
+    <ClInclude Include="game\monster\flyer_model.h" />
+    <ClInclude Include="game\monster\gladiator.h" />
+    <ClInclude Include="game\monster\gladiator_model.h" />
+    <ClInclude Include="game\monster\gunner.h" />
+    <ClInclude Include="game\monster\gunner_model.h" />
+    <ClInclude Include="game\monster\infantry.h" />
+    <ClInclude Include="game\monster\insane_model.h" />
+    <ClInclude Include="game\monster\medic.h" />
+    <ClInclude Include="game\monster\medic_model.h" />
+    <ClInclude Include="game\monster\soldier.h" />
     <ClInclude Include="game\monster\soldier_model.h" />
-    <ClInclude Include="game\monster\m_infantry.h" />
+    <ClInclude Include="game\monster\infantry_model.h" />
     <ClInclude Include="game\move.h" />
     <ClInclude Include="game\player_frames.h" />
     <ClInclude Include="game\phys.h" />
     <ClInclude Include="game\player.h" />
+    <ClInclude Include="game\rogue\ai.h" />
+    <ClInclude Include="game\rogue\ballistics\flechette.h" />
+    <ClInclude Include="game\rogue\ballistics\heatbeam.h" />
+    <ClInclude Include="game\rogue\ballistics\melee.h" />
+    <ClInclude Include="game\rogue\ballistics\nuke.h" />
+    <ClInclude Include="game\rogue\ballistics\prox.h" />
+    <ClInclude Include="game\rogue\ballistics\tesla.h" />
+    <ClInclude Include="game\rogue\ballistics\tracker.h" />
+    <ClInclude Include="game\rogue\func.h" />
+    <ClInclude Include="game\rogue\items.h" />
+    <ClInclude Include="game\rogue\monster.h" />
+    <ClInclude Include="game\rogue\weaponry\chainfist.h" />
+    <ClInclude Include="game\rogue\weaponry\disruptor.h" />
+    <ClInclude Include="game\rogue\weaponry\etf_rifle.h" />
+    <ClInclude Include="game\rogue\weaponry\heatbeam.h" />
+    <ClInclude Include="game\rogue\weaponry\tesla.h" />
+    <ClInclude Include="game\savables.h" />
     <ClInclude Include="game\spawn.h" />
+    <ClInclude Include="game\statusbar.h" />
     <ClInclude Include="game\svcmds.h" />
     <ClInclude Include="game\target.h" />
     <ClInclude Include="game\trigger.h" />
@@ -118,8 +149,32 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="game\monster\flash.h" />
+    <ClCompile Include="game\monster\berserk.cpp" />
+    <ClCompile Include="game\monster\flyer.cpp" />
+    <ClCompile Include="game\monster\gladiator.cpp" />
+    <ClCompile Include="game\monster\gunner.cpp" />
     <ClCompile Include="game\monster\infantry.cpp" />
+    <ClCompile Include="game\monster\insane.cpp" />
+    <ClCompile Include="game\monster\medic.cpp" />
     <ClCompile Include="game\monster\soldier.cpp" />
+    <ClCompile Include="game\rogue\ai.cpp" />
+    <ClCompile Include="game\rogue\ballistics\flechette.cpp" />
+    <ClCompile Include="game\rogue\ballistics\heatbeam.cpp" />
+    <ClCompile Include="game\rogue\ballistics\melee.cpp" />
+    <ClCompile Include="game\rogue\ballistics\nuke.cpp" />
+    <ClCompile Include="game\rogue\ballistics\prox.cpp" />
+    <ClCompile Include="game\rogue\ballistics\tesla.cpp" />
+    <ClCompile Include="game\rogue\ballistics\tracker.cpp" />
+    <ClCompile Include="game\rogue\func.cpp" />
+    <ClCompile Include="game\rogue\items.cpp" />
+    <ClCompile Include="game\rogue\monster.cpp" />
+    <ClCompile Include="game\rogue\weaponry\chainfist.cpp" />
+    <ClCompile Include="game\rogue\weaponry\disruptor.cpp" />
+    <ClCompile Include="game\rogue\weaponry\etf_rifle.cpp" />
+    <ClCompile Include="game\rogue\weaponry\heatbeam.cpp" />
+    <ClCompile Include="game\rogue\weaponry\tesla.cpp" />
+    <ClCompile Include="game\savables.cpp" />
+    <ClCompile Include="game\statusbar.cpp" />
     <ClCompile Include="game\trail.cpp" />
     <ClInclude Include="game\util.h">
       <FileType>Document</FileType>
@@ -174,8 +229,36 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="game\xatrix\ballistics\ionripper.h" />
+    <ClInclude Include="game\xatrix\ballistics\plasma.h" />
+    <ClInclude Include="game\xatrix\ballistics\trap.h" />
+    <ClInclude Include="game\xatrix\func.h" />
+    <ClInclude Include="game\xatrix\items.h" />
+    <ClInclude Include="game\xatrix\misc.h" />
+    <ClInclude Include="game\xatrix\monster.h" />
+    <ClInclude Include="game\xatrix\monster\fixbot.h" />
+    <ClInclude Include="game\xatrix\monster\fixbot_model.h" />
+    <ClInclude Include="game\xatrix\monster\gekk.h" />
+    <ClInclude Include="game\xatrix\monster\gekk_model.h" />
+    <ClInclude Include="game\xatrix\weaponry\ionripper.h" />
+    <ClInclude Include="game\xatrix\weaponry\phalanx.h" />
+    <ClInclude Include="game\xatrix\weaponry\trap.h" />
     <ClInclude Include="lib\math.h" />
+    <ClInclude Include="lib\math\bbox.h" />
     <ClInclude Include="lib\math\random.h" />
+    <ClCompile Include="game\xatrix\ballistics\ionripper.cpp" />
+    <ClCompile Include="game\xatrix\ballistics\plasma.cpp" />
+    <ClCompile Include="game\xatrix\ballistics\trap.cpp" />
+    <ClCompile Include="game\xatrix\func.cpp" />
+    <ClCompile Include="game\xatrix\items.cpp" />
+    <ClCompile Include="game\xatrix\misc.cpp" />
+    <ClCompile Include="game\xatrix\monster.cpp" />
+    <ClCompile Include="game\xatrix\monster\fixbot.cpp" />
+    <ClCompile Include="game\xatrix\monster\gekk.cpp" />
+    <ClCompile Include="game\xatrix\target.cpp" />
+    <ClCompile Include="game\xatrix\weaponry\ionripper.cpp" />
+    <ClCompile Include="game\xatrix\weaponry\phalanx.cpp" />
+    <ClCompile Include="game\xatrix\weaponry\trap.cpp" />
     <ClCompile Include="lib\gi.cpp" />
     <ClCompile Include="lib\math\random.cpp" />
     <ClInclude Include="lib\math\vector.h" />
@@ -184,13 +267,11 @@
     </ClInclude>
     <ClInclude Include="lib\info.h" />
     <ClCompile Include="lib\protocol.cpp" />
-    <ClInclude Include="lib\savables.h" />
     <ClInclude Include="lib\string.h">
       <FileType>Document</FileType>
     </ClInclude>
     <ClInclude Include="lib\string\format.h" />
     <ClInclude Include="lib\types.h" />
-    <ClCompile Include="lib\savables.cpp" />
     <ClCompile Include="lib\string\format.cpp" />
     <ClCompile Include="lib\types\allocator.cpp" />
     <ClInclude Include="lib\types\allocator.h" />
@@ -237,26 +318,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -306,6 +387,9 @@
     <IntDir>obj\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>.;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -322,8 +406,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
-      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
-      <TranslateIncludes>true</TranslateIncludes>
+      <AdditionalOptions>-Wmissing-prototypes -Wmissing-variable-declarations %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -350,7 +433,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
-      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <AdditionalOptions>-Wmissing-prototypes -Wmissing-variable-declarations %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -377,7 +460,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
-      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <AdditionalOptions>-Wmissing-prototypes -Wmissing-variable-declarations %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -404,7 +487,7 @@
       <ModuleDependenciesFile>$(IntDir)%(RelativeDir)</ModuleDependenciesFile>
       <XMLDocumentationFileName>$(IntDir)%(RelativeDir)</XMLDocumentationFileName>
       <SourceDependenciesFile>$(IntDir)%(RelativeDir)</SourceDependenciesFile>
-      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <AdditionalOptions>-Wmissing-prototypes -Wmissing-variable-declarations %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

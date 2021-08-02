@@ -5,6 +5,7 @@
 #include "lib/math/vector.h"
 #include "lib/protocol.h"
 #include "game/entity_types.h"
+#include "game/spawn.h"
 
 void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damage, vector);
 
@@ -34,7 +35,15 @@ void ClientBegin(entity &ent);
 
 void ClientThink(entity &ent, const usercmd &ucmd);
 
+DECLARE_ENTITY(INFO_PLAYER_START);
+
+DECLARE_ENTITY(INFO_PLAYER_DEATHMATCH);
+
+DECLARE_ENTITY(INFO_PLAYER_INTERMISSION);
+
 #ifdef SINGLE_PLAYER
+DECLARE_ENTITY(INFO_PLAYER_COOP);
+
 /*
 ==================
 SaveClientData

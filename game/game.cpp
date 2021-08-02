@@ -13,6 +13,7 @@
 #include "hud.h"
 #include "lib/string/format.h"
 #include "view.h"
+#include "target.h"
 
 constexpr stringlit GAMEVERSION = "clean";
 
@@ -99,7 +100,7 @@ void InitGame()
 	gi.cvar_forceset("deathmatch", "1");
 	gi.cvar_forceset("coop", "0");
 #endif
-	cvarref maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH);
+	gi.cvar("maxentities", va("%i", MAX_EDICTS), CVAR_NOSET);
 	
 	// change anytime vars
 	dmflags = gi.cvar("dmflags", "0", CVAR_SERVERINFO);
@@ -136,7 +137,7 @@ void InitGame()
 	// export our own features
 	gi.cvar_forceset("g_features", va("%i", G_FEATURES));
 
-	game.maxclients = (uint32_t)maxclients;
+	game.maxclients = (uint32_t) maxclients;
 
 	num_entities = game.maxclients + 1;
 
@@ -168,13 +169,9 @@ static void ClientEndServerFrames()
 {
     // calc the player views now that all pushing
     // and damage has been added
-	for (uint32_t i = 0; i < game.maxclients; i++)
-	{
-		entity &ent = itoe(1 + i);
-		
-		if (ent.inuse && ent.is_client())
+	for (entity &ent : entity_range(1, game.maxclients))
+		if (ent.inuse)
 			ClientEndServerFrame(ent);
-	}
 }
 
 /*
@@ -196,7 +193,7 @@ static entity &CreateTargetChangeLevel(string new_map)
 void EndDMLevel()
 {
 	// stay on same level flag
-	if ((dm_flags)dmflags & DF_SAME_LEVEL)
+	if (dmflags & DF_SAME_LEVEL)
 	{
 		BeginIntermission(CreateTargetChangeLevel(level.mapname));
 		return;
@@ -239,6 +236,7 @@ void EndDMLevel()
 	else
 	{  // search for a changelevel
 		entityref ent = G_FindEquals<&entity::type>(world, ET_TARGET_CHANGELEVEL);
+
 		if (!ent.has_value())
 		{
 			// the map designer didn't include a changelevel,
@@ -246,6 +244,7 @@ void EndDMLevel()
 			BeginIntermission(CreateTargetChangeLevel(level.mapname));
 			return;
 		}
+
 		BeginIntermission(ent);
 	}
 }
@@ -296,9 +295,9 @@ static void CheckDMRules()
 	}
 #endif
 
-	if ((int32_t)timelimit)
+	if (timelimit)
 	{
-		if (level.time >= (int32_t)timelimit * 60)
+		if (level.time >= timelimit * 60)
 		{
 			gi.bprintf(PRINT_HIGH, "Timelimit hit.\n");
 			EndDMLevel();
@@ -306,16 +305,14 @@ static void CheckDMRules()
 		}
 	}
 
-	if ((int32_t)fraglimit)
+	if (fraglimit)
 	{
-		for (uint32_t i = 0; i < game.maxclients; i++)
+		for (entity &cl : entity_range(1, game.maxclients))
 		{
-			entity &cl = itoe(i + 1);
-
 			if (!cl.inuse)
 				continue;
 
-			if (cl.client->resp.score >= (int32_t)fraglimit)
+			if (cl.client->resp.score >= fraglimit)
 			{
 				gi.bprintf(PRINT_HIGH, "Fraglimit hit.\n");
 				EndDMLevel();
@@ -341,10 +338,8 @@ static void ExitLevel()
 	ClientEndServerFrames();
 	
 	// clear some things before going to next level
-	for (uint32_t i = 0; i < game.maxclients; i++)
+	for (entity &ent : entity_range(1, game.maxclients))
 	{
-		entity &ent = itoe(1 + i);
-	
 		if (!ent.inuse)
 			continue;
 	
@@ -374,10 +369,8 @@ void RunFrame()
 	// treat each object in turn
 	// even the world gets a chance to think
 	//
-	for (uint32_t i = 0 ; i < num_entities; i++)
+	for (entity &ent : entity_range(0, num_entities - 1))
 	{
-		entity &ent = itoe(i);
-
 		if (!ent.inuse)
 			continue;
 		
@@ -397,7 +390,7 @@ void RunFrame()
 		}
 #endif
 	
-		if (i > 0 && i <= game.maxclients)
+		if (ent.is_client())
 			ClientBeginServerFrame(ent);
 	
 		G_RunEntity(ent);

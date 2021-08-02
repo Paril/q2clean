@@ -18,7 +18,7 @@ template<typename T>
 	return a > b ? a : b;
 }
 
-// clamp value between min and max (min < value < max)
+// clamp value between min and max (min <= value <= max)
 template<typename T>
 [[nodiscard]] constexpr const T &clamp(const T &min, const T &value, const T &max)
 {

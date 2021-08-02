@@ -1,5 +1,5 @@
 #include "config.h"
-#include "lib/savables.h"
+#include "game/savables.h"
 #include "game/entity_types.h"
 #include "lib/math/vector.h"
 #include "lib/protocol.h"

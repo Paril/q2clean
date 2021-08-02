@@ -9,6 +9,7 @@
 #include "lib/math/random.h"
 #include "lib/string/format.h"
 #include "game/combat.h"
+#include "game/misc.h"
 
 /*
 =========================================================
@@ -51,7 +52,9 @@ constexpr spawn_flag DOOR_NOMONSTER		= (spawn_flag)8;
 constexpr spawn_flag DOOR_TOGGLE		= (spawn_flag)32;
 constexpr spawn_flag DOOR_X_AXIS		= (spawn_flag)64;
 constexpr spawn_flag DOOR_Y_AXIS		= (spawn_flag)128;
+#ifdef GROUND_ZERO
 constexpr spawn_flag DOOR_INACTIVE		= (spawn_flag)8192;
+#endif
 
 //
 // Support routines for movement (changes in origin using velocity)
@@ -63,7 +66,7 @@ static void Move_Done(entity &ent)
 	ent.moveinfo.endfunc(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Move_Done);
+static REGISTER_SAVABLE_FUNCTION(Move_Done);
 
 static void Move_Final(entity &ent)
 {
@@ -75,11 +78,11 @@ static void Move_Final(entity &ent)
 
 	ent.velocity = ent.moveinfo.dir * (ent.moveinfo.remaining_distance / FRAMETIME);
 
-	ent.think = Move_Done_savable;
+	ent.think = SAVABLE(Move_Done);
 	ent.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(Move_Final);
+static REGISTER_SAVABLE_FUNCTION(Move_Final);
 
 static void Move_Begin(entity &ent)
 {
@@ -93,18 +96,18 @@ static void Move_Begin(entity &ent)
 	float frames = floor((ent.moveinfo.remaining_distance / ent.moveinfo.speed) / FRAMETIME);
 	ent.moveinfo.remaining_distance -= frames * ent.moveinfo.speed * FRAMETIME;
 	ent.nextthink = level.framenum + (gtime)frames;
-	ent.think = Move_Final_savable;
+	ent.think = SAVABLE(Move_Final);
 }
 
-REGISTER_SAVABLE_FUNCTION(Move_Begin);
+static REGISTER_SAVABLE_FUNCTION(Move_Begin);
 
 static void Think_AccelMove(entity &ent);
 
-REGISTER_SAVABLE_FUNCTION(Think_AccelMove);
+static REGISTER_SAVABLE_FUNCTION(Think_AccelMove);
 
 static void plat_CalcAcceleratedMove(entity &ent);
 
-void Move_Calc(entity &ent, vector dest, savable_function<thinkfunc> func)
+void Move_Calc(entity &ent, vector dest, savable_function<ethinkfunc> func)
 {
 	ent.velocity = vec3_origin;
 	ent.moveinfo.dir = dest - ent.s.origin;
@@ -118,7 +121,7 @@ void Move_Calc(entity &ent, vector dest, savable_function<thinkfunc> func)
 		else
 		{
 			ent.nextthink = level.framenum + 1;
-			ent.think = Move_Begin_savable;
+			ent.think = SAVABLE(Move_Begin);
 		}
 	}
 	else
@@ -127,7 +130,7 @@ void Move_Calc(entity &ent, vector dest, savable_function<thinkfunc> func)
 		plat_CalcAcceleratedMove(ent);
 		
 		ent.moveinfo.current_speed = 0;
-		ent.think = Think_AccelMove_savable;
+		ent.think = SAVABLE(Think_AccelMove);
 		ent.nextthink = level.framenum + 1;
 	}
 }
@@ -142,7 +145,7 @@ static void AngleMove_Done(entity &ent)
 	ent.moveinfo.endfunc(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(AngleMove_Done);
+static REGISTER_SAVABLE_FUNCTION(AngleMove_Done);
 
 static void AngleMove_Final(entity &ent)
 {
@@ -161,11 +164,15 @@ static void AngleMove_Final(entity &ent)
 
 	ent.avelocity = move * (1.0f / FRAMETIME);
 
-	ent.think = AngleMove_Done_savable;
+	ent.think = SAVABLE(AngleMove_Done);
 	ent.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(AngleMove_Final);
+static REGISTER_SAVABLE_FUNCTION(AngleMove_Final);
+
+static void AngleMove_Begin(entity &ent);
+
+DECLARE_SAVABLE_FUNCTION(AngleMove_Begin);
 
 static void AngleMove_Begin(entity &ent)
 {
@@ -209,25 +216,25 @@ static void AngleMove_Begin(entity &ent)
 
 #ifdef GROUND_ZERO
 	// if we're done accelerating, act as a normal rotation
-	if(ent.moveinfo.speed >= ent.speed)
+	if (ent.moveinfo.speed >= ent.speed)
 	{
 #endif
 		// set nextthink to trigger a think when dest is reached
-		ent.nextthink = level.framenum + (gtime)frames;
-		ent.think = AngleMove_Final_savable;
+		ent.nextthink = level.framenum + (gtime) frames;
+		ent.think = SAVABLE(AngleMove_Final);
 #ifdef GROUND_ZERO
 	}
 	else
 	{
 		ent.nextthink = level.framenum + 1;
-		ent.think = AngleMove_Begin;
+		ent.think = SAVABLE(AngleMove_Begin);
 	}
 #endif
 }
 
-REGISTER_SAVABLE_FUNCTION(AngleMove_Begin);
+static REGISTER_SAVABLE_FUNCTION(AngleMove_Begin);
 
-static void AngleMove_Calc(entity &ent, savable_function<thinkfunc> func)
+static void AngleMove_Calc(entity &ent, savable_function<ethinkfunc> func)
 {
 	ent.avelocity = vec3_origin;
 	ent.moveinfo.endfunc = func;
@@ -243,7 +250,7 @@ static void AngleMove_Calc(entity &ent, savable_function<thinkfunc> func)
 	else
 	{
 		ent.nextthink = level.framenum + 1;
-		ent.think = AngleMove_Begin_savable;
+		ent.think = SAVABLE(AngleMove_Begin);
 	}
 }
 
@@ -356,12 +363,12 @@ static void Think_AccelMove(entity &ent)
 
 	ent.velocity = ent.moveinfo.dir * (ent.moveinfo.current_speed * 10);
 	ent.nextthink = level.framenum + 1;
-	ent.think = Think_AccelMove_savable;
+	ent.think = SAVABLE(Think_AccelMove);
 }
 
 static void plat_go_down(entity &ent);
 
-REGISTER_SAVABLE_FUNCTION(plat_go_down);
+static REGISTER_SAVABLE_FUNCTION(plat_go_down);
 
 static void plat_hit_top(entity &ent)
 {
@@ -373,15 +380,16 @@ static void plat_hit_top(entity &ent)
 	}
 	ent.moveinfo.state = STATE_TOP;
 
-	ent.think = plat_go_down_savable;
+	ent.think = SAVABLE(plat_go_down);
 	ent.nextthink = level.framenum + 3 * BASE_FRAMERATE;
 }
 
-REGISTER_SAVABLE_FUNCTION(plat_hit_top);
+static REGISTER_SAVABLE_FUNCTION(plat_hit_top);
 
 #if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
-void(entity ent) plat2_kill_danger_area;
-void(entity ent) plat2_spawn_danger_area;
+// from rogue/func.qc
+//void plat2_kill_danger_area(entity &ent);
+//void plat2_spawn_danger_area(entity &ent);
 #endif
 
 static void plat_hit_bottom(entity &ent)
@@ -395,11 +403,11 @@ static void plat_hit_bottom(entity &ent)
 	ent.moveinfo.state = STATE_BOTTOM;
 #if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
 
-	plat2_kill_danger_area (ent);
+	//plat2_kill_danger_area (ent);
 #endif
 }
 
-REGISTER_SAVABLE_FUNCTION(plat_hit_bottom);
+static REGISTER_SAVABLE_FUNCTION(plat_hit_bottom);
 
 static void plat_go_down(entity &ent)
 {
@@ -410,10 +418,10 @@ static void plat_go_down(entity &ent)
 		ent.s.sound = ent.moveinfo.sound_middle;
 	}
 	ent.moveinfo.state = STATE_DOWN;
-	Move_Calc(ent, ent.moveinfo.end_origin, plat_hit_bottom_savable);
+	Move_Calc(ent, ent.moveinfo.end_origin, SAVABLE(plat_hit_bottom));
 #if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
 
-	plat2_spawn_danger_area(ent);
+	//plat2_spawn_danger_area(ent);
 #endif
 }
 
@@ -426,7 +434,7 @@ static void plat_go_up(entity &ent)
 		ent.s.sound = ent.moveinfo.sound_middle;
 	}
 	ent.moveinfo.state = STATE_UP;
-	Move_Calc(ent, ent.moveinfo.start_origin, plat_hit_top_savable);
+	Move_Calc(ent, ent.moveinfo.start_origin, SAVABLE(plat_hit_top));
 }
 
 static void plat_blocked(entity &self, entity &other)
@@ -455,11 +463,11 @@ static void plat_blocked(entity &self, entity &other)
 		plat_go_up(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(plat_blocked);
+static REGISTER_SAVABLE_FUNCTION(plat_blocked);
 
 void Use_Plat(entity &ent, entity &other [[maybe_unused]], entity &)
 {
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	// if a monster is using us, then allow the activity when stopped.
 	if (other.svflags & SVF_MONSTER)
 	{
@@ -477,7 +485,7 @@ void Use_Plat(entity &ent, entity &other [[maybe_unused]], entity &)
 	plat_go_down(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Use_Plat);
+static REGISTER_SAVABLE_FUNCTION(Use_Plat);
 
 static void Touch_Plat_Center(entity &ent, entity &other, vector, const surface &)
 {
@@ -495,7 +503,7 @@ static void Touch_Plat_Center(entity &ent, entity &other, vector, const surface 
 		plat.nextthink = level.framenum + 1 * BASE_FRAMERATE;   // the player is still on the plat, so delay going down
 }
 
-REGISTER_SAVABLE_FUNCTION(Touch_Plat_Center);
+static REGISTER_SAVABLE_FUNCTION(Touch_Plat_Center);
 
 entity &plat_spawn_inside_trigger(entity &ent)
 {
@@ -503,7 +511,7 @@ entity &plat_spawn_inside_trigger(entity &ent)
 // middle trigger
 //
 	entity &trigger = G_Spawn();
-	trigger.touch = Touch_Plat_Center_savable;
+	trigger.touch = SAVABLE(Touch_Plat_Center);
 	trigger.movetype = MOVETYPE_NONE;
 	trigger.solid = SOLID_TRIGGER;
 	trigger.enemy = ent;
@@ -566,7 +574,7 @@ static void SP_func_plat(entity &ent)
 
 	gi.setmodel(ent, ent.model);
 
-	ent.blocked = plat_blocked_savable;
+	ent.blocked = SAVABLE(plat_blocked);
 
 	if (!ent.speed)
 		ent.speed = 20.f;
@@ -597,7 +605,7 @@ static void SP_func_plat(entity &ent)
 	else
 		ent.pos2.z -= (ent.maxs.z - ent.mins.z) - st.lip;
 
-	ent.use = Use_Plat_savable;
+	ent.use = SAVABLE(Use_Plat);
 
 	plat_spawn_inside_trigger(ent);     // the "start moving" trigger
 
@@ -624,7 +632,7 @@ static void SP_func_plat(entity &ent)
 	ent.moveinfo.sound_end = gi.soundindex("plats/pt1_end.wav");
 }
 
-REGISTER_ENTITY(func_plat, ET_FUNC_PLAT);
+REGISTER_ENTITY(FUNC_PLAT, func_plat);
 
 //====================================================================
 
@@ -650,6 +658,10 @@ constexpr spawn_flag ROTATING_ANIMATED = (spawn_flag)64;
 constexpr spawn_flag ROTATING_ANIMATED_FAST = (spawn_flag)128;
 
 #ifdef GROUND_ZERO
+static void rotating_accel(entity &self);
+
+static REGISTER_SAVABLE_FUNCTION(rotating_accel);
+
 static void rotating_accel(entity &self)
 {
 	float current_speed = VectorLength (self.avelocity);
@@ -663,16 +675,20 @@ static void rotating_accel(entity &self)
 	{
 		current_speed += self.accel;
 		self.avelocity = self.movedir * current_speed;
-		self.think = rotating_accel;
+		self.think = SAVABLE(rotating_accel);
 		self.nextthink = level.framenum + 1;
 	}
 }
+static void rotating_decel(entity &self);
+
+static REGISTER_SAVABLE_FUNCTION(rotating_decel);
 
 static void rotating_decel(entity &self)
 {
 	float current_speed = VectorLength (self.avelocity);
 
-	if (current_speed <= self.decel)		// done
+	// done
+	if (current_speed <= self.decel)
 	{
 		self.avelocity = vec3_origin;
 		G_UseTargets (self, self);
@@ -682,7 +698,7 @@ static void rotating_decel(entity &self)
 	{
 		current_speed -= self.decel;
 		self.avelocity = self.movedir * current_speed;
-		self.think = rotating_decel;
+		self.think = SAVABLE(rotating_decel);
 		self.nextthink = level.framenum + 1;
 	}
 }
@@ -693,7 +709,7 @@ static void rotating_blocked(entity &self, entity &other)
 	T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, (int32_t)self.dmg, 1, DAMAGE_NONE, MOD_CRUSH);
 }
 
-REGISTER_SAVABLE_FUNCTION(rotating_blocked);
+static REGISTER_SAVABLE_FUNCTION(rotating_blocked);
 
 static void rotating_touch(entity &self, entity &other, vector, const surface &)
 {
@@ -701,7 +717,7 @@ static void rotating_touch(entity &self, entity &other, vector, const surface &)
 		T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, (int32_t)self.dmg, 1, DAMAGE_NONE, MOD_CRUSH);
 }
 
-REGISTER_SAVABLE_FUNCTION(rotating_touch);
+static REGISTER_SAVABLE_FUNCTION(rotating_touch);
 
 static void rotating_use(entity &self, entity &, entity &)
 {
@@ -709,14 +725,14 @@ static void rotating_use(entity &self, entity &, entity &)
 	{
 		self.s.sound = SOUND_NONE;
 #ifdef GROUND_ZERO
-		if(self.spawnflags & 8192)	// Decelerate
+		if(self.spawnflags & DOOR_INACTIVE)	// Decelerate
 			rotating_decel (self);
 		else
 		{
 			G_UseTargets (self, self);
 #endif
 			self.avelocity = vec3_origin;
-			self.touch = 0;
+			self.touch = nullptr;
 #ifdef GROUND_ZERO
 		}
 #endif
@@ -726,7 +742,7 @@ static void rotating_use(entity &self, entity &, entity &)
 		self.s.sound = self.moveinfo.sound_middle;
 
 #ifdef GROUND_ZERO
-		if(self.spawnflags & 8192)	// accelerate
+		if(self.spawnflags & DOOR_INACTIVE)	// accelerate
 			rotating_accel (self);
 		else
 		{
@@ -737,11 +753,11 @@ static void rotating_use(entity &self, entity &, entity &)
 		}
 #endif
 		if (self.spawnflags & ROTATING_TOUCH_PAIN)
-			self.touch = rotating_touch_savable;
+			self.touch = SAVABLE(rotating_touch);
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(rotating_use);
+static REGISTER_SAVABLE_FUNCTION(rotating_use);
 
 static void SP_func_rotating(entity &ent)
 {
@@ -769,9 +785,9 @@ static void SP_func_rotating(entity &ent)
 	if (!ent.dmg)
 		ent.dmg = 2;
 
-	ent.use = rotating_use_savable;
+	ent.use = SAVABLE(rotating_use);
 	if (ent.dmg)
-		ent.blocked = rotating_blocked_savable;
+		ent.blocked = SAVABLE(rotating_blocked);
 
 	if (ent.spawnflags & ROTATING_START_ON)
 		ent.use(ent, world, world);
@@ -782,7 +798,7 @@ static void SP_func_rotating(entity &ent)
 		ent.s.effects |= EF_ANIM_ALLFAST;
 
 #ifdef GROUND_ZERO
-	if(ent.spawnflags & 8192)	// Accelerate / Decelerate
+	if(ent.spawnflags & DOOR_INACTIVE)	// Accelerate / Decelerate
 	{
 		if(!ent.accel)
 			ent.accel = 1.f;
@@ -800,7 +816,7 @@ static void SP_func_rotating(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(func_rotating, ET_FUNC_ROTATING);
+static REGISTER_ENTITY(FUNC_ROTATING, func_rotating);
 
 /*
 ======================================================================
@@ -834,13 +850,13 @@ static void button_done(entity &self)
 	self.s.effects |= EF_ANIM01;
 }
 
-REGISTER_SAVABLE_FUNCTION(button_done);
+static REGISTER_SAVABLE_FUNCTION(button_done);
 
 static void button_return(entity &self)
 {
 	self.moveinfo.state = STATE_DOWN;
 
-	Move_Calc(self, self.moveinfo.start_origin, button_done_savable);
+	Move_Calc(self, self.moveinfo.start_origin, SAVABLE(button_done));
 
 	self.s.frame = 0;
 
@@ -848,7 +864,7 @@ static void button_return(entity &self)
 		self.takedamage = true;
 }
 
-REGISTER_SAVABLE_FUNCTION(button_return);
+static REGISTER_SAVABLE_FUNCTION(button_return);
 
 static void button_wait(entity &self)
 {
@@ -861,11 +877,11 @@ static void button_wait(entity &self)
 	if (self.moveinfo.wait >= 0)
 	{
 		self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
-		self.think = button_return_savable;
+		self.think = SAVABLE(button_return);
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(button_wait);
+static REGISTER_SAVABLE_FUNCTION(button_wait);
 
 static void button_fire(entity &self)
 {
@@ -875,7 +891,7 @@ static void button_fire(entity &self)
 	self.moveinfo.state = STATE_UP;
 	if (self.moveinfo.sound_start && !(self.flags & FL_TEAMSLAVE))
 		gi.sound(self, CHAN_NO_PHS_ADD | CHAN_VOICE, self.moveinfo.sound_start, 1, ATTN_STATIC, 0);
-	Move_Calc(self, self.moveinfo.end_origin, button_wait_savable);
+	Move_Calc(self, self.moveinfo.end_origin, SAVABLE(button_wait));
 }
 
 static void button_use(entity &self, entity &, entity &cactivator)
@@ -884,7 +900,7 @@ static void button_use(entity &self, entity &, entity &cactivator)
 	button_fire(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(button_use);
+static REGISTER_SAVABLE_FUNCTION(button_use);
 
 static void button_touch(entity &self, entity &other, vector, const surface &)
 {
@@ -898,7 +914,7 @@ static void button_touch(entity &self, entity &other, vector, const surface &)
 	button_fire(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(button_touch);
+static REGISTER_SAVABLE_FUNCTION(button_touch);
 
 static void button_killed(entity &self, entity &, entity &attacker, int32_t, vector)
 {
@@ -908,7 +924,7 @@ static void button_killed(entity &self, entity &, entity &attacker, int32_t, vec
 	button_fire(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(button_killed);
+static REGISTER_SAVABLE_FUNCTION(button_killed);
 
 static void SP_func_button(entity &ent)
 {
@@ -940,17 +956,17 @@ static void SP_func_button(entity &ent)
 	float dist = abs_movedir.x * ent.size.x + abs_movedir.y * ent.size.y + abs_movedir.z * ent.size.z - st.lip;
 	ent.pos2 = ent.pos1 + (dist * ent.movedir);
 
-	ent.use = button_use_savable;
+	ent.use = SAVABLE(button_use);
 	ent.s.effects |= EF_ANIM01;
 
 	if (ent.health)
 	{
 		ent.max_health = ent.health;
-		ent.die = button_killed_savable;
+		ent.die = SAVABLE(button_killed);
 		ent.takedamage = true;
 	}
 	else if (!ent.targetname)
-		ent.touch = button_touch_savable;
+		ent.touch = SAVABLE(button_touch);
 
 	ent.moveinfo.state = STATE_BOTTOM;
 
@@ -966,7 +982,7 @@ static void SP_func_button(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(func_button, ET_FUNC_BUTTON);
+static REGISTER_ENTITY(FUNC_BUTTON, func_button);
 
 /*
 ======================================================================
@@ -1015,7 +1031,7 @@ static void door_use_areaportals(entity &self, bool open)
 
 static void door_go_down(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_go_down);
+static REGISTER_SAVABLE_FUNCTION(door_go_down);
 
 static void door_hit_top(entity &self)
 {
@@ -1033,12 +1049,12 @@ static void door_hit_top(entity &self)
 
 	if (self.moveinfo.wait >= 0)
 	{
-		self.think = door_go_down_savable;
+		self.think = SAVABLE(door_go_down);
 		self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(door_hit_top);
+static REGISTER_SAVABLE_FUNCTION(door_hit_top);
 
 static void door_hit_bottom(entity &self)
 {
@@ -1052,7 +1068,7 @@ static void door_hit_bottom(entity &self)
 	door_use_areaportals(self, false);
 }
 
-REGISTER_SAVABLE_FUNCTION(door_hit_bottom);
+static REGISTER_SAVABLE_FUNCTION(door_hit_bottom);
 
 static void door_go_down(entity &self)
 {
@@ -1071,9 +1087,9 @@ static void door_go_down(entity &self)
 	self.moveinfo.state = STATE_DOWN;
 
 	if (self.type == ET_FUNC_DOOR)
-		Move_Calc(self, self.moveinfo.start_origin, door_hit_bottom_savable);
+		Move_Calc(self, self.moveinfo.start_origin, SAVABLE(door_hit_bottom));
 	else if (self.type == ET_FUNC_DOOR_ROTATING)
-		AngleMove_Calc(self, door_hit_bottom_savable);
+		AngleMove_Calc(self, SAVABLE(door_hit_bottom));
 }
 
 static void door_go_up(entity &self, entity &cactivator)
@@ -1099,22 +1115,24 @@ static void door_go_up(entity &self, entity &cactivator)
 	self.moveinfo.state = STATE_UP;
 
 	if (self.type == ET_FUNC_DOOR)
-		Move_Calc(self, self.moveinfo.end_origin, door_hit_top_savable);
+		Move_Calc(self, self.moveinfo.end_origin, SAVABLE(door_hit_top));
 	else if (self.type == ET_FUNC_DOOR_ROTATING)
-		AngleMove_Calc(self, door_hit_top_savable);
+		AngleMove_Calc(self, SAVABLE(door_hit_top));
 
 	G_UseTargets(self, cactivator);
 	door_use_areaportals(self, true);
 }
 
 #ifdef GROUND_ZERO
+static void smart_water_go_up(entity &self);
+
+DECLARE_SAVABLE_FUNCTION(smart_water_go_up);
+
 static void smart_water_go_up(entity &self)
 {
 	float	distance;
 	entityref	lowestPlayer;
-	entityref	ent;
 	float	lowestPlayerPt;
-	int	i;
 
 	if (self.moveinfo.state == STATE_TOP)
 	{	// reset top wait time
@@ -1143,23 +1161,21 @@ static void smart_water_go_up(entity &self)
 
 	// find the lowest player point.
 	lowestPlayerPt = FLT_MAX;
-	lowestPlayer = world;
-	for (i=0 ; i<game.maxclients ; i++)
-	{
-		ent = itoe(1 + i);
 
+	for (entity &ent : entity_range(1, game.maxclients))
+	{
 		// don't count dead or unused player slots
-		if((ent->inuse) && (ent->health > 0))
+		if (ent.inuse && ent.health > 0)
 		{
-			if (ent->absmin[2] < lowestPlayerPt)
+			if (ent.absmin[2] < lowestPlayerPt)
 			{
-				lowestPlayerPt = ent->absmin[2];
+				lowestPlayerPt = ent.absmin[2];
 				lowestPlayer = ent;
 			}
 		}
 	}
 
-	if (!lowestPlayer)
+	if (!lowestPlayer.has_value())
 		return;
 
 	distance = lowestPlayerPt - self.absmax[2];
@@ -1167,19 +1183,19 @@ static void smart_water_go_up(entity &self)
 	// for the calculations, make sure we intend to go up at least a little.
 	if(distance < self.accel)
 	{
-		distance = 100f;
-		self.moveinfo.speed = 5f;
+		distance = 100.f;
+		self.moveinfo.speed = 5.f;
 	}
 	else
 		self.moveinfo.speed = distance / self.accel;
 
 	if(self.moveinfo.speed < 5)
-		self.moveinfo.speed = 5f;
+		self.moveinfo.speed = 5.f;
 	else if(self.moveinfo.speed > self.speed)
 		self.moveinfo.speed = self.speed;
 
 	// FIXME - should this allow any movement other than straight up?
-	self.moveinfo.dir = '0 0 1';	
+	self.moveinfo.dir = MOVEDIR_UP;	
 	self.velocity = self.moveinfo.dir * self.moveinfo.speed;
 	self.moveinfo.remaining_distance = distance;
 
@@ -1190,9 +1206,11 @@ static void smart_water_go_up(entity &self)
 		self.moveinfo.state = STATE_UP;
 	}
 
-	self.think = smart_water_go_up;
+	self.think = SAVABLE(smart_water_go_up);
 	self.nextthink = level.framenum + 1;
 }
+
+static REGISTER_SAVABLE_FUNCTION(smart_water_go_up);
 #endif
 
 static void door_use(entity &self, entity &, entity &cactivator)
@@ -1208,7 +1226,7 @@ static void door_use(entity &self, entity &, entity &cactivator)
 			for (entityref ent = self; ent.has_value(); ent = ent->teamchain)
 			{
 				ent->message = nullptr;
-				ent->touch = 0;
+				ent->touch = nullptr;
 				door_go_down(ent);
 			}
 			return;
@@ -1217,7 +1235,7 @@ static void door_use(entity &self, entity &, entity &cactivator)
 
 #ifdef GROUND_ZERO
 	// smart water is different
-	if ((self.spawnflags & 2) && (gi.pointcontents((self.mins + self.maxs) * 0.5) & MASK_WATER))
+	if ((self.spawnflags & WATER_SMART) && (gi.pointcontents((self.mins + self.maxs) * 0.5f) & MASK_WATER))
 	{
 		self.message = 0;
 		self.touch = 0;
@@ -1231,12 +1249,12 @@ static void door_use(entity &self, entity &, entity &cactivator)
 	for (entityref ent = self; ent.has_value(); ent = ent->teamchain)
 	{
 		ent->message = nullptr;
-		ent->touch = 0;
+		ent->touch = nullptr;
 		door_go_up(ent, cactivator);
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(door_use);
+static REGISTER_SAVABLE_FUNCTION(door_use);
 
 static void Touch_DoorTrigger(entity &self, entity &other, vector, const surface &)
 {
@@ -1256,7 +1274,7 @@ static void Touch_DoorTrigger(entity &self, entity &other, vector, const surface
 	door_use(self.owner, other, other);
 }
 
-REGISTER_SAVABLE_FUNCTION(Touch_DoorTrigger);
+static REGISTER_SAVABLE_FUNCTION(Touch_DoorTrigger);
 
 static void Think_CalcMoveSpeed(entity &self)
 {
@@ -1291,7 +1309,7 @@ static void Think_CalcMoveSpeed(entity &self)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(Think_CalcMoveSpeed);
+static REGISTER_SAVABLE_FUNCTION(Think_CalcMoveSpeed);
 
 static void Think_SpawnDoorTrigger(entity &ent)
 {
@@ -1319,7 +1337,7 @@ static void Think_SpawnDoorTrigger(entity &ent)
 	other.owner = ent;
 	other.solid = SOLID_TRIGGER;
 	other.movetype = MOVETYPE_NONE;
-	other.touch = Touch_DoorTrigger_savable;
+	other.touch = SAVABLE(Touch_DoorTrigger);
 	gi.linkentity(other);
 
 	if (ent.spawnflags & DOOR_START_OPEN)
@@ -1328,7 +1346,7 @@ static void Think_SpawnDoorTrigger(entity &ent)
 	Think_CalcMoveSpeed(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Think_SpawnDoorTrigger);
+static REGISTER_SAVABLE_FUNCTION(Think_SpawnDoorTrigger);
 
 static void door_blocked(entity &self, entity &other)
 {
@@ -1353,14 +1371,14 @@ static void door_blocked(entity &self, entity &other)
 	{
 		if (self.moveinfo.state == STATE_DOWN)
 			for (entityref ent = self.teammaster; ent.has_value(); ent = ent->teamchain)
-				door_go_up(ent, ent->activator);
+				door_go_up(ent, ent->activator.or_default(world));
 		else
 			for (entityref ent = self.teammaster ; ent.has_value(); ent = ent->teamchain)
 				door_go_down(ent);
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(door_blocked);
+static REGISTER_SAVABLE_FUNCTION(door_blocked);
 
 static void door_killed(entity &self, entity &, entity &attacker, int32_t, vector)
 {
@@ -1373,7 +1391,7 @@ static void door_killed(entity &self, entity &, entity &attacker, int32_t, vecto
 	door_use(self.teammaster, attacker, attacker);
 }
 
-REGISTER_SAVABLE_FUNCTION(door_killed);
+static REGISTER_SAVABLE_FUNCTION(door_killed);
 
 static void door_touch(entity &self, entity &other, vector, const surface &)
 {
@@ -1388,7 +1406,7 @@ static void door_touch(entity &self, entity &other, vector, const surface &)
 	gi.sound(other, CHAN_AUTO, gi.soundindex("misc/talk1.wav"), 1, ATTN_NORM, 0);
 }
 
-REGISTER_SAVABLE_FUNCTION(door_touch);
+static REGISTER_SAVABLE_FUNCTION(door_touch);
 
 static void SP_func_door(entity &ent)
 {
@@ -1404,13 +1422,13 @@ static void SP_func_door(entity &ent)
 	ent.solid = SOLID_BSP;
 	gi.setmodel(ent, ent.model);
 
-	ent.blocked = door_blocked_savable;
-	ent.use = door_use_savable;
+	ent.blocked = SAVABLE(door_blocked);
+	ent.use = SAVABLE(door_use);
 
 	if (!ent.speed)
 		ent.speed = 100.f;
 #ifdef SINGLE_PLAYER
-	if ((int32_t)deathmatch)
+	if (deathmatch)
 #endif
 		ent.speed *= 2;
 
@@ -1448,13 +1466,13 @@ static void SP_func_door(entity &ent)
 	if (ent.health)
 	{
 		ent.takedamage = true;
-		ent.die = door_killed_savable;
+		ent.die = SAVABLE(door_killed);
 		ent.max_health = ent.health;
 	}
 	else if (ent.targetname && ent.message)
 	{
 		gi.soundindex("misc/talk.wav");
-		ent.touch = door_touch_savable;
+		ent.touch = SAVABLE(door_touch);
 	}
 
 	ent.moveinfo.speed = ent.speed;
@@ -1479,12 +1497,12 @@ static void SP_func_door(entity &ent)
 
 	ent.nextthink = level.framenum + 1;
 	if (ent.health || ent.targetname)
-		ent.think = Think_CalcMoveSpeed_savable;
+		ent.think = SAVABLE(Think_CalcMoveSpeed);
 	else
-		ent.think = Think_SpawnDoorTrigger_savable;
+		ent.think = SAVABLE(Think_SpawnDoorTrigger);
 }
 
-REGISTER_ENTITY(func_door, ET_FUNC_DOOR);
+REGISTER_ENTITY(FUNC_DOOR, func_door);
 
 /*QUAKED func_door_rotating (0 .5 .8) ? START_OPEN REVERSE CRUSHER NOMONSTER ANIMATED TOGGLE X_AXIS Y_AXIS
 TOGGLE causes the door to wait in both the start and end states for a trigger event.
@@ -1518,24 +1536,26 @@ REVERSE will cause the door to rotate in the opposite direction.
 constexpr spawn_flag DOOR_ROTATING_ANIMATED = (spawn_flag)16;
 
 #ifdef GROUND_ZERO
-static void(entity self, entity other, entity cactivator) Door_Activate =
+static void Door_Activate(entity &self, entity &, entity &)
 {
 	self.use = 0;
 	
 	if (self.health)
 	{
 		self.takedamage = true;
-		self.die = door_killed;
+		self.die = SAVABLE(door_killed);
 		self.max_health = self.health;
 	}
 
 	if (self.health)
-		self.think = Think_CalcMoveSpeed;
+		self.think = SAVABLE(Think_CalcMoveSpeed);
 	else
-		self.think = Think_SpawnDoorTrigger;
+		self.think = SAVABLE(Think_SpawnDoorTrigger);
 	self.nextthink = level.framenum + 1;
 
 }
+
+static REGISTER_SAVABLE_FUNCTION(Door_Activate);
 #endif
 
 static void SP_func_door_rotating(entity &ent)
@@ -1569,8 +1589,8 @@ static void SP_func_door_rotating(entity &ent)
 	ent.solid = SOLID_BSP;
 	gi.setmodel(ent, ent.model);
 
-	ent.blocked = door_blocked_savable;
-	ent.use = door_use_savable;
+	ent.blocked = SAVABLE(door_blocked);
+	ent.use = SAVABLE(door_use);
 
 	if (!ent.speed)
 		ent.speed = 100.f;
@@ -1603,14 +1623,14 @@ static void SP_func_door_rotating(entity &ent)
 	if (ent.health)
 	{
 		ent.takedamage = true;
-		ent.die = door_killed_savable;
+		ent.die = SAVABLE(door_killed);
 		ent.max_health = ent.health;
 	}
 
 	if (ent.targetname && ent.message)
 	{
 		gi.soundindex("misc/talk.wav");
-		ent.touch = door_touch_savable;
+		ent.touch = SAVABLE(door_touch);
 	}
 
 	ent.moveinfo.state = STATE_BOTTOM;
@@ -1634,9 +1654,9 @@ static void SP_func_door_rotating(entity &ent)
 
 	ent.nextthink = level.framenum + 1;
 	if (ent.health || ent.targetname)
-		ent.think = Think_CalcMoveSpeed_savable;
+		ent.think = SAVABLE(Think_CalcMoveSpeed);
 	else
-		ent.think = Think_SpawnDoorTrigger_savable;
+		ent.think = SAVABLE(Think_SpawnDoorTrigger);
 
 #ifdef GROUND_ZERO
 	if (ent.spawnflags & DOOR_INACTIVE)
@@ -1645,12 +1665,12 @@ static void SP_func_door_rotating(entity &ent)
 		ent.die = 0;
 		ent.think = 0;
 		ent.nextthink = 0;
-		ent.use = Door_Activate;
+		ent.use = SAVABLE(Door_Activate);
 	}
 #endif
 }
 
-REGISTER_ENTITY(func_door_rotating, ET_FUNC_DOOR_ROTATING);
+REGISTER_ENTITY(FUNC_DOOR_ROTATING, func_door_rotating);
 
 /*QUAKED func_water (0 .5 .8) ? START_OPEN
 func_water is a moveable water brush.  It must be targeted to operate.  Use a non-water texture at your own risk.
@@ -1668,20 +1688,22 @@ START_OPEN causes the water to move to its destination when spawned and operate 
 */
 
 #ifdef GROUND_ZERO
-static void(entity self, entity other) smart_water_blocked =
+static void smart_water_blocked(entity &self, entity &other)
 {
-	if (!(other.svflags & SVF_MONSTER) && (!other.is_client) )
+	if (!(other.svflags & SVF_MONSTER) && (!other.is_client()) )
 	{
 		// give it a chance to go away on it's own terms (like gibs)
-		T_Damage (other, self, self, vec3_origin, other.s.origin, vec3_origin, 100000, 1, 0, MOD_LAVA);
+		T_Damage (other, self, self, vec3_origin, other.s.origin, vec3_origin, 100000, 1, DAMAGE_NONE, MOD_LAVA);
 		// if it's still there, nuke it
 		if (other.inuse)		// PGM
 			BecomeExplosion1 (other);
 		return;
 	}
 
-	T_Damage (other, self, self, vec3_origin, other.s.origin, vec3_origin, 100, 1, 0, MOD_LAVA);
+	T_Damage (other, self, self, vec3_origin, other.s.origin, vec3_origin, 100, 1, DAMAGE_NONE, MOD_LAVA);
 }
+
+static REGISTER_SAVABLE_FUNCTION(smart_water_blocked);
 #endif
 
 static void SP_func_water(entity &self)
@@ -1733,13 +1755,13 @@ static void SP_func_water(entity &self)
 	self.moveinfo.accel = self.moveinfo.decel = self.moveinfo.speed = self.speed;
 
 #ifdef GROUND_ZERO
-	if (self.spawnflags & 2)	// smart water
+	if (self.spawnflags & WATER_SMART)	// smart water
 	{
 		// this is actually the divisor of the lowest player's distance to determine speed.
 		// self.speed then becomes the cap of the speed.
 		if(!self.accel)
-			self.accel = 20f;
-		self.blocked = smart_water_blocked;
+			self.accel = 20.f;
+		self.blocked = SAVABLE(smart_water_blocked);
 	}
 #endif
 
@@ -1747,7 +1769,7 @@ static void SP_func_water(entity &self)
 		self.wait = -1.f;
 	self.moveinfo.wait = self.wait;
 
-	self.use = door_use_savable;
+	self.use = SAVABLE(door_use);
 
 	if (self.wait == -1)
 		self.spawnflags |= DOOR_TOGGLE;
@@ -1755,7 +1777,7 @@ static void SP_func_water(entity &self)
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(func_water, ET_FUNC_DOOR);
+static REGISTER_ENTITY_INHERIT(FUNC_WATER, func_water, ET_FUNC_DOOR);
 
 /*QUAKED func_train (0 .5 .8) ? START_ON TOGGLE BLOCK_STOPS
 Trains are moving platforms that players can ride.
@@ -1767,13 +1789,10 @@ dmg     default 2
 noise   looping sound to play when the train is in motion
 
 */
-constexpr spawn_flag TRAIN_START_ON		= (spawn_flag)1;
-constexpr spawn_flag TRAIN_TOGGLE		= (spawn_flag)2;
-constexpr spawn_flag TRAIN_BLOCK_STOPS	= (spawn_flag)4;
 
 static void train_next(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(train_next);
+static REGISTER_SAVABLE_FUNCTION(train_next);
 
 static void train_blocked(entity &self, entity &other)
 {
@@ -1796,7 +1815,7 @@ static void train_blocked(entity &self, entity &other)
 	T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, self.dmg, 1, DAMAGE_NONE, MOD_CRUSH);
 }
 
-REGISTER_SAVABLE_FUNCTION(train_blocked);
+static REGISTER_SAVABLE_FUNCTION(train_blocked);
 
 static void train_wait(entity &self)
 {
@@ -1818,7 +1837,7 @@ static void train_wait(entity &self)
 		if (self.moveinfo.wait > 0)
 		{
 			self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
-			self.think = train_next_savable;
+			self.think = SAVABLE(train_next);
 		}
 		else if (self.spawnflags & TRAIN_TOGGLE)
 		{ // && wait < 0
@@ -1843,14 +1862,16 @@ static void train_wait(entity &self)
 		train_next(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(train_wait);
+static REGISTER_SAVABLE_FUNCTION(train_wait);
 
 #ifdef GROUND_ZERO
 static cvarref g_legacy_trains;
 
-static void(entity self) train_piece_wait =
+static void train_piece_wait(entity &)
 {
 }
+
+static REGISTER_SAVABLE_FUNCTION(train_piece_wait);
 #endif
 
 static void train_next(entity &self)
@@ -1871,7 +1892,7 @@ again:
 	self.target = ent->target;
 
 	// check for a teleport path_corner
-	if (ent->spawnflags & 1)
+	if (ent->spawnflags & TRAIN_START_ON)
 	{
 		if (!first)
 		{
@@ -1887,18 +1908,18 @@ again:
 	}
 
 #ifdef GROUND_ZERO
-	if (ent.speed)
+	if (ent->speed)
 	{
-		self.speed = ent.speed;
-		self.moveinfo.speed = ent.speed;
-		if(ent.accel)
-			self.moveinfo.accel = ent.accel;
+		self.speed = ent->speed;
+		self.moveinfo.speed = ent->speed;
+		if(ent->accel)
+			self.moveinfo.accel = ent->accel;
 		else
-			self.moveinfo.accel = ent.speed;
-		if(ent.decel)
-			self.moveinfo.decel = ent.decel;
+			self.moveinfo.accel = ent->speed;
+		if(ent->decel)
+			self.moveinfo.decel = ent->decel;
 		else
-			self.moveinfo.decel = ent.speed;
+			self.moveinfo.decel = ent->speed;
 		self.moveinfo.current_speed = 0;
 	}
 #endif
@@ -1917,29 +1938,28 @@ again:
 	self.moveinfo.state = STATE_TOP;
 	self.moveinfo.start_origin = self.s.origin;
 	self.moveinfo.end_origin = dest;
-	Move_Calc(self, dest, train_wait_savable);
+	Move_Calc(self, dest, SAVABLE(train_wait));
 	self.spawnflags |= TRAIN_START_ON;
 
 #ifdef GROUND_ZERO
-	if(self.team && !g_legacy_trains.intVal)
+	if(self.team && !g_legacy_trains)
 	{
-		entity e;
-		vector dir, dst;
+		vector dir = dest - self.s.origin;
 
-		dir = dest - self.s.origin;
-		for (e=self.teamchain; e ; e = e.teamchain)
+		for (entityref e = self.teamchain; e.has_value(); e = e->teamchain)
 		{
-			dst = dir + e.s.origin;
-			e.moveinfo.start_origin = e.s.origin;
-			e.moveinfo.end_origin = dst;
+			vector dst = dir + e->s.origin;
 
-			e.moveinfo.state = STATE_TOP;
-			e.speed = self.speed;
-			e.moveinfo.speed = self.moveinfo.speed;
-			e.moveinfo.accel = self.moveinfo.accel;
-			e.moveinfo.decel = self.moveinfo.decel;
-			e.movetype = MOVETYPE_PUSH;
-			Move_Calc (e, dst, train_piece_wait);
+			e->moveinfo.start_origin = e->s.origin;
+			e->moveinfo.end_origin = dst;
+
+			e->moveinfo.state = STATE_TOP;
+			e->speed = self.speed;
+			e->moveinfo.speed = self.moveinfo.speed;
+			e->moveinfo.accel = self.moveinfo.accel;
+			e->moveinfo.decel = self.moveinfo.decel;
+			e->movetype = MOVETYPE_PUSH;
+			Move_Calc (e, dst, SAVABLE(train_piece_wait));
 		}
 	
 	}
@@ -1953,7 +1973,7 @@ static void train_resume(entity &self)
 	self.moveinfo.state = STATE_TOP;
 	self.moveinfo.start_origin = self.s.origin;
 	self.moveinfo.end_origin = dest;
-	Move_Calc(self, dest, train_wait_savable);
+	Move_Calc(self, dest, SAVABLE(train_wait));
 	self.spawnflags |= TRAIN_START_ON;
 }
 
@@ -1985,12 +2005,12 @@ void func_train_find(entity &self)
 	if (self.spawnflags & TRAIN_START_ON)
 	{
 		self.nextthink = level.framenum + 1;
-		self.think = train_next_savable;
+		self.think = SAVABLE(train_next);
 		self.activator = self;
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(func_train_find);
+static REGISTER_SAVABLE_FUNCTION(func_train_find);
 
 void train_use(entity &self, entity &, entity &cactivator)
 {
@@ -2010,7 +2030,7 @@ void train_use(entity &self, entity &, entity &cactivator)
 		train_next(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(train_use);
+static REGISTER_SAVABLE_FUNCTION(train_use);
 
 static void SP_func_train(entity &self)
 {
@@ -2021,7 +2041,7 @@ static void SP_func_train(entity &self)
 	self.movetype = MOVETYPE_PUSH;
 
 	self.s.angles = vec3_origin;
-	self.blocked = train_blocked_savable;
+	self.blocked = SAVABLE(train_blocked);
 	if (self.spawnflags & TRAIN_BLOCK_STOPS)
 		self.dmg = 0;
 	else if (!self.dmg)
@@ -2037,7 +2057,7 @@ static void SP_func_train(entity &self)
 
 	self.moveinfo.accel = self.moveinfo.decel = self.moveinfo.speed = self.speed;
 
-	self.use = train_use_savable;
+	self.use = SAVABLE(train_use);
 
 	gi.linkentity(self);
 
@@ -2046,13 +2066,13 @@ static void SP_func_train(entity &self)
 		// start trains on the second frame, to make sure their targets have had
 		// a chance to spawn
 		self.nextthink = level.framenum + 1;
-		self.think = func_train_find_savable;
+		self.think = SAVABLE(func_train_find);
 	}
 	else
 		gi.dprintf("func_train without a target at %s\n", vtos(self.absmin).ptr());
 }
 
-REGISTER_ENTITY(func_train, ET_FUNC_TRAIN);
+REGISTER_ENTITY(FUNC_TRAIN, func_train);
 
 /*QUAKED trigger_elevator (0.3 0.1 0.6) (-8 -8 -8) (8 8 8)
 */
@@ -2078,7 +2098,7 @@ static void trigger_elevator_use(entity &self, entity &other, entity &)
 	train_resume(self.movetarget);
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_elevator_use);
+static REGISTER_SAVABLE_FUNCTION(trigger_elevator_use);
 
 static void trigger_elevator_init(entity &self)
 {
@@ -2102,19 +2122,19 @@ static void trigger_elevator_init(entity &self)
 		return;
 	}
 
-	self.use = trigger_elevator_use_savable;
+	self.use = SAVABLE(trigger_elevator_use);
 	self.svflags = SVF_NOCLIENT;
 }
 
-REGISTER_SAVABLE_FUNCTION(trigger_elevator_init);
+static REGISTER_SAVABLE_FUNCTION(trigger_elevator_init);
 
 static void SP_trigger_elevator(entity &self)
 {
-	self.think = trigger_elevator_init_savable;
+	self.think = SAVABLE(trigger_elevator_init);
 	self.nextthink = level.framenum + 1;
 }
 
-REGISTER_ENTITY(trigger_elevator, ET_TRIGGER_ELEVATOR);
+static REGISTER_ENTITY(TRIGGER_ELEVATOR, trigger_elevator);
 
 /*QUAKED func_timer (0.3 0.1 0.6) (-8 -8 -8) (8 8 8) START_ON
 "wait"          base time between triggering all targets, default is 1
@@ -2136,7 +2156,7 @@ static void func_timer_think(entity &self)
 	self.nextthink = level.framenum + (gtime)((self.wait + random(-self.rand, self.rand)) * BASE_FRAMERATE);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_timer_think);
+static REGISTER_SAVABLE_FUNCTION(func_timer_think);
 
 static void func_timer_use(entity &self, entity &, entity &cactivator)
 {
@@ -2156,15 +2176,17 @@ static void func_timer_use(entity &self, entity &, entity &cactivator)
 		func_timer_think(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_timer_use);
+static REGISTER_SAVABLE_FUNCTION(func_timer_use);
+
+static constexpr spawn_flag TIMER_START_ON = (spawn_flag) 1;
 
 static void SP_func_timer(entity &self)
 {
 	if (!self.wait)
 		self.wait = 1.0f;
 
-	self.use = func_timer_use_savable;
-	self.think = func_timer_think_savable;
+	self.use = SAVABLE(func_timer_use);
+	self.think = SAVABLE(func_timer_think);
 
 	if (self.rand >= self.wait)
 	{
@@ -2172,7 +2194,7 @@ static void SP_func_timer(entity &self)
 		gi.dprintf("func_timer at %s has random >= wait\n", vtos(self.s.origin).ptr());
 	}
 
-	if (self.spawnflags & 1)
+	if (self.spawnflags & TIMER_START_ON)
 	{
 		self.nextthink = level.framenum + (gtime)((1.0f + st.pausetime + self.delay + self.wait + random(-self.rand, self.rand)) * BASE_FRAMERATE);
 		self.activator = self;
@@ -2181,19 +2203,19 @@ static void SP_func_timer(entity &self)
 	self.svflags = SVF_NOCLIENT;
 }
 
-REGISTER_ENTITY(func_timer, ET_FUNC_TIMER);
+static REGISTER_ENTITY(FUNC_TIMER, func_timer);
 
 /*QUAKED func_conveyor (0 .5 .8) ? START_ON TOGGLE
 Conveyors are stationary brushes that move what's on them.
 The brush should be have a surface with at least one current content enabled.
 speed   default 100
 */
-constexpr spawn_flag CONVEYOR_START_ON = (spawn_flag)1;
-constexpr spawn_flag CONVEYOR_TOGGLE = (spawn_flag)2;
+constexpr spawn_flag CONVEYOR_START_ON = (spawn_flag) 1;
+constexpr spawn_flag CONVEYOR_TOGGLE = (spawn_flag) 2;
 
 static void func_conveyor_use(entity &self, entity &, entity &)
 {
-	if (self.spawnflags & 1)
+	if (self.spawnflags & CONVEYOR_START_ON)
 	{
 		self.speed = 0;
 		self.spawnflags &= ~CONVEYOR_START_ON;
@@ -2208,7 +2230,7 @@ static void func_conveyor_use(entity &self, entity &, entity &)
 		self.count = 0;
 }
 
-REGISTER_SAVABLE_FUNCTION(func_conveyor_use);
+static REGISTER_SAVABLE_FUNCTION(func_conveyor_use);
 
 static void SP_func_conveyor(entity &self)
 {
@@ -2221,14 +2243,14 @@ static void SP_func_conveyor(entity &self)
 		self.speed = 0;
 	}
 
-	self.use = func_conveyor_use_savable;
+	self.use = SAVABLE(func_conveyor_use);
 
 	gi.setmodel(self, self.model);
 	self.solid = SOLID_BSP;
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(func_conveyor, ET_FUNC_CONVEYOR);
+static REGISTER_ENTITY(FUNC_CONVEYOR, func_conveyor);
 
 /*QUAKED func_door_secret (0 .5 .8) ? always_shoot 1st_left 1st_down
 A secret door.  Slide back and then to the side.
@@ -2249,31 +2271,31 @@ constexpr spawn_flag SECRET_1ST_DOWN		= (spawn_flag)4;
 
 static void door_secret_move1(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_move1);
+static REGISTER_SAVABLE_FUNCTION(door_secret_move1);
 
 static void door_secret_move2(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_move2);
+static REGISTER_SAVABLE_FUNCTION(door_secret_move2);
 
 static void door_secret_move3(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_move3);
+static REGISTER_SAVABLE_FUNCTION(door_secret_move3);
 
 static void door_secret_move4(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_move4);
+static REGISTER_SAVABLE_FUNCTION(door_secret_move4);
 
 static void door_secret_move5(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_move5);
+static REGISTER_SAVABLE_FUNCTION(door_secret_move5);
 
 static void door_secret_move6(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_move6);
+static REGISTER_SAVABLE_FUNCTION(door_secret_move6);
 
 static void door_secret_done(entity &self);
 
-REGISTER_SAVABLE_FUNCTION(door_secret_done);
+static REGISTER_SAVABLE_FUNCTION(door_secret_done);
 
 static void door_secret_use(entity &self, entity &, entity &)
 {
@@ -2281,21 +2303,21 @@ static void door_secret_use(entity &self, entity &, entity &)
 	if (self.s.origin)
 		return;
 
-	Move_Calc(self, self.pos1, door_secret_move1_savable);
+	Move_Calc(self, self.pos1, SAVABLE(door_secret_move1));
 	door_use_areaportals(self, true);
 }
 
-REGISTER_SAVABLE_FUNCTION(door_secret_use);
+static REGISTER_SAVABLE_FUNCTION(door_secret_use);
 
 static void door_secret_move1(entity &self)
 {
 	self.nextthink = level.framenum + (gtime)(1.0f * BASE_FRAMERATE);
-	self.think = door_secret_move2_savable;
+	self.think = SAVABLE(door_secret_move2);
 }
 
 static void door_secret_move2(entity &self)
 {
-	Move_Calc(self, self.pos2, door_secret_move3_savable);
+	Move_Calc(self, self.pos2, SAVABLE(door_secret_move3));
 }
 
 static void door_secret_move3(entity &self)
@@ -2303,23 +2325,23 @@ static void door_secret_move3(entity &self)
 	if (self.wait == -1)
 		return;
 	self.nextthink = level.framenum + (gtime)(self.wait * BASE_FRAMERATE);
-	self.think = door_secret_move4_savable;
+	self.think = SAVABLE(door_secret_move4);
 }
 
 static void door_secret_move4(entity &self)
 {
-	Move_Calc(self, self.pos1, door_secret_move5_savable);
+	Move_Calc(self, self.pos1, SAVABLE(door_secret_move5));
 }
 
 static void door_secret_move5(entity &self)
 {
 	self.nextthink = level.framenum + (gtime)(1.0f * BASE_FRAMERATE);
-	self.think = door_secret_move6_savable;
+	self.think = SAVABLE(door_secret_move6);
 }
 
 static void door_secret_move6(entity &self)
 {
-	Move_Calc(self, vec3_origin, door_secret_done_savable);
+	Move_Calc(self, vec3_origin, SAVABLE(door_secret_done));
 }
 
 static void door_secret_done(entity &self)
@@ -2352,7 +2374,7 @@ static void door_secret_blocked(entity &self, entity &other)
 	T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, self.dmg, 1, DAMAGE_NONE, MOD_CRUSH);
 }
 
-REGISTER_SAVABLE_FUNCTION(door_secret_blocked);
+static REGISTER_SAVABLE_FUNCTION(door_secret_blocked);
 
 static void door_secret_die(entity &self, entity &, entity &attacker, int32_t, vector)
 {
@@ -2360,7 +2382,7 @@ static void door_secret_die(entity &self, entity &, entity &attacker, int32_t, v
 	door_secret_use(self, attacker, attacker);
 }
 
-REGISTER_SAVABLE_FUNCTION(door_secret_die);
+static REGISTER_SAVABLE_FUNCTION(door_secret_die);
 
 static void SP_func_door_secret(entity &ent)
 {
@@ -2372,14 +2394,14 @@ static void SP_func_door_secret(entity &ent)
 	ent.solid = SOLID_BSP;
 	gi.setmodel(ent, ent.model);
 
-	ent.blocked = door_secret_blocked_savable;
-	ent.use = door_secret_use_savable;
+	ent.blocked = SAVABLE(door_secret_blocked);
+	ent.use = SAVABLE(door_secret_use);
 
 	if (!ent.targetname || (ent.spawnflags & SECRET_ALWAYS_SHOOT))
 	{
 		ent.health = 0;
 		ent.takedamage = true;
-		ent.die = door_secret_die_savable;
+		ent.die = SAVABLE(door_secret_die);
 	}
 
 	if (!ent.dmg)
@@ -2416,19 +2438,19 @@ static void SP_func_door_secret(entity &ent)
 	if (ent.health)
 	{
 		ent.takedamage = true;
-		ent.die = door_killed_savable;
+		ent.die = SAVABLE(door_killed);
 		ent.max_health = ent.health;
 	}
 	else if (ent.targetname && ent.message)
 	{
 		gi.soundindex("misc/talk.wav");
-		ent.touch = door_touch_savable;
+		ent.touch = SAVABLE(door_touch);
 	}
 
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(func_door_secret, ET_FUNC_DOOR);
+static REGISTER_ENTITY_INHERIT(FUNC_DOOR_SECRET, func_door_secret, ET_FUNC_DOOR);
 
 /*QUAKED func_killbox (1 0 0) ?
 Kills everything inside when fired, irrespective of protection.
@@ -2438,13 +2460,13 @@ static void use_killbox(entity &self, entity &, entity &)
 	KillBox(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(use_killbox);
+static REGISTER_SAVABLE_FUNCTION(use_killbox);
 
 static void SP_func_killbox(entity &ent)
 {
 	gi.setmodel(ent, ent.model);
-	ent.use = use_killbox_savable;
+	ent.use = SAVABLE(use_killbox);
 	ent.svflags = SVF_NOCLIENT;
 }
 
-REGISTER_ENTITY(func_killbox, ET_FUNC_KILLBOX);
+static REGISTER_ENTITY(FUNC_KILLBOX, func_killbox);

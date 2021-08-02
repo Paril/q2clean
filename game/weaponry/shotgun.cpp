@@ -6,6 +6,7 @@
 #include "lib/math/vector.h"
 #include "lib/math/random.h"
 #include "game/ballistics/bullet.h"
+#include "shotgun.h"
 
 static void weapon_shotgun_fire(entity &ent)
 {
@@ -48,11 +49,11 @@ static void weapon_shotgun_fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 }
 
 void Weapon_Shotgun(entity &ent)
 {
-	Weapon_Generic(ent, 7, 18, 36, 39, { 22, 28, 34 }, { 8, 9 }, weapon_shotgun_fire);
+	Weapon_Generic(ent, 7, 18, 36, 39, G_IsAnyFrame<22, 28, 34>, G_IsAnyFrame<8, 9>, weapon_shotgun_fire);
 }

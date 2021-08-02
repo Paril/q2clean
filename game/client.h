@@ -233,6 +233,7 @@ struct client : public server_client
 	gtime		ir_framenum;
 	gtime		nuke_framenum;
 	gtime		tracker_pain_framenum;
+	int32_t		chainfist_last_sequence;
 #endif
 
 #ifdef PMENU

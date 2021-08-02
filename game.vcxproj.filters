@@ -58,7 +58,7 @@
     <ClInclude Include="game\monster\flash.h">
       <Filter>game\monster</Filter>
     </ClInclude>
-    <ClInclude Include="game\monster\m_infantry.h">
+    <ClInclude Include="game\monster\infantry_model.h">
       <Filter>game\monster</Filter>
     </ClInclude>
     <ClInclude Include="game\monster\soldier_model.h">
@@ -211,9 +211,6 @@
     <ClInclude Include="lib\protocol.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="lib\savables.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="lib\string.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -221,6 +218,141 @@
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="config.h" />
+    <ClInclude Include="game\savables.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\ballistics\trap.h">
+      <Filter>game\xatrix\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\weaponry\trap.h">
+      <Filter>game\xatrix\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\items.h">
+      <Filter>game\xatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\weaponry\ionripper.h">
+      <Filter>game\xatrix\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\ballistics\ionripper.h">
+      <Filter>game\xatrix\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\ballistics\plasma.h">
+      <Filter>game\xatrix\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\weaponry\phalanx.h">
+      <Filter>game\xatrix\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\monster.h">
+      <Filter>game\xatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="game\statusbar.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\misc.h">
+      <Filter>game\xatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\monster\fixbot_model.h">
+      <Filter>game\xatrix\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\monster\gekk_model.h">
+      <Filter>game\xatrix\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\gunner_model.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ai.h">
+      <Filter>game\rogue</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\berserk_model.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\flyer_model.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\insane_model.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\flechette.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\prox.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\melee.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\nuke.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\tesla.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\heatbeam.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\ballistics\tracker.h">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\weaponry\tesla.h">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\weaponry\chainfist.h">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\weaponry\disruptor.h">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\weaponry\etf_rifle.h">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\weaponry\heatbeam.h">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\items.h">
+      <Filter>game\rogue</Filter>
+    </ClInclude>
+    <ClInclude Include="game\game_types.h">
+      <Filter>game</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\func.h">
+      <Filter>game\rogue</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\medic_model.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\rogue\monster.h">
+      <Filter>game\rogue</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\medic.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\gladiator_model.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\monster\gekk.h">
+      <Filter>game\xatrix\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\monster\fixbot.h">
+      <Filter>game\xatrix\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\xatrix\func.h">
+      <Filter>game\xatrix</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\soldier.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\infantry.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\gunner.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="game\monster\gladiator.h">
+      <Filter>game\monster</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\math\bbox.h">
+      <Filter>lib\math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -287,7 +419,7 @@
     <ClCompile Include="game\weaponry\handgrenade.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\combat.impl.cpp">
+    <ClCompile Include="game\combat.cpp">
       <Filter>game</Filter>
     </ClCompile>
     <ClCompile Include="lib\types\allocator.cpp">
@@ -395,11 +527,122 @@
     <ClCompile Include="game\weaponry\hyperblaster.cpp">
       <Filter>game\weaponry</Filter>
     </ClCompile>
-    <ClCompile Include="game\ballistics\grapple.cpp">
+    <ClCompile Include="game\savables.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\ballistics\trap.cpp">
+      <Filter>game\xatrix\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\weaponry\trap.cpp">
+      <Filter>game\xatrix\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\items.cpp">
+      <Filter>game\xatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\weaponry\ionripper.cpp">
+      <Filter>game\xatrix\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\ballistics\ionripper.cpp">
+      <Filter>game\xatrix\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\ballistics\plasma.cpp">
+      <Filter>game\xatrix\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\weaponry\phalanx.cpp">
+      <Filter>game\xatrix\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\monster.cpp">
+      <Filter>game\xatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="game\statusbar.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\monster\gekk.cpp">
+      <Filter>game\xatrix\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\misc.cpp">
+      <Filter>game\xatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\monster\fixbot.cpp">
+      <Filter>game\xatrix\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\func.cpp">
+      <Filter>game\xatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="game\xatrix\target.cpp">
+      <Filter>game\xatrix</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\gunner.cpp">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ai.cpp">
+      <Filter>game\rogue</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\berserk.cpp">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\flyer.cpp">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\insane.cpp">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\ctf\grapple.cpp">
       <Filter>game\ctf</Filter>
     </ClCompile>
-    <ClCompile Include="lib\savables.cpp">
-      <Filter>lib</Filter>
+    <ClCompile Include="game\rogue\ballistics\flechette.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ballistics\prox.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ballistics\melee.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ballistics\nuke.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ballistics\tesla.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ballistics\heatbeam.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\ballistics\tracker.cpp">
+      <Filter>game\rogue\ballistics</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\weaponry\tesla.cpp">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\weaponry\chainfist.cpp">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\weaponry\disruptor.cpp">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\weaponry\etf_rifle.cpp">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\weaponry\heatbeam.cpp">
+      <Filter>game\rogue\weaponry</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\items.cpp">
+      <Filter>game\rogue</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\func.cpp">
+      <Filter>game\rogue</Filter>
+    </ClCompile>
+    <ClCompile Include="game\entity_types.cpp">
+      <Filter>game</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\medic.cpp">
+      <Filter>game\monster</Filter>
+    </ClCompile>
+    <ClCompile Include="game\rogue\monster.cpp">
+      <Filter>game\rogue</Filter>
+    </ClCompile>
+    <ClCompile Include="game\monster\gladiator.cpp">
+      <Filter>game\monster</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -438,6 +681,27 @@
     </Filter>
     <Filter Include="lib\string">
       <UniqueIdentifier>{7b380818-7dfe-44a7-8826-de5015ae0b4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\xatrix">
+      <UniqueIdentifier>{2579472c-623b-4444-97c9-e35654eb11e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\xatrix\weaponry">
+      <UniqueIdentifier>{a693a9b3-c782-498b-9e3d-e8aae7bcafa4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\xatrix\ballistics">
+      <UniqueIdentifier>{dd49e1d2-59c8-4d25-b994-e7400b35361b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\xatrix\monster">
+      <UniqueIdentifier>{c6ba6bc0-245e-450e-baba-82c840d3c094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\rogue">
+      <UniqueIdentifier>{a8b88873-c39c-4849-88b5-10106a71e9ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\rogue\ballistics">
+      <UniqueIdentifier>{fb6e9876-69b0-4a7f-963d-b348363ed31e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\rogue\weaponry">
+      <UniqueIdentifier>{5c189b9b-8c6b-4127-868c-4a30315fb7a8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

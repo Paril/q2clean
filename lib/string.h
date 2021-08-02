@@ -130,6 +130,9 @@ public:
 	}
 	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
 
+	inline bool operator==(const string &lit) const { return !strcmp(ptr(), lit.ptr()); }
+	inline bool operator!=(const string &lit) const { return !(*this == lit); }
+
 	inline bool operator==(const stringref &lit) const;
 	inline bool operator!=(const stringref &lit) const;
 
@@ -194,8 +197,8 @@ public:
 		return operator stringlit()[index];
 	}
 
-	inline bool operator==(stringlit lit) const { return !strcmp(operator stringlit(), lit); }
-	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
+	inline bool operator==(const stringref &lit) const { return !strcmp(operator stringlit(), lit.ptr()); }
+	inline bool operator!=(const stringref &lit) const { return !(*this == lit); }
 
 	// string is "valid" if its length is non-zero and doesn't start with a 0
 	inline explicit operator bool() const { return slength && operator stringlit()[0]; }
@@ -246,7 +249,7 @@ template<typename TA, typename TB, typename = std::enable_if_t<is_string_not_lit
 inline size_t strstr(const TA &str, const TB &substring)
 {
 	if (!str)
-		return (size_t)-1;
+		return (size_t) -1;
 
 	stringlit result = strstr(str.ptr(), (stringlit)substring);
 	return result ? (result - str.ptr()) : -1;
@@ -444,7 +447,7 @@ inline bool striequals(const TA &a, const TB &b)
 	stringlit la = (stringlit)a;
 	stringlit lb = (stringlit)b;
 
-	while (*la == *lb)
+	while (tolower(*la) == tolower(*lb))
 	{
 		if (*la == 0)
 			return true;
@@ -496,6 +499,9 @@ public:
 
 	inline bool operator==(stringlit lit) const { return !strcmp(operator stringlit(), lit); }
 	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
+
+	inline bool operator==(const stringref &lit) const { return !strcmp(operator stringlit(), lit.ptr()); }
+	inline bool operator!=(const stringref &lit) const { return !(*this == lit); }
 
 	// string is "valid" if its length is non-zero and doesn't start with a 0
 	inline explicit operator bool() const { return size && operator stringlit()[0]; }
@@ -589,4 +595,4 @@ skipwhite:
 		start = token_end;
 
 	return substr(data, token_start, token_end - token_start);
-};
+}

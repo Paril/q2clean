@@ -6,6 +6,7 @@
 #include "game/entity.h"
 #include "game/combat.h"
 #include "game/ballistics/blaster.h"
+#include "blaster.h"
 
 void Blaster_Fire(entity &ent, vector g_offset, int32_t damage, bool hyper, entity_effects effect)
 {
@@ -57,5 +58,5 @@ static void Weapon_Blaster_Fire(entity &ent)
 
 void Weapon_Blaster(entity &ent)
 {
-	Weapon_Generic(ent, 4, 8, 52, 55, { 19, 32 }, { 5 }, Weapon_Blaster_Fire);
+	Weapon_Generic(ent, 4, 8, 52, 55, G_IsAnyFrame<19, 32>, G_IsAnyFrame<5>, Weapon_Blaster_Fire);
 }

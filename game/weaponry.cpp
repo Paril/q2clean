@@ -7,11 +7,14 @@
 #include "game/player_frames.h"
 #include "weaponry.h"
 
-bool			is_quad;
+#ifdef THE_RECKONING
+#include "game/xatrix/weaponry/trap.h"
+#endif
+
+bool		is_quad;
 muzzleflash	is_silenced;
 
 int32_t	damage_multiplier;
-
 
 void P_DamageModifier(entity &ent)
 {
@@ -37,13 +40,13 @@ void P_DamageModifier(entity &ent)
 		is_quad = true;
 
 #ifdef GROUND_ZERO
-		if (dmflags.intVal & DF_NO_STACK_DOUBLE)
+		if (dmflags & DF_NO_STACK_DOUBLE)
 			return;
 #endif
 	}
 
 #ifdef GROUND_ZERO
-	if (ent.client.double_framenum > level.framenum)
+	if (ent.client->double_framenum > level.framenum)
 	{
 		damage_multiplier *= 2;
 		is_quad = true;
@@ -52,6 +55,8 @@ void P_DamageModifier(entity &ent)
 }
 
 #ifdef SINGLE_PLAYER
+entity_type ET_PLAYER_NOISE("player_noise");
+
 void PlayerNoise(entity &who, vector where, player_noise type)
 {
 	if (type == PNOISE_WEAPON)
@@ -63,7 +68,7 @@ void PlayerNoise(entity &who, vector where, player_noise type)
 		}
 	}
 
-	if ((int32_t) deathmatch)
+	if (deathmatch)
 		return;
 
 	if (who.flags & FL_NOTARGET)
@@ -85,8 +90,7 @@ void PlayerNoise(entity &who, vector where, player_noise type)
 		{
 			entity &noise = G_Spawn();
 			noise.type = ET_PLAYER_NOISE;
-			noise.mins = { -8, -8, -8 };
-			noise.maxs = { 8, 8, 8 };
+			noise.bounds = bbox::sized(8.f);
 			noise.owner = who;
 			noise.svflags = SVF_NOCLIENT;
 			who.mynoise = noise;
@@ -95,8 +99,7 @@ void PlayerNoise(entity &who, vector where, player_noise type)
 		{
 			entity &noise = G_Spawn();
 			noise.type = ET_PLAYER_NOISE;
-			noise.mins = { -8, -8, -8 };
-			noise.maxs = { 8, 8, 8 };
+			noise.bounds = bbox::sized(8.f);
 			noise.owner = who;
 			noise.svflags = SVF_NOCLIENT;
 			who.mynoise2 = noise;
@@ -119,8 +122,7 @@ void PlayerNoise(entity &who, vector where, player_noise type)
 	}
 
 	noise->s.origin = where;
-	noise->absmin = where + noise->maxs;
-	noise->absmax = where + noise->maxs;
+	noise->absbounds = noise->bounds.offsetted(where);
 	noise->last_sound_framenum = level.framenum;
 	gi.linkentity(noise);
 }
@@ -139,12 +141,12 @@ void ChangeWeapon(entity &ent)
 	}
 
 #ifdef THE_RECKONING
-	if (ent.client.trap_framenum)
+	if (ent.client->trap_framenum)
 	{
-		ent.client.trap_framenum = level.framenum;
-		ent.client.weapon_sound = 0;
+		ent.client->trap_framenum = level.framenum;
+		ent.client->weapon_sound = SOUND_NONE;
 		weapon_trap_fire(ent, false);
-		ent.client.trap_framenum = 0;
+		ent.client->trap_framenum = 0;
 	}
 #endif
 
@@ -199,20 +201,16 @@ void NoAmmoWeaponChange(entity &ent)
 	if (inventory[ITEM_SLUGS] && inventory[ITEM_RAILGUN])
 		ent.client->newweapon = ITEM_RAILGUN;
 #ifdef THE_RECKONING
-	else if (ent.client.pers.inventory[FindItem("mag slug")->id]
-		&& ent.client.pers.inventory[FindItem("phalanx")->id])
-		ent.client.newweapon = FindItem("phalanx");
-	else if (ent.client.pers.inventory[FindItem("cells")->id]
-		&& ent.client.pers.inventory[FindItem("ionripper")->id])
-		ent.client.newweapon = FindItem("ionripper");
+	else if (inventory[ITEM_MAGSLUG] && inventory[ITEM_PHALANX])
+		ent.client->newweapon = ITEM_PHALANX;
+	else if (inventory[ITEM_CELLS] && inventory[ITEM_BOOMER])
+		ent.client->newweapon = ITEM_BOOMER;
 #endif
 #ifdef GROUND_ZERO
-	else if ((ent.client.pers.inventory[FindItem("cells")->id] >= 2)
-		&& ent.client.pers.inventory[FindItem("Plasma Beam")->id])
-		ent.client.newweapon = FindItem("Plasma Beam");
-	else if (ent.client.pers.inventory[FindItem("flechettes")->id]
-		&& ent.client.pers.inventory[FindItem("etf rifle")->id])
-		ent.client.newweapon = FindItem("etf rifle");
+	else if (inventory[ITEM_CELLS] >= 2 && inventory[ITEM_PLASMA_BEAM])
+		ent.client->newweapon = ITEM_PLASMA_BEAM;
+	else if (inventory[ITEM_FLECHETTES] && inventory[ITEM_ETF_RIFLE])
+		ent.client->newweapon = ITEM_ETF_RIFLE;
 #endif
 	else if (inventory[ITEM_CELLS] && inventory[ITEM_HYPERBLASTER])
 		ent.client->newweapon = ITEM_HYPERBLASTER;
@@ -245,8 +243,8 @@ void Think_Weapon(entity &ent)
 
 		ent.client->pers.weapon->weaponthink(ent);
 #ifdef THE_RECKONING
-		if (ent.client.quadfire_framenum > level.framenum)
-			ent.client.pers.weapon->weaponthink(ent);
+		if (ent.client->quadfire_framenum > level.framenum)
+			ent.client->pers.weapon->weaponthink(ent);
 #endif
 #ifdef CTF
 		if (CTFApplyHaste(ent))
@@ -255,7 +253,7 @@ void Think_Weapon(entity &ent)
 	}
 }
 
-void Weapon_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE_LAST, int32_t FRAME_IDLE_LAST, int32_t FRAME_DEACTIVATE_LAST, std::initializer_list<int32_t> is_pause_frame, std::initializer_list<int32_t> is_fire_frame, fire_func *fire)
+void Weapon_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE_LAST, int32_t FRAME_IDLE_LAST, int32_t FRAME_DEACTIVATE_LAST, G_WeaponFrameFunc is_pause_frame, G_WeaponFrameFunc is_fire_frame, fire_func *fire)
 {
 	const int32_t FRAME_FIRE_FIRST = FRAME_ACTIVATE_LAST + 1;
 	const int32_t FRAME_IDLE_FIRST = FRAME_FIRE_LAST + 1;
@@ -368,9 +366,8 @@ void Weapon_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE
 				return;
 			}
 
-			for (auto &frame : is_pause_frame)
-				if (frame == ent.client->ps.gunframe && (Q_rand() & 15))
-					return;
+			if (is_pause_frame(ent.client->ps.gunframe) && (Q_rand() & 15))
+				return;
 
 			ent.client->ps.gunframe++;
 			return;
@@ -381,29 +378,27 @@ void Weapon_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE
 	{
 		bool fired = false;
 
-		for (auto &frame : is_fire_frame)
-			if (frame == ent.client->ps.gunframe)
-			{
+		if (is_fire_frame(ent.client->ps.gunframe))
+		{
 #ifdef CTF
-				if (CTFApplyStrengthSound(ent)) {}
-				else
+			if (CTFApplyStrengthSound(ent)) {}
+			else
 #endif
-					if (ent.client->quad_framenum > level.framenum)
-						gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage3.wav"), 1, ATTN_NORM, 0);
+			if (ent.client->quad_framenum > level.framenum)
+				gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage3.wav"), 1, ATTN_NORM, 0);
 #ifdef GROUND_ZERO
-					else if (ent.client.double_framenum > level.framenum)
-						gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage3.wav"), 1, ATTN_NORM, 0);
+			else if (ent.client->double_framenum > level.framenum)
+				gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage3.wav"), 1, ATTN_NORM, 0);
 #endif
 
 #ifdef CTF
-				CTFApplyHasteSound(ent);
+			CTFApplyHasteSound(ent);
 #endif
 
-				fire(ent);
+			fire(ent);
 
-				fired = true;
-				break;
-			}
+			fired = true;
+		}
 
 		if (!fired)
 			ent.client->ps.gunframe++;

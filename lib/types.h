@@ -15,6 +15,3 @@ using uint64_t = std::uint64_t;
 using nullptr_t = std::nullptr_t;
 using size_t = std::size_t;
 using ptrdiff_t = std::ptrdiff_t;
-
-// Time is stored as an unsigned 64-bit integer
-using gtime = uint64_t;

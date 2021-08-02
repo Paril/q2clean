@@ -7,17 +7,7 @@
 #include "lib/types/enum.h"
 #include "entity_types.h"
 #include "lib/protocol.h"
-
-// default server FPS
-constexpr gtime		BASE_FRAMERATE = 10;
-// the amount of time, in s, that a single frame lasts for
-constexpr float		BASE_1_FRAMETIME = 1.0f / BASE_FRAMERATE;
-// the amount of time, in ms, that a single frame lasts for
-constexpr gtime		BASE_FRAMETIME = (gtime) (BASE_1_FRAMETIME * 1000);
-// the amount of time, in s, that a single frame lasts for
-constexpr float		BASE_FRAMETIME_1000 = BASE_1_FRAMETIME;
-// the amount of time, in s, that a single frame lasts for
-constexpr float		FRAMETIME = BASE_1_FRAMETIME;
+#include "game_types.h"
 
 // Contains some constants and structures that are integral to game states.
 
@@ -77,6 +67,8 @@ enum dm_flags : uint32_t
 	DF_CTF_NO_TECH = 1 << 23
 #endif
 };
+
+MAKE_ENUM_BITWISE(dm_flags);
 
 // weapon parameters
 constexpr int32_t DEFAULT_BULLET_HSPREAD	= 300;

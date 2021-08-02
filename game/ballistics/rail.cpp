@@ -7,6 +7,7 @@
 #include "game/combat.h"
 #include "game/entity.h"
 #include "game/game.h"
+#include "rail.h"
 
 /*
 =================

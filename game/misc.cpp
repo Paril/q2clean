@@ -20,7 +20,7 @@ static void SP_func_group(entity &ent)
 	G_FreeEdict(ent);
 }
 
-REGISTER_ENTITY(func_group, ET_UNKNOWN);
+static REGISTER_ENTITY(FUNC_GROUP, func_group);
 
 //=====================================================
 static void Use_Areaportal(entity &ent, entity &, entity &)
@@ -29,7 +29,7 @@ static void Use_Areaportal(entity &ent, entity &, entity &)
 	gi.SetAreaPortalState(ent.style, ent.count);
 }
 
-REGISTER_SAVABLE_FUNCTION(Use_Areaportal);
+static REGISTER_SAVABLE_FUNCTION(Use_Areaportal);
 
 /*QUAKED func_areaportal (0 0 0) ?
 
@@ -39,11 +39,11 @@ Usually enclosed in the middle of a door.
 */
 static void SP_func_areaportal(entity &ent)
 {
-	ent.use = Use_Areaportal_savable;
+	ent.use = SAVABLE(Use_Areaportal);
 	ent.count = 0;     // always start closed;
 }
 
-REGISTER_ENTITY(func_areaportal, ET_FUNC_AREAPORTAL);
+REGISTER_ENTITY(FUNC_AREAPORTAL, func_areaportal);
 
 //=====================================================
 
@@ -53,7 +53,6 @@ void ClipGibVelocity(entity &ent)
 	ent.velocity.y = clamp(-300.f, ent.velocity.y, 300.f);
 	ent.velocity.z = clamp(200.f, ent.velocity.z, 500.f); // always some upwards
 }
-
 
 /*
 =================
@@ -67,19 +66,19 @@ static void gib_think(entity &self)
 
 	if (self.s.frame == 10)
 	{
-		self.think = G_FreeEdict_savable;
+		self.think = SAVABLE(G_FreeEdict);
 		self.nextthink = level.framenum + (gtime)(random(8.f, 18.f) * BASE_FRAMERATE);
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(gib_think);
+static REGISTER_SAVABLE_FUNCTION(gib_think);
 
 void gib_touch(entity &self, entity &, vector normal, const surface &)
 {
 	if (!self.groundentity.has_value())
 		return;
 
-	self.touch = 0;
+	self.touch = nullptr;
 
 	if (normal)
 	{
@@ -92,7 +91,7 @@ void gib_touch(entity &self, entity &, vector normal, const surface &)
 		if (self.s.modelindex == sm_meat_index)
 		{
 			self.s.frame++;
-			self.think = gib_think_savable;
+			self.think = SAVABLE(gib_think);
 			self.nextthink = level.framenum + 1;
 		}
 	}
@@ -107,7 +106,7 @@ void gib_die(entity &self, entity &, entity &, int32_t, vector)
 
 REGISTER_SAVABLE_FUNCTION(gib_die);
 
-void ThrowGib(entity &self, stringlit gibname, int32_t damage, gib_type type)
+entity &ThrowGib(entity &self, stringlit gibname, int32_t damage, gib_type type)
 {
 	entity &gib = G_Spawn();
 
@@ -120,14 +119,14 @@ void ThrowGib(entity &self, stringlit gibname, int32_t damage, gib_type type)
 	gib.s.effects |= EF_GIB;
 	gib.flags |= FL_NO_KNOCKBACK;
 	gib.takedamage = true;
-	gib.die = gib_die_savable;
+	gib.die = SAVABLE(gib_die);
 
 	float vscale;
 
 	if (type == GIB_ORGANIC)
 	{
 		gib.movetype = MOVETYPE_TOSS;
-		gib.touch = gib_touch_savable;
+		gib.touch = SAVABLE(gib_touch);
 		vscale = 0.5f;
 	}
 	else
@@ -140,10 +139,12 @@ void ThrowGib(entity &self, stringlit gibname, int32_t damage, gib_type type)
 	ClipGibVelocity(gib);
 	gib.avelocity = randomv({ 600, 600, 600 });
 
-	gib.think = G_FreeEdict_savable;
+	gib.think = SAVABLE(G_FreeEdict);
 	gib.nextthink = level.framenum + (gtime)(random(10.f, 20.f) * BASE_FRAMERATE);
 
 	gi.linkentity(gib);
+
+	return gib;
 }
 
 void ThrowHead(entity &self, stringlit gibname, int32_t damage, gib_type type)
@@ -162,14 +163,14 @@ void ThrowHead(entity &self, stringlit gibname, int32_t damage, gib_type type)
 	self.flags |= FL_NO_KNOCKBACK;
 	self.svflags &= ~SVF_MONSTER;
 	self.takedamage = true;
-	self.die = gib_die_savable;
+	self.die = SAVABLE(gib_die);
 
 	float vscale;
 
 	if (type == GIB_ORGANIC)
 	{
 		self.movetype = MOVETYPE_TOSS;
-		self.touch = gib_touch_savable;
+		self.touch = SAVABLE(gib_touch);
 		vscale = 0.5f;
 	}
 	else
@@ -183,7 +184,7 @@ void ThrowHead(entity &self, stringlit gibname, int32_t damage, gib_type type)
 
 	self.avelocity[YAW] = random(-600.f, 600.f);
 
-	self.think = G_FreeEdict_savable;
+	self.think = SAVABLE(G_FreeEdict);
 	self.nextthink = level.framenum + (gtime)(random(10.f, 20.f) * BASE_FRAMERATE);
 
 	gi.linkentity(self);
@@ -226,7 +227,7 @@ void ThrowClientHead(entity &self, int32_t damage)
 	}
 	else
 	{
-		self.think = 0;
+		self.think = nullptr;
 		self.nextthink = 0;
 	}
 
@@ -252,13 +253,12 @@ void ThrowDebris(entity &self, stringlit modelname, float speed, vector origin)
 	chunk.movetype = MOVETYPE_BOUNCE;
 	chunk.solid = SOLID_NOT;
 	chunk.avelocity = randomv({ 600, 600, 600 });
-	chunk.think = G_FreeEdict_savable;
+	chunk.think = SAVABLE(G_FreeEdict);
 	chunk.nextthink = level.framenum + (gtime)(random(5.f, 10.f) * BASE_FRAMERATE);
 	chunk.s.frame = 0;
 	chunk.flags = FL_NONE;
-	chunk.type = ET_DEBRIS;
 	chunk.takedamage = true;
-	chunk.die = gib_die_savable;
+	chunk.die = SAVABLE(gib_die);
 	gi.linkentity(chunk);
 }
 
@@ -325,7 +325,7 @@ static void path_corner_touch(entity &self, entity &other, vector , const surfac
 #endif
 }
 
-REGISTER_SAVABLE_FUNCTION(path_corner_touch);
+static REGISTER_SAVABLE_FUNCTION(path_corner_touch);
 
 static void SP_path_corner(entity &self)
 {
@@ -337,14 +337,14 @@ static void SP_path_corner(entity &self)
 	}
 
 	self.solid = SOLID_TRIGGER;
-	self.touch = path_corner_touch_savable;
+	self.touch = SAVABLE(path_corner_touch);
 	self.mins = { -8, -8, -8 };
 	self.maxs = { 8, 8, 8 };
 	self.svflags |= SVF_NOCLIENT;
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(path_corner, ET_PATH_CORNER);
+REGISTER_ENTITY(PATH_CORNER, path_corner);
 
 #ifdef SINGLE_PLAYER
 /*QUAKED point_combat (0.5 0.3 0) (-8 -8 -8) (8 8 8) Hold
@@ -380,7 +380,7 @@ static void point_combat_touch(entity &self, entity &other, vector, const surfac
 	if (other.movetarget == self)
 	{
 		other.target = nullptr;
-		other.movetarget = world;
+		other.movetarget = null_entity;
 		other.goalentity = other.enemy;
 		other.monsterinfo.aiflags &= ~AI_COMBAT_POINT;
 	}
@@ -402,24 +402,24 @@ static void point_combat_touch(entity &self, entity &other, vector, const surfac
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(point_combat_touch);
+static REGISTER_SAVABLE_FUNCTION(point_combat_touch);
 
 static void SP_point_combat(entity &self)
 {
-	if ((int32_t)deathmatch)
+	if (deathmatch)
 	{
 		G_FreeEdict(self);
 		return;
 	}
 	self.solid = SOLID_TRIGGER;
-	self.touch = point_combat_touch_savable;
+	self.touch = SAVABLE(point_combat_touch);
 	self.mins = { -8, -8, -16 };
 	self.maxs = { 8, 8, 16 };
 	self.svflags = SVF_NOCLIENT;
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(point_combat, ET_POINT_COMBAT);
+REGISTER_ENTITY(POINT_COMBAT, point_combat);
 #endif
 
 /*QUAKED info_null (0 0.5 0) (-4 -4 -4) (4 4 4)
@@ -430,7 +430,7 @@ static void SP_info_null(entity &self)
 	G_FreeEdict(self);
 }
 
-REGISTER_ENTITY(info_null, ET_UNKNOWN);
+static REGISTER_ENTITY(INFO_NULL, info_null);
 
 /*QUAKED info_notnull (0 0.5 0) (-4 -4 -4) (4 4 4)
 Used as a positional target for lightning.
@@ -441,7 +441,7 @@ static void SP_info_notnull(entity &self)
 	self.absmax = self.s.origin;
 }
 
-REGISTER_ENTITY(info_notnull, ET_INFO_NOTNULL);
+static REGISTER_ENTITY(INFO_NOTNULL, info_notnull);
 
 /*QUAKED light (0 1 0) (-8 -8 -8) (8 8 8) START_OFF
 Non-displayed light.
@@ -465,14 +465,14 @@ static void light_use(entity &self, entity &, entity &)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(light_use);
+static REGISTER_SAVABLE_FUNCTION(light_use);
 #endif
 
 static void SP_light(entity &self)
 {
 #ifdef SINGLE_PLAYER
 	// no targeted lights in deathmatch, because they cause global messages
-	if (!self.targetname || (int32_t)deathmatch)
+	if (!self.targetname || deathmatch)
 	{
 #endif
 		G_FreeEdict(self);
@@ -482,7 +482,7 @@ static void SP_light(entity &self)
 
 	if (self.style >= 32)
 	{
-		self.use = light_use_savable;
+		self.use = SAVABLE(light_use);
 		if (self.spawnflags & START_OFF)
 			gi.configstring((config_string)(CS_LIGHTS + self.style), "a");
 		else
@@ -491,7 +491,7 @@ static void SP_light(entity &self)
 #endif
 }
 
-REGISTER_ENTITY(light, ET_LIGHT);
+REGISTER_ENTITY(LIGHT, light);
 
 /*QUAKED func_wall (0 .5 .8) ? TRIGGER_SPAWN TOGGLE START_ON ANIMATED ANIMATED_FAST
 This is just a solid wall if not inhibited
@@ -530,10 +530,10 @@ static void func_wall_use(entity &self, entity &, entity &)
 	gi.linkentity(self);
 
 	if (!(self.spawnflags & WALL_TOGGLE))
-		self.use = 0;
+		self.use = nullptr;
 }
 
-REGISTER_SAVABLE_FUNCTION(func_wall_use);
+static REGISTER_SAVABLE_FUNCTION(func_wall_use);
 
 static void SP_func_wall(entity &self)
 {
@@ -546,7 +546,7 @@ static void SP_func_wall(entity &self)
 		self.s.effects |= EF_ANIM_ALLFAST;
 
 	// just a wall
-	if ((self.spawnflags & (WALL_START_ON | WALL_TOGGLE | WALL_TRIGGER_SPAWN)) == 0)
+	if ((self.spawnflags & (WALL_START_ON | WALL_TOGGLE | WALL_TRIGGER_SPAWN)) == NO_SPAWNFLAGS)
 	{
 		self.solid = SOLID_BSP;
 		gi.linkentity(self);
@@ -567,7 +567,7 @@ static void SP_func_wall(entity &self)
 		}
 	}
 
-	self.use = func_wall_use_savable;
+	self.use = SAVABLE(func_wall_use);
 	if (self.spawnflags & WALL_START_ON)
 		self.solid = SOLID_BSP;
 	else
@@ -578,7 +578,7 @@ static void SP_func_wall(entity &self)
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(func_wall, ET_FUNC_WALL);
+static REGISTER_ENTITY(FUNC_WALL, func_wall);
 
 /*QUAKED func_object (0 .5 .8) ? TRIGGER_SPAWN ANIMATED ANIMATED_FAST
 This is solid bmodel that will fall if it's support it removed.
@@ -599,26 +599,26 @@ static void func_object_touch(entity &self, entity &other, vector normal, const 
 	T_Damage(other, self, self, vec3_origin, self.s.origin, vec3_origin, self.dmg, 1, DAMAGE_NONE, MOD_CRUSH);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_object_touch);
+static REGISTER_SAVABLE_FUNCTION(func_object_touch);
 
 static void func_object_release(entity &self)
 {
 	self.movetype = MOVETYPE_TOSS;
-	self.touch = func_object_touch_savable;
+	self.touch = SAVABLE(func_object_touch);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_object_release);
+static REGISTER_SAVABLE_FUNCTION(func_object_release);
 
 static void func_object_use(entity &self, entity &, entity &)
 {
 	self.solid = SOLID_BSP;
 	self.svflags &= ~SVF_NOCLIENT;
-	self.use = 0;
+	self.use = nullptr;
 	KillBox(self);
 	func_object_release(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_object_use);
+static REGISTER_SAVABLE_FUNCTION(func_object_use);
 
 static void SP_func_object(entity &self)
 {
@@ -638,14 +638,14 @@ static void SP_func_object(entity &self)
 	{
 		self.solid = SOLID_BSP;
 		self.movetype = MOVETYPE_PUSH;
-		self.think = func_object_release_savable;
+		self.think = SAVABLE(func_object_release);
 		self.nextthink = level.framenum + 2;
 	}
 	else
 	{
 		self.solid = SOLID_NOT;
 		self.movetype = MOVETYPE_PUSH;
-		self.use = func_object_use_savable;
+		self.use = SAVABLE(func_object_use);
 		self.svflags |= SVF_NOCLIENT;
 	}
 
@@ -659,7 +659,7 @@ static void SP_func_object(entity &self)
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(func_object, ET_FUNC_OBJECT);
+static REGISTER_ENTITY(FUNC_OBJECT, func_object);
 #ifdef SINGLE_PLAYER
 
 /*QUAKED func_explosive (0 .5 .8) ? Trigger_Spawn ANIMATED ANIMATED_FAST
@@ -727,24 +727,21 @@ static void func_explosive_explode(entity &self, entity &inflictor, entity &atta
 #ifdef GROUND_ZERO
 	// PMM - if we're part of a train, clean ourselves out of it
 	bool done = false;
-	entity master;
 
 	if (self.flags & FL_TEAMSLAVE)
 	{
-		if (self.teammaster)
+		if (self.teammaster.has_value() && self.teammaster->inuse)
 		{
-			master = self.teammaster;
-			if(master && master.inuse)		// because mappers (other than jim (usually)) are stupid....
+			entityref master = self.teammaster;
+
+			while (!done)
 			{
-				while (!done)
+				if (master->teamchain == self)
 				{
-					if (master.teamchain == self)
-					{
-						master.teamchain = self.teamchain;
-						done = true;
-					}
-					master = master.teamchain;
+					master->teamchain = self.teamchain;
+					done = true;
 				}
+				master = master->teamchain;
 			}
 		}
 	}
@@ -758,40 +755,42 @@ static void func_explosive_explode(entity &self, entity &inflictor, entity &atta
 		G_FreeEdict(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_explosive_explode);
+static REGISTER_SAVABLE_FUNCTION(func_explosive_explode);
 
 static void func_explosive_use(entity &self, entity &other, entity &)
 {
 	func_explosive_explode(self, self, other, self.health, vec3_origin);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_explosive_use);
+static REGISTER_SAVABLE_FUNCTION(func_explosive_use);
 
 #ifdef GROUND_ZERO
-static void(entity self, entity other, entity cactivator) func_explosive_activate =
+static void func_explosive_activate(entity &self, entity &other, entity &cactivator)
 {
 	bool approved = false;
 
-	if (other && other.target)
+	if (other.target)
 	{
-		if(other.target == self.targetname)
+		if (other.target == self.targetname)
 			approved = true;
 	}
-	if (!approved && cactivator && cactivator.target)
+	if (!approved && cactivator.target)
 	{
-		if(cactivator.target == self.targetname)
+		if (cactivator.target == self.targetname)
 			approved = true;
 	}
 
 	if (!approved)
 		return;
 
-	self.use = func_explosive_use;
+	self.use = SAVABLE(func_explosive_use);
 	if (!self.health)
 		self.health = 100;
-	self.die = func_explosive_explode;
+	self.die = SAVABLE(func_explosive_explode);
 	self.takedamage = true;
 }
+
+static REGISTER_SAVABLE_FUNCTION(func_explosive_activate);
 #endif
 
 static void func_explosive_spawn(entity &self, entity &, entity &)
@@ -803,11 +802,18 @@ static void func_explosive_spawn(entity &self, entity &, entity &)
 	gi.linkentity(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_explosive_spawn);
+static REGISTER_SAVABLE_FUNCTION(func_explosive_spawn);
+
+static constexpr spawn_flag EXPLOSIVE_TRIGGERED = (spawn_flag) 1;
+static constexpr spawn_flag EXPLOSIVE_ANIMATED = (spawn_flag) 2;
+static constexpr spawn_flag EXPLOSIVE_ANIMATED_FAST = (spawn_flag) 4;
+#ifdef GROUND_ZERO
+static constexpr spawn_flag EXPLOSIVE_ACTIVATED = (spawn_flag) 8;
+#endif
 
 static void SP_func_explosive(entity &self)
 {
-	if ((int32_t)deathmatch)
+	if (deathmatch)
 	{
 		// auto-remove for deathmatch
 		G_FreeEdict(self);
@@ -821,47 +827,49 @@ static void SP_func_explosive(entity &self)
 
 	gi.setmodel(self, self.model);
 
-	if (self.spawnflags & 1)
+	if (self.spawnflags & EXPLOSIVE_TRIGGERED)
 	{
 		self.svflags |= SVF_NOCLIENT;
 		self.solid = SOLID_NOT;
-		self.use = func_explosive_spawn_savable;
+		self.use = SAVABLE(func_explosive_spawn);
 	}
 #ifdef GROUND_ZERO
-	else if (self.spawnflags & 8)
+	else if (self.spawnflags & EXPLOSIVE_ACTIVATED)
 	{
 		self.solid = SOLID_BSP;
+
 		if(self.targetname)
-			self.use = func_explosive_activate;
+			self.use = SAVABLE(func_explosive_activate);
 	}
 #endif
 	else
 	{
 		self.solid = SOLID_BSP;
+
 		if (self.targetname)
-			self.use = func_explosive_use_savable;
+			self.use = SAVABLE(func_explosive_use);
 	}
 
-	if (self.spawnflags & 2)
+	if (self.spawnflags & EXPLOSIVE_ANIMATED)
 		self.s.effects |= EF_ANIM_ALL;
-	if (self.spawnflags & 4)
+	if (self.spawnflags & EXPLOSIVE_ANIMATED_FAST)
 		self.s.effects |= EF_ANIM_ALLFAST;
 
-	if (self.use != func_explosive_use_savable
+	if (self.use != SAVABLE(func_explosive_use)
 #ifdef GROUND_ZERO
 		&& self.use != func_explosive_activate
 #endif
 		) {
 		if (!self.health)
 			self.health = 100;
-		self.die = func_explosive_explode_savable;
+		self.die = SAVABLE(func_explosive_explode);
 		self.takedamage = true;
 	}
 
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(func_explosive, ET_FUNC_EXPLOSIVE);
+static REGISTER_ENTITY(FUNC_EXPLOSIVE, func_explosive);
 
 #include "move.h"
 
@@ -882,7 +890,7 @@ static void barrel_touch(entity &self, entity &other, vector, const surface &)
 	M_walkmove(self, vectoyaw(v), 20 * ratio * FRAMETIME);
 }
 
-REGISTER_SAVABLE_FUNCTION(barrel_touch);
+static REGISTER_SAVABLE_FUNCTION(barrel_touch);
 
 static void barrel_explode(entity &self)
 {
@@ -943,23 +951,27 @@ static void barrel_explode(entity &self)
 		BecomeExplosion1(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(barrel_explode);
+static REGISTER_SAVABLE_FUNCTION(barrel_explode);
 
 static void barrel_delay(entity &self, entity &, entity &attacker, int, vector)
 {
 	self.takedamage = false;
 	self.nextthink = level.framenum + 2;
-	self.think = barrel_explode_savable;
+	self.think = SAVABLE(barrel_explode);
 	self.activator = attacker;
 }
 
-REGISTER_SAVABLE_FUNCTION(barrel_delay);
+static REGISTER_SAVABLE_FUNCTION(barrel_delay);
 
 #ifdef GROUND_ZERO
-static void(entity self) barrel_think =
+static void barrel_think(entity &self);
+
+static REGISTER_SAVABLE_FUNCTION(barrel_think);
+
+static void barrel_think(entity &self)
 {
 	// the think needs to be first since later stuff may override.
-	self.think = barrel_think;
+	self.think = SAVABLE(barrel_think);
 	self.nextthink = level.framenum + 1;
 
 	M_CatagorizePosition (self);
@@ -968,19 +980,21 @@ static void(entity self) barrel_think =
 	M_WorldEffects (self);
 }
 
-static void(entity self) barrel_start =
+static void barrel_start(entity &self)
 {
 	M_droptofloor(self);
-	self.think = barrel_think;
+	self.think = SAVABLE(barrel_think);
 	self.nextthink = level.framenum + 1;
 }
+
+static REGISTER_SAVABLE_FUNCTION(barrel_start);
 #endif
 
 #include "monster.h"
 
 static void SP_misc_explobox(entity &self)
 {
-	if ((int32_t)deathmatch)
+	if (deathmatch)
 	{
 		// auto-remove for deathmatch
 		G_FreeEdict(self);
@@ -1006,23 +1020,23 @@ static void SP_misc_explobox(entity &self)
 	if (!self.dmg)
 		self.dmg = 150;
 
-	self.die = barrel_delay_savable;
+	self.die = SAVABLE(barrel_delay);
 	self.takedamage = true;
 	self.monsterinfo.aiflags = AI_NOSTEP;
 
-	self.touch = barrel_touch_savable;
+	self.touch = SAVABLE(barrel_touch);
 
 #ifdef GROUND_ZERO
-	self.think = barrel_start;
+	self.think = SAVABLE(barrel_start);
 #else
-	self.think = M_droptofloor_savable;
+	self.think = SAVABLE(M_droptofloor);
 #endif
 	self.nextthink = level.framenum + 2;
 
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(misc_explobox, ET_MISC_EXPLOBOX);
+REGISTER_ENTITY(MISC_EXPLOBOX, misc_explobox);
 #endif
 
 //
@@ -1037,7 +1051,7 @@ static void misc_blackhole_use(entity &ent, entity &, entity &)
 	G_FreeEdict(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_blackhole_use);
+static REGISTER_SAVABLE_FUNCTION(misc_blackhole_use);
 
 static void misc_blackhole_think(entity &self)
 {
@@ -1050,7 +1064,7 @@ static void misc_blackhole_think(entity &self)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_blackhole_think);
+static REGISTER_SAVABLE_FUNCTION(misc_blackhole_think);
 
 static void SP_misc_blackhole(entity &ent)
 {
@@ -1060,13 +1074,13 @@ static void SP_misc_blackhole(entity &ent)
 	ent.maxs = { 64, 64, 8 };
 	ent.s.modelindex = gi.modelindex("models/objects/black/tris.md2");
 	ent.s.renderfx = RF_TRANSLUCENT;
-	ent.use = misc_blackhole_use_savable;
-	ent.think = misc_blackhole_think_savable;
+	ent.use = SAVABLE(misc_blackhole_use);
+	ent.think = SAVABLE(misc_blackhole_think);
 	ent.nextthink = level.framenum + 2;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_blackhole, ET_MISC_BLACKHOLE);
+static REGISTER_ENTITY(MISC_BLACKHOLE, misc_blackhole);
 
 /*QUAKED misc_eastertank (1 .5 0) (-32 -32 -16) (32 32 32)
 */
@@ -1082,7 +1096,7 @@ static void misc_eastertank_think(entity &self)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_eastertank_think);
+static REGISTER_SAVABLE_FUNCTION(misc_eastertank_think);
 
 static void SP_misc_eastertank(entity &ent)
 {
@@ -1092,12 +1106,12 @@ static void SP_misc_eastertank(entity &ent)
 	ent.maxs = { 32, 32, 32 };
 	ent.s.modelindex = gi.modelindex("models/monsters/tank/tris.md2");
 	ent.s.frame = 254;
-	ent.think = misc_eastertank_think_savable;
+	ent.think = SAVABLE(misc_eastertank_think);
 	ent.nextthink = level.framenum + 2;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_eastertank, ET_MISC_EASTERTANK);
+static REGISTER_ENTITY(MISC_EASTERTANK, misc_eastertank);
 
 /*QUAKED misc_easterchick (1 .5 0) (-32 -32 0) (32 32 32)
 */
@@ -1112,7 +1126,7 @@ static void misc_easterchick_think(entity &self)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_easterchick_think);
+static REGISTER_SAVABLE_FUNCTION(misc_easterchick_think);
 
 static void SP_misc_easterchick(entity &ent)
 {
@@ -1122,12 +1136,12 @@ static void SP_misc_easterchick(entity &ent)
 	ent.maxs = { 32, 32, 32 };
 	ent.s.modelindex = gi.modelindex("models/monsters/bitch/tris.md2");
 	ent.s.frame = 208;
-	ent.think = misc_easterchick_think_savable;
+	ent.think = SAVABLE(misc_easterchick_think);
 	ent.nextthink = level.framenum + 2;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_easterchick, ET_MISC_EASTERCHICK);
+static REGISTER_ENTITY(MISC_EASTERCHICK, misc_easterchick);
 
 /*QUAKED misc_easterchick2 (1 .5 0) (-32 -32 0) (32 32 32)
 */
@@ -1142,7 +1156,7 @@ static void misc_easterchick2_think(entity &self)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_easterchick2_think);
+static REGISTER_SAVABLE_FUNCTION(misc_easterchick2_think);
 
 static void SP_misc_easterchick2(entity &ent)
 {
@@ -1152,12 +1166,12 @@ static void SP_misc_easterchick2(entity &ent)
 	ent.maxs = { 32, 32, 32 };
 	ent.s.modelindex = gi.modelindex("models/monsters/bitch/tris.md2");
 	ent.s.frame = 248;
-	ent.think = misc_easterchick2_think_savable;
+	ent.think = SAVABLE(misc_easterchick2_think);
 	ent.nextthink = level.framenum + 2;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_easterchick2, ET_MISC_EASTERCHICK2);
+static REGISTER_ENTITY(MISC_EASTERCHICK2, misc_easterchick2);
 
 /*QUAKED monster_commander_body (1 .5 0) (-32 -32 0) (32 32 48)
 Not really a monster, this is the Tank Commander's decapitated body.
@@ -1174,16 +1188,16 @@ static void commander_body_think(entity &self)
 		gi.sound(self, CHAN_BODY, gi.soundindex("tank/thud.wav"), 1, ATTN_NORM, 0);
 }
 
-REGISTER_SAVABLE_FUNCTION(commander_body_think);
+static REGISTER_SAVABLE_FUNCTION(commander_body_think);
 
 static void commander_body_use(entity &self, entity &, entity &)
 {
-	self.think = commander_body_think_savable;
+	self.think = SAVABLE(commander_body_think);
 	self.nextthink = level.framenum + 1;
 	gi.sound(self, CHAN_BODY, gi.soundindex("tank/pain.wav"), 1, ATTN_NORM, 0);
 }
 
-REGISTER_SAVABLE_FUNCTION(commander_body_use);
+static REGISTER_SAVABLE_FUNCTION(commander_body_use);
 
 static void commander_body_drop(entity &self)
 {
@@ -1191,7 +1205,7 @@ static void commander_body_drop(entity &self)
 	self.s.origin[2] += 2;
 }
 
-REGISTER_SAVABLE_FUNCTION(commander_body_drop);
+static REGISTER_SAVABLE_FUNCTION(commander_body_drop);
 
 static void SP_monster_commander_body(entity &self)
 {
@@ -1201,7 +1215,7 @@ static void SP_monster_commander_body(entity &self)
 	self.s.modelindex = gi.modelindex(self.model);
 	self.mins = { -32, -32, 0 };
 	self.maxs = { 32, 32, 48 };
-	self.use = commander_body_use_savable;
+	self.use = SAVABLE(commander_body_use);
 	self.takedamage = true;
 	self.flags = FL_GODMODE;
 	self.s.renderfx |= RF_FRAMELERP;
@@ -1210,11 +1224,11 @@ static void SP_monster_commander_body(entity &self)
 	gi.soundindex("tank/thud.wav");
 	gi.soundindex("tank/pain.wav");
 
-	self.think = commander_body_drop_savable;
+	self.think = SAVABLE(commander_body_drop);
 	self.nextthink = level.framenum + 5;
 }
 
-REGISTER_ENTITY(monster_commander_body, ET_MONSTER_COMMANDER_BODY);
+static REGISTER_ENTITY(MONSTER_COMMANDER_BODY, monster_commander_body);
 
 /*QUAKED misc_banner (1 .5 0) (-4 -4 -4) (4 4 4)
 The origin is the bottom of the banner.
@@ -1226,7 +1240,7 @@ static void misc_banner_think(entity &ent)
 	ent.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_banner_think);
+static REGISTER_SAVABLE_FUNCTION(misc_banner_think);
 
 static void SP_misc_banner(entity &ent)
 {
@@ -1236,11 +1250,11 @@ static void SP_misc_banner(entity &ent)
 	ent.s.frame = Q_rand() % 16;
 	gi.linkentity(ent);
 
-	ent.think = misc_banner_think_savable;
+	ent.think = SAVABLE(misc_banner_think);
 	ent.nextthink = level.framenum + 1;
 }
 
-REGISTER_ENTITY(misc_banner, ET_MISC_BANNER);
+static REGISTER_ENTITY(MISC_BANNER, misc_banner);
 #ifdef SINGLE_PLAYER
 
 /*QUAKED misc_deadsoldier (1 .5 0) (-16 -16 0) (16 16 16) ON_BACK ON_STOMACH BACK_DECAP FETAL_POS SIT_DECAP IMPALED
@@ -1263,11 +1277,11 @@ static void misc_deadsoldier_die(entity &self, entity &, entity &, int32_t damag
 	ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_deadsoldier_die);
+static REGISTER_SAVABLE_FUNCTION(misc_deadsoldier_die);
 
 static void SP_misc_deadsoldier(entity &ent)
 {
-	if ((int32_t)deathmatch)
+	if (deathmatch)
 	{
 		// auto-remove for deathmatch
 		G_FreeEdict(ent);
@@ -1297,12 +1311,13 @@ static void SP_misc_deadsoldier(entity &ent)
 	ent.deadflag = DEAD_DEAD;
 	ent.takedamage = true;
 	ent.svflags |= SVF_MONSTER | SVF_DEADMONSTER;
-	ent.die = misc_deadsoldier_die_savable;
+	ent.die = SAVABLE(misc_deadsoldier_die);
+	ent.monsterinfo.aiflags |= AI_GOOD_GUY;
 
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_deadsoldier, ET_MISC_DEADSOLDIER);
+static REGISTER_ENTITY(MISC_DEADSOLDIER, misc_deadsoldier);
 #endif
 /*QUAKED misc_viper (1 .5 0) (-16 -16 0) (16 16 32)
 This is the Viper for the flyby bombing.
@@ -1317,7 +1332,7 @@ There must be a path for it to follow once it is activated.
 void misc_viper_use(entity &self, entity &other, entity &cactivator)
 {
 	self.svflags &= ~SVF_NOCLIENT;
-	self.use = train_use_savable;
+	self.use = SAVABLE(train_use);
 	train_use(self, other, cactivator);
 }
 
@@ -1341,16 +1356,16 @@ static void SP_misc_viper(entity &ent)
 	ent.mins = { -16, -16, 0 };
 	ent.maxs = { 16, 16, 32 };
 
-	ent.think = func_train_find_savable;
+	ent.think = SAVABLE(func_train_find);
 	ent.nextthink = level.framenum + 1;
-	ent.use = misc_viper_use_savable;
+	ent.use = SAVABLE(misc_viper_use);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.moveinfo.accel = ent.moveinfo.decel = ent.moveinfo.speed = ent.speed;
 
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_viper, ET_MISC_VIPER);
+static REGISTER_ENTITY(MISC_VIPER, misc_viper);
 
 /*QUAKED misc_bigviper (1 .5 0) (-176 -120 -24) (176 120 72)
 This is a large stationary viper as seen in Paul's intro
@@ -1365,7 +1380,7 @@ static void SP_misc_bigviper(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_bigviper, ET_MISC_BIGVIPER);
+static REGISTER_ENTITY(MISC_BIGVIPER, misc_bigviper);
 
 /*QUAKED misc_viper_bomb (1 0 0) (-8 -8 -8) (8 8 8)
 "dmg"   how much boom should the bomb make?
@@ -1379,7 +1394,7 @@ static void misc_viper_bomb_touch(entity &self, entity &, vector, const surface 
 	BecomeExplosion2(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_viper_bomb_touch);
+static REGISTER_SAVABLE_FUNCTION(misc_viper_bomb_touch);
 
 static void misc_viper_bomb_prethink(entity &self)
 {
@@ -1397,17 +1412,17 @@ static void misc_viper_bomb_prethink(entity &self)
 	self.s.angles[2] = diff + 10;
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_viper_bomb_prethink);
+static REGISTER_SAVABLE_FUNCTION(misc_viper_bomb_prethink);
 
 static void misc_viper_bomb_use(entity &self, entity &, entity &cactivator)
 {
 	self.solid = SOLID_BBOX;
 	self.svflags &= ~SVF_NOCLIENT;
 	self.s.effects |= EF_ROCKET;
-	self.use = 0;
+	self.use = nullptr;
 	self.movetype = MOVETYPE_TOSS;
-	self.prethink = misc_viper_bomb_prethink_savable;
-	self.touch = misc_viper_bomb_touch_savable;
+	self.prethink = SAVABLE(misc_viper_bomb_prethink);
+	self.touch = SAVABLE(misc_viper_bomb_touch);
 	self.activator = cactivator;
 
 	entityref viper = G_FindEquals<&entity::type>(world, ET_MISC_VIPER);
@@ -1417,7 +1432,7 @@ static void misc_viper_bomb_use(entity &self, entity &, entity &cactivator)
 	self.moveinfo.dir = viper->moveinfo.dir;
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_viper_bomb_use);
+static REGISTER_SAVABLE_FUNCTION(misc_viper_bomb_use);
 
 static void SP_misc_viper_bomb(entity &self)
 {
@@ -1431,13 +1446,13 @@ static void SP_misc_viper_bomb(entity &self)
 	if (!self.dmg)
 		self.dmg = 1000;
 
-	self.use = misc_viper_bomb_use_savable;
+	self.use = SAVABLE(misc_viper_bomb_use);
 	self.svflags |= SVF_NOCLIENT;
 
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(misc_viper_bomb, ET_MISC_VIPER_BOMB);
+static REGISTER_ENTITY(MISC_VIPER_BOMB, misc_viper_bomb);
 
 /*QUAKED misc_strogg_ship (1 .5 0) (-16 -16 0) (16 16 32)
 This is a Storgg ship for the flybys.
@@ -1449,7 +1464,7 @@ There must be a path for it to follow once it is activated.
 void misc_strogg_ship_use(entity &self, entity &other, entity &cactivator)
 {
 	self.svflags &= ~SVF_NOCLIENT;
-	self.use = train_use_savable;
+	self.use = SAVABLE(train_use);
 	train_use(self, other, cactivator);
 }
 
@@ -1473,16 +1488,16 @@ static void SP_misc_strogg_ship(entity &ent)
 	ent.mins = { -16, -16, 0 };
 	ent.maxs = { 16, 16, 32 };
 
-	ent.think = func_train_find_savable;
+	ent.think = SAVABLE(func_train_find);
 	ent.nextthink = level.framenum + 1;
-	ent.use = misc_strogg_ship_use_savable;
+	ent.use = SAVABLE(misc_strogg_ship_use);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.moveinfo.accel = ent.moveinfo.decel = ent.moveinfo.speed = ent.speed;
 
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_strogg_ship, ET_MISC_STROGG_SHIP);
+static REGISTER_ENTITY(MISC_STROGG_SHIP, misc_strogg_ship);
 
 /*QUAKED misc_satellite_dish (1 .5 0) (-64 -64 0) (64 64 128)
 */
@@ -1493,16 +1508,16 @@ static void misc_satellite_dish_think(entity &self)
 		self.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_satellite_dish_think);
+static REGISTER_SAVABLE_FUNCTION(misc_satellite_dish_think);
 
 static void misc_satellite_dish_use(entity &self, entity &, entity &)
 {
 	self.s.frame = 0;
-	self.think = misc_satellite_dish_think_savable;
+	self.think = SAVABLE(misc_satellite_dish_think);
 	self.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(misc_satellite_dish_use);
+static REGISTER_SAVABLE_FUNCTION(misc_satellite_dish_use);
 
 static void SP_misc_satellite_dish(entity &ent)
 {
@@ -1511,11 +1526,11 @@ static void SP_misc_satellite_dish(entity &ent)
 	ent.mins = { -64, -64, 0 };
 	ent.maxs = { 64, 64, 128 };
 	ent.s.modelindex = gi.modelindex("models/objects/satellite/tris.md2");
-	ent.use = misc_satellite_dish_use_savable;
+	ent.use = SAVABLE(misc_satellite_dish_use);
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_satellite_dish, ET_MISC_SATELLITE_DISH);
+static REGISTER_ENTITY(MISC_SATELLITE_DISH, misc_satellite_dish);
 
 /*QUAKED light_mine1 (0 1 0) (-2 -2 -12) (2 2 12)
 */
@@ -1527,7 +1542,7 @@ static void SP_light_mine1(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(light_mine1, ET_LIGHT_MINE1);
+static REGISTER_ENTITY(LIGHT_MINE1, light_mine1);
 
 /*QUAKED light_mine2 (0 1 0) (-2 -2 -12) (2 2 12)
 */
@@ -1539,7 +1554,7 @@ static void SP_light_mine2(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(light_mine2, ET_LIGHT_MINE2);
+static REGISTER_ENTITY(LIGHT_MINE2, light_mine2);
 
 /*QUAKED misc_gib_arm (1 0 0) (-8 -8 -8) (8 8 8)
 Intended for use with the target_spawner
@@ -1550,17 +1565,17 @@ static void SP_misc_gib_arm(entity &ent)
 	ent.solid = SOLID_NOT;
 	ent.s.effects |= EF_GIB;
 	ent.takedamage = true;
-	ent.die = gib_die_savable;
+	ent.die = SAVABLE(gib_die);
 	ent.movetype = MOVETYPE_TOSS;
 	ent.svflags |= SVF_MONSTER;
 	ent.deadflag = DEAD_DEAD;
 	ent.avelocity = randomv({ 200, 200, 200 });
-	ent.think = G_FreeEdict_savable;
+	ent.think = SAVABLE(G_FreeEdict);
 	ent.nextthink = level.framenum + 30 * BASE_FRAMERATE;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_gib_arm, ET_MISC_GIB_ARM);
+static REGISTER_ENTITY(MISC_GIB_ARM, misc_gib_arm);
 
 /*QUAKED misc_gib_leg (1 0 0) (-8 -8 -8) (8 8 8)
 Intended for use with the target_spawner
@@ -1571,17 +1586,17 @@ static void SP_misc_gib_leg(entity &ent)
 	ent.solid = SOLID_NOT;
 	ent.s.effects |= EF_GIB;
 	ent.takedamage = true;
-	ent.die = gib_die_savable;
+	ent.die = SAVABLE(gib_die);
 	ent.movetype = MOVETYPE_TOSS;
 	ent.svflags |= SVF_MONSTER;
 	ent.deadflag = DEAD_DEAD;
 	ent.avelocity = randomv({ 200, 200, 200 });
-	ent.think = G_FreeEdict_savable;
+	ent.think = SAVABLE(G_FreeEdict);
 	ent.nextthink = level.framenum + 30 * BASE_FRAMERATE;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_gib_leg, ET_MISC_GIB_LEG);
+static REGISTER_ENTITY(MISC_GIB_LEG, misc_gib_leg);
 
 /*QUAKED misc_gib_head (1 0 0) (-8 -8 -8) (8 8 8)
 Intended for use with the target_spawner
@@ -1592,17 +1607,17 @@ static void SP_misc_gib_head(entity &ent)
 	ent.solid = SOLID_NOT;
 	ent.s.effects |= EF_GIB;
 	ent.takedamage = true;
-	ent.die = gib_die_savable;
+	ent.die = SAVABLE(gib_die);
 	ent.movetype = MOVETYPE_TOSS;
 	ent.svflags |= SVF_MONSTER;
 	ent.deadflag = DEAD_DEAD;
 	ent.avelocity = randomv({ 200, 200, 200 });
-	ent.think = G_FreeEdict_savable;
+	ent.think = SAVABLE(G_FreeEdict);
 	ent.nextthink = level.framenum + 30 * BASE_FRAMERATE;
 	gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_gib_head, ET_MISC_GIB_HEAD);
+static REGISTER_ENTITY(MISC_GIB_HEAD, misc_gib_head);
 
 //=====================================================
 
@@ -1620,7 +1635,7 @@ static void SP_target_character(entity &self)
 	gi.linkentity(self);
 }
 
-REGISTER_ENTITY(target_character, ET_TARGET_CHARACTER);
+static REGISTER_ENTITY(TARGET_CHARACTER, target_character);
 
 /*QUAKED target_string (0 0 1) (-8 -8 -8) (8 8 8)
 */
@@ -1652,14 +1667,14 @@ static void target_string_use(entity &self, entity &, entity &)
 	}
 }
 
-REGISTER_SAVABLE_FUNCTION(target_string_use);
+static REGISTER_SAVABLE_FUNCTION(target_string_use);
 
 static void SP_target_string(entity &self)
 {
-	self.use = target_string_use_savable;
+	self.use = SAVABLE(target_string_use);
 }
 
-REGISTER_ENTITY(target_string, ET_TARGET_STRING);
+static REGISTER_ENTITY(TARGET_STRING, target_string);
 
 /*QUAKED func_clock (0 0 1) (-8 -8 -8) (8 8 8) TIMER_UP TIMER_DOWN START_OFF MULTI_USE
 target a target_string with this
@@ -1681,11 +1696,12 @@ constexpr spawn_flag CLOCK_MULTI_USE = (spawn_flag)8;
 
 static void func_clock_reset(entity &self)
 {
-	self.activator = world;
+	self.activator = null_entity;
+
 	if (self.spawnflags & CLOCK_TIMER_UP)
 	{
 		self.health = 0;
-		self.wait = (float)self.count;
+		self.wait = (float) self.count;
 	}
 	else if (self.spawnflags & CLOCK_TIMER_DOWN)
 	{
@@ -1760,19 +1776,19 @@ static void func_clock_think(entity &self)
 	self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
 }
 
-REGISTER_SAVABLE_FUNCTION(func_clock_think);
+static REGISTER_SAVABLE_FUNCTION(func_clock_think);
 
 static void func_clock_use(entity &self, entity &, entity &cactivator)
 {
 	if (!(self.spawnflags & CLOCK_MULTI_USE))
-		self.use = 0;
+		self.use = nullptr;
 	if (self.activator.has_value())
 		return;
 	self.activator = cactivator;
 	self.think(self);
 }
 
-REGISTER_SAVABLE_FUNCTION(func_clock_use);
+static REGISTER_SAVABLE_FUNCTION(func_clock_use);
 
 static void SP_func_clock(entity &self)
 {
@@ -1795,20 +1811,20 @@ static void SP_func_clock(entity &self)
 
 	func_clock_reset(self);
 
-	self.think = func_clock_think_savable;
+	self.think = SAVABLE(func_clock_think);
 
 	if (self.spawnflags & CLOCK_START_OFF)
-		self.use = func_clock_use_savable;
+		self.use = SAVABLE(func_clock_use);
 	else
 		self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
 }
 
-REGISTER_ENTITY(func_clock, ET_FUNC_CLOCK);
+static REGISTER_ENTITY(FUNC_CLOCK, func_clock);
 
 //=================================================================================
 
 #ifdef HOOK_CODE
-import ctf.grapple;
+#include "game/ctf/grapple.h"
 #endif
 
 static void teleporter_touch(entity &self, entity &other, vector, const surface &)
@@ -1857,7 +1873,7 @@ static void teleporter_touch(entity &self, entity &other, vector, const surface 
 	gi.linkentity(other);
 }
 
-REGISTER_SAVABLE_FUNCTION(teleporter_touch);
+static REGISTER_SAVABLE_FUNCTION(teleporter_touch);
 
 /*QUAKED misc_teleporter (1 0 0) (-32 -32 -24) (32 32 -16)
 Stepping onto this disc will teleport players to the targeted misc_teleporter_dest object.
@@ -1882,7 +1898,7 @@ static void SP_misc_teleporter(entity &ent)
 	gi.linkentity(ent);
 
 	entity &trig = G_Spawn();
-	trig.touch = teleporter_touch_savable;
+	trig.touch = SAVABLE(teleporter_touch);
 	trig.solid = SOLID_TRIGGER;
 	trig.target = ent.target;
 	trig.owner = ent;
@@ -1892,7 +1908,7 @@ static void SP_misc_teleporter(entity &ent)
 	gi.linkentity(trig);
 }
 
-REGISTER_ENTITY(misc_teleporter, ET_MISC_TELEPORTER);
+static REGISTER_ENTITY(MISC_TELEPORTER, misc_teleporter);
 
 /*QUAKED misc_teleporter_dest (1 0 0) (-32 -32 -24) (32 32 -16)
 Point teleporters at these.
@@ -1907,4 +1923,4 @@ void SP_misc_teleporter_dest(entity &ent)
     gi.linkentity(ent);
 }
 
-REGISTER_ENTITY(misc_teleporter_dest, ET_MISC_TELEPORTER_DEST);
+REGISTER_ENTITY(MISC_TELEPORTER_DEST, misc_teleporter_dest);

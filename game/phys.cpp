@@ -55,8 +55,8 @@ static inline void SV_CheckVelocity(entity &ent)
 	vector normalized = ent.velocity;
 	float length = VectorNormalize(normalized);
 
-	if (length > (float)sv_maxvelocity)
-		ent.velocity = normalized * (float)sv_maxvelocity;
+	if (length > sv_maxvelocity)
+		ent.velocity = normalized * sv_maxvelocity.value;
 }
 
 /*
@@ -81,14 +81,7 @@ static inline bool SV_RunThink(entity &ent)
 	return false;
 }
 
-/*
-==================
-SV_Impact
-
-Two entities have touched, so run their touch functions
-==================
-*/
-static inline void SV_Impact(entity &e1, trace &tr)
+void SV_Impact(entity &e1, const trace &tr)
 {
 	entity &e2 = tr.ent;
 
@@ -231,12 +224,12 @@ SV_AddGravity
 */
 void SV_AddGravity(entity &ent)
 {
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	if (ent.gravityVector[2] > 0)
-		ent.velocity += ent.gravityVector * (ent.gravity * sv_gravity.floatVal * FRAMETIME);
+		ent.velocity += ent.gravityVector * (ent.gravity * sv_gravity * FRAMETIME);
 	else
 #endif
-		ent.velocity.z -= ent.gravity * (float)sv_gravity * FRAMETIME;
+		ent.velocity.z -= ent.gravity * sv_gravity * FRAMETIME;
 }
 
 /*
@@ -745,7 +738,7 @@ static void SV_Physics_Step(entity &ent)
 		if (!(ent.flags & FL_FLY))
 			if (!((ent.flags & FL_SWIM) && (ent.waterlevel > 2)))
 			{
-				if (ent.velocity.z < (float)sv_gravity * -0.1f)
+				if (ent.velocity.z < sv_gravity * -0.1f)
 					hitsound = true;
 				if (ent.waterlevel == 0)
 					SV_AddGravity(ent);
@@ -854,7 +847,6 @@ void G_RunEntity(entity &ent)
 #ifdef SINGLE_PLAYER
 	case MOVETYPE_STEP: {
 #ifdef GROUND_ZERO
-		trace_t	trace;
 		vector previous_origin = ent.s.origin;
 #endif
 		SV_Physics_Step(ent);
@@ -862,8 +854,9 @@ void G_RunEntity(entity &ent)
 		// if we moved, check and fix origin if needed
 		if (ent.s.origin != previous_origin)
 		{
-			gi.trace (&trace, ent.s.origin, ent.mins, ent.maxs, previous_origin, ent, MASK_MONSTERSOLID);
-			if (trace.allsolid || trace.startsolid)
+			trace tr = gi.trace (ent.s.origin, ent.mins, ent.maxs, previous_origin, ent, MASK_MONSTERSOLID);
+
+			if (tr.allsolid || tr.startsolid)
 				ent.s.origin = previous_origin;
 		}
 #endif

@@ -5,14 +5,21 @@
 #include "util.h"
 #include "lib/gi.h"
 #include "items/armor.h"
+#include "combat.h"
+#ifdef GROUND_ZERO
+#include "game/rogue/ballistics/tesla.h"
+#include "game/monster/medic.h"
+#endif
+#ifdef THE_RECKONING
+#include "game/xatrix/monster/gekk.h"
+#endif
 
 bool CanDamage(entity &targ, entity &inflictor)
 {
 	// bmodels need special checking because their origin is 0,0,0
-	if (targ.movetype == MOVETYPE_PUSH)
+	if (targ.solid == SOLID_BSP)
 	{
-		const vector dest = (targ.absmin + targ.absmax) * 0.5f;
-		trace tr = gi.traceline(inflictor.s.origin, dest, inflictor, MASK_SOLID);
+		trace tr = gi.traceline(inflictor.s.origin, targ.absbounds.center(), inflictor, MASK_SOLID);
 
 		if (tr.fraction == 1.0f)
 			return true;
@@ -61,14 +68,14 @@ means_of_death meansOfDeath;
 
 bool CheckTeamDamage(means_of_death mod [[maybe_unused]])
 {
-	return ((dm_flags) dmflags & DF_NO_FRIENDLY_FIRE)
+	return (dmflags & DF_NO_FRIENDLY_FIRE)
 #ifdef GROUND_ZERO
 		&& (mod != MOD_NUKE)
 #endif
 		;
 }
 
-void SpawnDamage(temp_event type, vector origin, vector normal)
+static void SpawnDamage(temp_event type, vector origin, vector normal)
 {
 	gi.WriteByte(svc_temp_entity);
 	gi.WriteByte(type);
@@ -77,7 +84,7 @@ void SpawnDamage(temp_event type, vector origin, vector normal)
 	gi.multicast(origin, MULTICAST_PVS);
 }
 
-inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, int damage, damage_flags dflags)
+static inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, int damage, damage_flags dflags)
 {
 	int32_t		save;
 	gitem_id	power_armor_type;
@@ -173,7 +180,7 @@ inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, int dam
 	return save;
 }
 
-inline int32_t CheckArmor(entity &ent, vector point, vector normal, int32_t damage, temp_event te_sparks, damage_flags dflags)
+static inline int32_t CheckArmor(entity &ent, vector point, vector normal, int32_t damage, temp_event te_sparks, damage_flags dflags)
 {
 	if (!damage)
 		return 0;
@@ -214,15 +221,18 @@ inline int32_t CheckArmor(entity &ent, vector point, vector normal, int32_t dama
 	return save;
 }
 
-void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, vector point)
+// temporary
+static entity_type ET_MONSTER_CARRIER, ET_MONSTER_WIDOW, ET_MONSTER_WIDOW2, ET_MONSTER_TANK, ET_MONSTER_SUPERTANK, ET_MONSTER_MAKRON, ET_MONSTER_JORG;
+
+static inline void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, vector point)
 {
 	if (targ.health < -999)
 		targ.health = -999;
 
-#if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
+#if defined(ROGUE_AI) && defined(SINGLE_PLAYER)
 	if (targ.monsterinfo.aiflags & AI_MEDIC)
 	{
-		if (targ.enemy)  // god, I hope so
+		if (targ.enemy.has_value())  // god, I hope so
 			cleanupHealTarget(targ.enemy);
 
 		// clean up self
@@ -236,24 +246,19 @@ void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, v
 	if ((targ.svflags & SVF_MONSTER) && (targ.deadflag != DEAD_DEAD))
 	{
 #ifdef GROUND_ZERO
-		//ROGUE - free up slot for spawned monster if it's spawned
-		if (targ.monsterinfo.aiflags & AI_SPAWNED_CARRIER)
+		if (targ.monsterinfo.commander.has_value() && targ.monsterinfo.commander->inuse)
 		{
-			if (targ.monsterinfo.commander && targ.monsterinfo.commander.inuse && targ.monsterinfo.commander.classname == "monster_carrier")
-				targ.monsterinfo.commander.monsterinfo.monster_slots++;
-		}
-		if (targ.monsterinfo.aiflags & AI_SPAWNED_MEDIC_C)
-		{
-			if (targ.monsterinfo.commander && targ.monsterinfo.commander.inuse && targ.monsterinfo.commander.classname == "monster_medic_commander")
-				targ.monsterinfo.commander.monsterinfo.monster_slots++;
-		}
-		if (targ.monsterinfo.aiflags & AI_SPAWNED_WIDOW)
-		{
-			// need to check this because we can have variable numbers of coop players
-			if (targ.monsterinfo.commander && targ.monsterinfo.commander.inuse && !strncmp(targ.monsterinfo.commander.classname, "monster_widow", 13))
+			entityref commander = targ.monsterinfo.commander;
+
+			//ROGUE - free up slot for spawned monster if it's spawned
+			if (((targ.monsterinfo.aiflags & AI_SPAWNED_CARRIER) && commander->type == ET_MONSTER_CARRIER) ||
+				((targ.monsterinfo.aiflags & AI_SPAWNED_MEDIC_C) && commander->type == ET_MONSTER_MEDIC_COMMANDER))
+				commander->monsterinfo.monster_slots++;
+			else if (targ.monsterinfo.aiflags & AI_SPAWNED_WIDOW)
 			{
-				if (targ.monsterinfo.commander.monsterinfo.monster_used > 0)
-					targ.monsterinfo.commander.monsterinfo.monster_used--;
+				if (commander->type == ET_MONSTER_WIDOW || commander->type == ET_MONSTER_WIDOW2)
+					if (commander->monsterinfo.monster_used)
+						commander->monsterinfo.monster_used--;
 			}
 		}
 #endif
@@ -262,10 +267,10 @@ void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, v
 		{
 			level.killed_monsters++;
 
-			if ((int32_t) coop && attacker.is_client())
+			if (coop && attacker.is_client())
 				attacker.client->resp.score++;
 
-#ifndef GROUND_ZERO
+#ifndef ROGUE_AI
 			// medics won't heal monsters that they kill themselves
 			if (attacker.type == ET_MONSTER_MEDIC)
 				targ.owner = attacker;
@@ -284,7 +289,7 @@ void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, v
 #ifdef SINGLE_PLAYER
 	if ((targ.svflags & SVF_MONSTER) && (targ.deadflag != DEAD_DEAD))
 	{
-		targ.touch = 0;
+		targ.touch = nullptr;
 		monster_death_use(targ);
 	}
 #endif
@@ -296,12 +301,13 @@ void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, v
 #include "ai.h"
 
 #ifdef GROUND_ZERO
-bool(entity self, entity tesla) MarkTeslaArea;
-void(entity self, entity tesla) TargetTesla;
+#include "rogue/ai.h"
+#endif
 
-void(entity targ, entity attacker, entity inflictor) M_ReactToDamage =
+#ifdef GROUND_ZERO
+static void M_ReactToDamage(entity &targ, entity &attacker, entity &inflictor)
 #else
-void M_ReactToDamage(entity &targ, entity &attacker)
+static void M_ReactToDamage(entity &targ, entity &attacker)
 #endif
 {
 	if (!(attacker.is_client()) && !(attacker.svflags & SVF_MONSTER))
@@ -311,10 +317,12 @@ void M_ReactToDamage(entity &targ, entity &attacker)
 	// logic for tesla - if you are hit by a tesla, and can't see who you should be mad at (attacker)
 	// attack the tesla
 	// also, target the tesla if it's a "new" tesla
-	if (inflictor && inflictor.classname == "tesla")
+	if (inflictor.type == ET_TESLA)
 	{
-		bool new_tesla = MarkTeslaArea(targ, inflictor);
+#ifdef ROGUE_AI
+		bool new_tesla = MarkTeslaArea(inflictor);
 		if (new_tesla)
+#endif
 			TargetTesla(targ, inflictor);
 		return;
 	}
@@ -334,30 +342,32 @@ void M_ReactToDamage(entity &targ, entity &attacker)
 #ifdef GROUND_ZERO
 	// if we're currently mad at something a target_anger made us mad at, ignore
 	// damage
-	if (targ.enemy && (targ.monsterinfo.aiflags & AI_TARGET_ANGER))
+	if (targ.enemy.has_value() && (targ.monsterinfo.aiflags & AI_TARGET_ANGER))
 	{
 		float	percentHealth;
 
 		// make sure whatever we were pissed at is still around.
-		if (targ.enemy.inuse)
+		if (targ.enemy->inuse)
 		{
 			percentHealth = (float) (targ.health) / (float) (targ.max_health);
-			if (targ.enemy.inuse && percentHealth > 0.33)
+
+			if (targ.enemy->inuse && percentHealth > 0.33)
 				return;
 		}
 
 		// remove the target anger flag
 		targ.monsterinfo.aiflags &= ~AI_TARGET_ANGER;
 	}
+#endif
 
+#ifdef ROGUE_AI
 	// if we're healing someone, do like above and try to stay with them
-	if (targ.enemy && (targ.monsterinfo.aiflags & AI_MEDIC))
+	if (targ.enemy.has_value() && (targ.monsterinfo.aiflags & AI_MEDIC))
 	{
-		float	percentHealth;
+		float	percentHealth = (float) (targ.health) / (float) (targ.max_health);
 
-		percentHealth = (float) (targ.health) / (float) (targ.max_health);
 		// ignore it some of the time
-		if (targ.enemy.inuse && percentHealth > 0.25)
+		if (targ.enemy->inuse && percentHealth > 0.25)
 			return;
 
 		// remove the medic flag
@@ -389,14 +399,12 @@ void M_ReactToDamage(entity &targ, entity &attacker)
 
 	// it's the same base (walk/swim/fly) type and a different classname and it's not a tank
 	// (they spray too much), get mad at them
-#ifdef GROUND_ZERO
 	if (((targ.flags & (FL_FLY | FL_SWIM)) == (attacker.flags & (FL_FLY | FL_SWIM))) &&
-		(targ.classname != attacker.classname) &&
+		(targ.type != attacker.type) &&
+#if defined(ROGUE_AI) || defined(GROUND_ZERO)
 		!(attacker.monsterinfo.aiflags & AI_IGNORE_SHOTS) &&
 		!(targ.monsterinfo.aiflags & AI_IGNORE_SHOTS))
 #else
-	if (((targ.flags & (FL_FLY | FL_SWIM)) == (attacker.flags & (FL_FLY | FL_SWIM))) &&
-		(targ.type != attacker.type) &&
 		(attacker.type != ET_MONSTER_TANK) &&
 		(attacker.type != ET_MONSTER_SUPERTANK) &&
 		(attacker.type != ET_MONSTER_MAKRON) &&
@@ -560,18 +568,18 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 		if ((targ.svflags & SVF_MONSTER) || targ.is_client())
 		{
 #if defined(THE_RECKONING) && defined(SINGLE_PLAYER)
-			if (targ.classname == "monster_gekk")
+			if (targ.type == ET_MONSTER_GEKK)
 				SpawnDamage(TE_GREENBLOOD, point, normal);
 			else
 #endif
 #ifdef GROUND_ZERO
-				if (targ.flags & FL_MECHANICAL)
-					SpawnDamage(TE_ELECTRIC_SPARKS, point, normal);
-				else if (mod == MOD_CHAINFIST)
-					SpawnDamage(TE_MOREBLOOD, point, normal);
-				else
+			if (targ.flags & FL_MECHANICAL)
+				SpawnDamage(TE_ELECTRIC_SPARKS, point, normal);
+			else if (mod == MOD_CHAINFIST)
+				SpawnDamage(TE_MOREBLOOD, point, normal);
+			else
 #endif
-					SpawnDamage(TE_BLOOD, point, normal);
+				SpawnDamage(TE_BLOOD, point, normal);
 		}
 		else
 			SpawnDamage(te_sparks, point, normal);
@@ -602,7 +610,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 				targ.pain(targ, attacker, (float) knockback, take);
 
 			// nightmare mode monsters don't go into pain frames often
-			if ((int32_t) skill == 3)
+			if (skill == 3)
 				targ.pain_debounce_framenum = level.framenum + 5 * BASE_FRAMERATE;
 		}
 	}
@@ -632,27 +640,24 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 	}
 }
 
-void T_RadiusDamage(entity &inflictor, entity &attacker, float damage, entityref ignore, float radius, means_of_death mod)
+void T_RadiusDamage(entity &inflictor, entity &attacker, float damage, entityref ignore, float radius, means_of_death mod, damage_flags dflags)
 {
-	entityref	ent;
-
-	while ((ent = findradius(ent, inflictor.s.origin, radius)).has_value())
+	for (entity &ent : G_IterateRadius(inflictor.s.origin, radius))
 	{
 		if (ent == ignore)
 			continue;
-		if (!ent->takedamage)
+		if (!ent.takedamage)
 			continue;
 
-		float points = damage - 0.5f * VectorDistance(inflictor.s.origin, ent->s.origin + (0.5f * (ent->mins + ent->maxs)));
-		if (ent == attacker)
+		float points = damage - 0.5f * VectorDistance(inflictor.s.origin, ent.s.origin + ent.bounds.center());
+
+		if (!(dflags & DAMAGE_NO_RADIUS_HALF) && ent == attacker)
 			points = points * 0.5f;
-		if (points > 0)
+
+		if (points > 0 && CanDamage(ent, inflictor))
 		{
-			if (CanDamage(ent, inflictor))
-			{
-				vector dir = ent->s.origin - inflictor.s.origin;
-				T_Damage(ent, inflictor, attacker, dir, inflictor.s.origin, vec3_origin, (int) points, (int) points, DAMAGE_RADIUS, mod);
-			}
+			vector dir = ent.s.origin - inflictor.s.origin;
+			T_Damage(ent, inflictor, attacker, dir, inflictor.s.origin, vec3_origin, (int32_t) points, (int32_t) points, dflags, mod);
 		}
 	}
 }

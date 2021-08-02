@@ -1,6 +1,6 @@
 #include "config.h"
 #include "game/game.h"
-#include "lib/savables.h"
+#include "game/savables.h"
 #include "lib/protocol.h"
 #include "lib/math/random.h"
 #include "lib/math/vector.h"
@@ -12,6 +12,12 @@
 #include "health.h"
 #include "armor.h"
 #include "powerups.h"
+#ifdef GROUND_ZERO
+#include "game/rogue/items.h"
+#endif
+#ifdef THE_RECKONING
+#include "game/xatrix/items.h"
+#endif
 
 void DoRespawn(entity &item)
 {
@@ -51,7 +57,7 @@ void DoRespawn(entity &item)
 	ent->s.event = EV_ITEM_RESPAWN;
 }
 
-REGISTER_SAVABLE_FUNCTION(DoRespawn);
+static REGISTER_SAVABLE_FUNCTION(DoRespawn);
 
 void SetRespawn(entity &ent, float delay)
 {
@@ -59,7 +65,7 @@ void SetRespawn(entity &ent, float delay)
 	ent.svflags |= SVF_NOCLIENT;
 	ent.solid = SOLID_NOT;
 	ent.nextthink = level.framenum + (gtime) (delay * BASE_FRAMERATE);
-	ent.think = DoRespawn_savable;
+	ent.think = SAVABLE(DoRespawn);
 	gi.linkentity(ent);
 }
 
@@ -82,24 +88,13 @@ void Touch_Item(entity &ent, entity &other, vector, const surface &)
 		// show icon and name on status bar
 		other.client->ps.stats[STAT_PICKUP_ICON] = gi.imageindex(ent.item->icon);
 		other.client->ps.stats[STAT_PICKUP_STRING] = CS_ITEMS + (config_string) ent.item->id;
-		other.client->pickup_msg_framenum = level.framenum + (int) (3.0f * BASE_FRAMERATE);
+		other.client->pickup_msg_framenum = level.framenum + (gtime) (3.0f * BASE_FRAMERATE);
 
 		// change selected item
 		if (ent.item->use)
 			other.client->ps.stats[STAT_SELECTED_ITEM] = other.client->pers.selected_item = ent.item->id;
 
-		if (ent.item->pickup == Pickup_Health)
-		{
-			if (ent.count == 2)
-				gi.sound(other, CHAN_ITEM, gi.soundindex("items/s_health.wav"), 1, ATTN_NORM, 0);
-			else if (ent.count == 10)
-				gi.sound(other, CHAN_ITEM, gi.soundindex("items/n_health.wav"), 1, ATTN_NORM, 0);
-			else if (ent.count == 25)
-				gi.sound(other, CHAN_ITEM, gi.soundindex("items/l_health.wav"), 1, ATTN_NORM, 0);
-			else
-				gi.sound(other, CHAN_ITEM, gi.soundindex("items/m_health.wav"), 1, ATTN_NORM, 0);
-		}
-		else if (ent.item->pickup_sound)
+		if (ent.item->pickup_sound)
 			gi.sound(other, CHAN_ITEM, gi.soundindex(ent.item->pickup_sound), 1, ATTN_NORM, 0);
 	}
 
@@ -132,30 +127,29 @@ static void drop_temp_touch(entity &ent, entity &other, vector plane, const surf
 	Touch_Item(ent, other, plane, surf);
 }
 
-REGISTER_SAVABLE_FUNCTION(drop_temp_touch);
+static REGISTER_SAVABLE_FUNCTION(drop_temp_touch);
 
 static void drop_make_touchable(entity &ent)
 {
-	ent.touch = Touch_Item_savable;
+	ent.touch = SAVABLE(Touch_Item);
 
 #ifdef SINGLE_PLAYER
 	if (deathmatch)
 	{
 #endif
 		ent.nextthink = level.framenum + 29 * BASE_FRAMERATE;
-		ent.think = G_FreeEdict_savable;
+		ent.think = SAVABLE(G_FreeEdict);
 #ifdef SINGLE_PLAYER
 	}
 #endif
 }
 
-REGISTER_SAVABLE_FUNCTION(drop_make_touchable);
+static REGISTER_SAVABLE_FUNCTION(drop_make_touchable);
 
 entity &Drop_Item(entity &ent, const gitem_t &it)
 {
 	entity &dropped = G_Spawn();
 
-	dropped.type = ET_ITEM;
 	dropped.item = it;
 	dropped.spawnflags = DROPPED_ITEM;
 	dropped.s.effects = it.world_model_flags;
@@ -164,12 +158,11 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 		| RF_IR_VISIBLE
 #endif
 		;
-	dropped.mins = { -15, -15, -15 };
-	dropped.maxs = { 15, 15, 15 };
+	dropped.bounds = bbox::sized(15.f);
 	gi.setmodel(dropped, it.world_model);
 	dropped.solid = SOLID_TRIGGER;
 	dropped.movetype = MOVETYPE_TOSS;
-	dropped.touch = drop_temp_touch_savable;
+	dropped.touch = SAVABLE(drop_temp_touch);
 	dropped.owner = ent;
 
 	vector forward;
@@ -180,7 +173,7 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 		AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 		dropped.s.origin = G_ProjectSource(ent.s.origin, { 24, 0, -16 }, forward, right);
 
-		trace tr = gi.trace(ent.s.origin, dropped.mins, dropped.maxs, dropped.s.origin, ent, CONTENTS_SOLID);
+		trace tr = gi.trace(ent.s.origin, dropped.bounds, dropped.s.origin, ent, CONTENTS_SOLID);
 		dropped.s.origin = tr.endpos;
 	}
 	else
@@ -192,7 +185,7 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 	dropped.velocity = forward * 100;
 	dropped.velocity.z = 300.f;
 
-	dropped.think = drop_make_touchable_savable;
+	dropped.think = SAVABLE(drop_make_touchable);
 	dropped.nextthink = level.framenum + 1 * BASE_FRAMERATE;
 
 	gi.linkentity(dropped);
@@ -202,28 +195,27 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 static void Use_Item(entity &ent, entity &, entity &)
 {
 	ent.svflags &= ~SVF_NOCLIENT;
-	ent.use = 0;
+	ent.use = nullptr;
 
 	if (ent.spawnflags & ITEM_NO_TOUCH)
 	{
 		ent.solid = SOLID_BBOX;
-		ent.touch = 0;
+		ent.touch = nullptr;
 	}
 	else
 	{
 		ent.solid = SOLID_TRIGGER;
-		ent.touch = Touch_Item_savable;
+		ent.touch = SAVABLE(Touch_Item);
 	}
 
 	gi.linkentity(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Use_Item);
+static REGISTER_SAVABLE_FUNCTION(Use_Item);
 
 void droptofloor(entity &ent)
 {
-	ent.mins = { -15, -15, -15 };
-	ent.maxs = { 15, 15, 15 };
+	ent.bounds = bbox::sized(15.f);
 
 	if (ent.model)
 		gi.setmodel(ent, ent.model);
@@ -232,17 +224,17 @@ void droptofloor(entity &ent)
 
 	ent.solid = SOLID_TRIGGER;
 	ent.movetype = MOVETYPE_TOSS;
-	ent.touch = Touch_Item_savable;
+	ent.touch = SAVABLE(Touch_Item);
 
 	vector dest = ent.s.origin;
 	dest[2] -= 128;
 
-	trace tr = gi.trace(ent.s.origin, ent.mins, ent.maxs, dest, ent, MASK_SOLID);
+	trace tr = gi.trace(ent.s.origin, ent.bounds, dest, ent, MASK_SOLID);
 
 	if (tr.startsolid)
 	{
 #ifdef THE_RECKONING
-		if (ent.classname == "foodcube")
+		if (ent.item->id == ITEM_FOODCUBE)
 		{
 			tr.endpos = ent.s.origin;
 			ent.velocity[2] = 0;
@@ -271,14 +263,14 @@ void droptofloor(entity &ent)
 		if (ent == ent.teammaster)
 		{
 			ent.nextthink = level.framenum + 1;
-			ent.think = DoRespawn_savable;
+			ent.think = SAVABLE(DoRespawn);
 		}
 	}
 
 	if (ent.spawnflags & ITEM_NO_TOUCH)
 	{
 		ent.solid = SOLID_BBOX;
-		ent.touch = 0;
+		ent.touch = nullptr;
 		ent.s.effects &= ~EF_ROTATE;
 		ent.s.renderfx &= ~RF_GLOW;
 	}
@@ -287,7 +279,7 @@ void droptofloor(entity &ent)
 	{
 		ent.svflags |= SVF_NOCLIENT;
 		ent.solid = SOLID_NOT;
-		ent.use = Use_Item_savable;
+		ent.use = SAVABLE(Use_Item);
 	}
 
 	gi.linkentity(ent);
@@ -343,9 +335,7 @@ void PrecacheItem(const gitem_t &it)
 		string ext = substr(v, v_len - 3);
 
 		// determine type based on extension
-		if (ext == "md2")
-			gi.modelindex(v);
-		else if (ext == "sp2")
+		if (ext == "md2" || ext == "sp2")
 			gi.modelindex(v);
 		else if (ext == "wav")
 			gi.soundindex(v);
@@ -366,10 +356,6 @@ Items can't be immediately dropped to floor, because they might
 be on an entity that hasn't spawned yet.
 ============
 */
-
-#ifdef GROUND_ZERO
-void(entity ent) SetTriggeredSpawn;
-#endif
 
 #ifdef CTF
 void(entity) CTFFlagSetup;
@@ -395,25 +381,25 @@ void SpawnItem(entity &ent, const gitem_t &it)
 	if (deathmatch)
 	{
 #endif
-		if (((dm_flags) dmflags & DF_NO_ARMOR) && (it.pickup == Pickup_Armor || it.pickup == Pickup_PowerArmor))
+		if ((dmflags & DF_NO_ARMOR) && (it.pickup == Pickup_Armor || it.pickup == Pickup_PowerArmor))
 			G_FreeEdict(ent);
-		else if (((dm_flags) dmflags & DF_NO_ITEMS) && it.pickup == Pickup_Powerup)
+		else if ((dmflags & DF_NO_ITEMS) && it.pickup == Pickup_Powerup)
 			G_FreeEdict(ent);
-		else if (((dm_flags) dmflags & DF_NO_HEALTH) && (it.pickup == Pickup_Health || it.pickup == Pickup_Adrenaline || it.pickup == Pickup_AncientHead))
+		else if ((dmflags & DF_NO_HEALTH) && (it.pickup == Pickup_Health || it.pickup == Pickup_Adrenaline || it.pickup == Pickup_AncientHead))
 			G_FreeEdict(ent);
-		else if (((dm_flags) dmflags & DF_INFINITE_AMMO) && (it.flags == IT_AMMO || it.id == ITEM_BFG))
+		else if ((dmflags & DF_INFINITE_AMMO) && (it.flags == IT_AMMO || it.id == ITEM_BFG))
 			G_FreeEdict(ent);
 #ifdef GROUND_ZERO
-		else if ((dmflags.intVal & DF_NO_MINES) && (ent.classname == "ammo_prox" || ent.classname == "ammo_tesla"))
+		else if ((dmflags & DF_NO_MINES) && (it.id == ITEM_PROX || it.id == ITEM_TESLA))
 			G_FreeEdict(ent);
-		else if ((dmflags.intVal & DF_NO_NUKES) && ent.classname == "ammo_nuke")
+		else if ((dmflags & DF_NO_NUKES) && it.id == ITEM_NUKE)
 			G_FreeEdict(ent);
 #endif
 #ifdef SINGLE_PLAYER
 	}
 #endif
 #ifdef GROUND_ZERO
-	else if (ent.classname == "ammo_nuke")
+	else if (it.id == ITEM_NUKE)
 		G_FreeEdict(ent);
 #endif
 
@@ -449,10 +435,9 @@ void SpawnItem(entity &ent, const gitem_t &it)
 
 	ent.item = it;
 	ent.nextthink = level.framenum + 2;    // items start after other solids
-	ent.think = droptofloor_savable;
+	ent.think = SAVABLE(droptofloor);
 	ent.s.effects = it.world_model_flags;
 	ent.s.renderfx = RF_GLOW;
-	ent.type = ET_ITEM;
 
 	if (ent.model)
 		gi.modelindex(ent.model);

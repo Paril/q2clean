@@ -14,6 +14,7 @@ namespace internal
 	void *alloc(size_t len, mem_tag tag);
 	void free(void *ptr);
 	bool is_ready();
+	extern uint32_t non_game_count, game_count;
 }
 
 // a game_allocator directs memory for STL allocations over to
@@ -43,11 +44,13 @@ public:
 		if (!internal::is_ready())
 		{
 			ptr = (int32_t *) calloc(1, (num * sizeof(value_type)) + sizeof(int32_t));
+			internal::non_game_count += num;
 			*ptr = 0;
 		}
 		else
 		{
 			ptr = (int32_t *) internal::alloc((num * sizeof(value_type)) + sizeof(int32_t), TAG_GAME);
+			internal::game_count += num;
 			*ptr = 1;
 		}
 
@@ -59,9 +62,15 @@ public:
 		int32_t *p = ((int32_t *) ptr) - 1;
 
 		if (!*p)
+		{
 			free(p);
+			internal::non_game_count -= num;
+		}
 		else
+		{
 			internal::free(p);
+			internal::game_count -= num;
+		}
 	}
 };
 

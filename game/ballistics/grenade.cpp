@@ -7,6 +7,7 @@
 #include "lib/math/random.h"
 #include "game/combat.h"
 #include "lib/math/vector.h"
+#include "grenade.h"
 
 constexpr spawn_flag GRENADE_IS_HAND = (spawn_flag) 1;
 constexpr spawn_flag GRENADE_IS_HELD = (spawn_flag) 2;
@@ -24,15 +25,10 @@ void Grenade_Explode(entity &ent)
 	//FIXME: if we are onground then raise our Z just a bit since we are a point?
 	if (ent.enemy.has_value())
 	{
-		float	points;
-		vector	v;
-		vector dir;
-
-		v = ent.enemy->mins + ent.enemy->maxs;
-		v = ent.enemy->s.origin + (0.5f * v);
+		vector v = ent.enemy->s.origin + ent.enemy->bounds.center();
 		v = ent.s.origin - v;
-		points = ent.dmg - 0.5f * VectorLength(v);
-		dir = ent.enemy->s.origin - ent.s.origin;
+		float points = ent.dmg - 0.5f * VectorLength(v);
+		vector dir = ent.enemy->s.origin - ent.s.origin;
 		if (ent.spawnflags & GRENADE_IS_HAND)
 			mod = MOD_HANDGRENADE;
 		else
@@ -70,9 +66,9 @@ void Grenade_Explode(entity &ent)
 	G_FreeEdict(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Grenade_Explode);
+static REGISTER_SAVABLE_FUNCTION(Grenade_Explode);
 
-void Grenade_Touch(entity &ent, entity &other, vector, const surface &surf)
+static void Grenade_Touch(entity &ent, entity &other, vector, const surface &surf)
 {
 	if (other == ent.owner)
 		return;
@@ -102,7 +98,9 @@ void Grenade_Touch(entity &ent, entity &other, vector, const surface &surf)
 	Grenade_Explode(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Grenade_Touch);
+static REGISTER_SAVABLE_FUNCTION(Grenade_Touch);
+
+entity_type ET_GRENADE("grenade");
 
 void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float timer, float damage_radius)
 {
@@ -125,13 +123,11 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	grenade.clipmask = MASK_SHOT;
 	grenade.solid = SOLID_BBOX;
 	grenade.s.effects |= EF_GRENADE;
-	grenade.mins = vec3_origin;
-	grenade.maxs = vec3_origin;
 	grenade.s.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
 	grenade.owner = self;
-	grenade.touch = Grenade_Touch_savable;
+	grenade.touch = SAVABLE(Grenade_Touch);
 	grenade.nextthink = level.framenum + (gtime) (timer * BASE_FRAMERATE);
-	grenade.think = Grenade_Explode_savable;
+	grenade.think = SAVABLE(Grenade_Explode);
 	grenade.dmg = damage;
 	grenade.dmg_radius = damage_radius;
 	grenade.type = ET_GRENADE;
@@ -160,16 +156,14 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	grenade.clipmask = MASK_SHOT;
 	grenade.solid = SOLID_BBOX;
 	grenade.s.effects |= EF_GRENADE;
-	grenade.mins = vec3_origin;
-	grenade.maxs = vec3_origin;
 	grenade.s.modelindex = gi.modelindex("models/objects/grenade2/tris.md2");
 	grenade.owner = self;
-	grenade.touch = Grenade_Touch_savable;
+	grenade.touch = SAVABLE(Grenade_Touch);
 	grenade.nextthink = level.framenum + (gtime) (timer * BASE_FRAMERATE);
-	grenade.think = Grenade_Explode_savable;
+	grenade.think = SAVABLE(Grenade_Explode);
 	grenade.dmg = damage;
 	grenade.dmg_radius = damage_radius;
-	grenade.type = ET_HANDGRENADE;
+	grenade.type = ET_GRENADE;
 	grenade.spawnflags = GRENADE_IS_HAND;
 	if (held)
 		grenade.spawnflags |= GRENADE_IS_HELD;

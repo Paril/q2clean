@@ -4,6 +4,7 @@
 #include <exception>
 #include "lib/string.h"
 #include "lib/math/vector.h"
+#include "lib/math/bbox.h"
 #include "lib/types/array.h"
 #include "lib/types/enum.h"
 #include "game/entity_types.h"
@@ -90,8 +91,8 @@ public:
 	constexpr explicit sound_index(const int32_t &value) : index(value) { }
 	constexpr explicit operator bool() const { return (bool) index; }
 	constexpr explicit operator const int32_t &() const { return index; }
-	constexpr bool operator==(const sound_index &r) { return index == r.index; }
-	constexpr bool operator!=(const sound_index &r) { return index != r.index; }
+	constexpr bool operator==(const sound_index &r) const { return index == r.index; }
+	constexpr bool operator!=(const sound_index &r) const { return index != r.index; }
 };
 
 constexpr sound_index SOUND_NONE(0);
@@ -106,8 +107,8 @@ public:
 	constexpr explicit model_index(const int32_t &value) : index(value) { }
 	constexpr explicit operator bool() const { return (bool) index; }
 	constexpr explicit operator const int32_t &() const { return index; }
-	constexpr bool operator==(const model_index &r) { return index == r.index; }
-	constexpr bool operator!=(const model_index &r) { return index != r.index; }
+	constexpr bool operator==(const model_index &r) const { return index == r.index; }
+	constexpr bool operator!=(const model_index &r) const { return index != r.index; }
 };
 
 constexpr model_index MODEL_NONE(0);
@@ -124,8 +125,8 @@ public:
 	constexpr explicit image_index(const int32_t &value) : index(value) { }
 	constexpr explicit operator bool() const { return (bool) index; }
 	constexpr explicit operator const int32_t &() const { return index; }
-	constexpr bool operator==(const image_index &r) { return index == r.index; }
-	constexpr bool operator!=(const image_index &r) { return index != r.index; }
+	constexpr bool operator==(const image_index &r) const { return index == r.index; }
+	constexpr bool operator!=(const image_index &r) const { return index != r.index; }
 };
 
 constexpr image_index IMAGE_NONE(0);
@@ -220,7 +221,9 @@ enum cvar_flags : int32_t
 
 MAKE_ENUM_BITWISE(cvar_flags);
 
-// console variables
+// console variables.
+// this is an internal type and should not be used directly;
+// see cvarref below.
 struct cvar
 {
 	cvar() = delete;
@@ -235,7 +238,21 @@ struct cvar
 	const float			value;
 };
 
+template<typename T>
+concept is_numeric_like = std::is_enum_v<T> || std::is_integral_v<T> || std::is_floating_point_v<T>;
+
 // a wrapper for cvar that can perform conversions automatically.
+// this is the main way of interacting with cvars.
+// it can be converted/used in the following ways:
+// - explicit conversion to bool; you can check `if (cvar)` or `if (!cvar)`. this will
+//   only count "" and "0" as false, and everything else as true. This should work for
+//   the majority of cases where you'd need to check a number-like cvar. For more
+//   fine-grained control, you can check `.string` or `.value`.
+// - explicit conversion to a string literal; just a type conversion wrapper to .string
+// - explicit conversion to other types; any type that can be converted from a float
+//   is supported as a conversion operator.
+// - == and != are supported for strings/string-like types, to check for exact matches
+// - most operators are supported for numeric types, in both directions
 struct cvarref
 {
 private:
@@ -248,9 +265,9 @@ public:
 	stringlit			name;
 	stringlit			string;
 	stringlit			latched_string;
-	const cvar_flags &flags;
-	qboolean &modified;
-	const float &value;
+	const cvar_flags	&flags;
+	qboolean			&modified;
+	const float			&value;
 
 	cvarref() :
 		cv(nullptr),
@@ -298,19 +315,43 @@ public:
 		return *string && !(string[0] == '0' && string[1] == '\0');
 	}
 
-	// everything else is templated
-	template<typename T>
-	inline explicit operator T() const
-	{
-		return (T) value;
-	}
+	// templated numeric stuff
+	template<is_numeric_like T> inline explicit operator T() const { return (T) value; }
+	template<is_numeric_like T> inline bool operator==(T v) const { return v == (T) value; }
+	template<is_numeric_like T> inline bool operator!=(T v) const { return v != (T) value; }
+	template<is_numeric_like T> inline bool operator<(T v) const { return v < (T) value; }
+	template<is_numeric_like T> inline bool operator>(T v) const { return v > (T) value; }
+	template<is_numeric_like T> inline bool operator<=(T v) const { return v <= (T) value; }
+	template<is_numeric_like T> inline bool operator>=(T v) const { return v >= (T) value; }
+	template<is_numeric_like T> inline T operator-(T v) const { return v - (T) value; }
+	template<is_numeric_like T> inline T operator+(T v) const { return v + (T) value; }
+	template<is_numeric_like T> inline T operator*(T v) const { return v * (T) value; }
+	template<is_numeric_like T> inline T operator/(T v) const { return v / (T) value; }
+	template<is_numeric_like T> inline T operator&(T v) const { return v & (T) value; }
+	template<is_numeric_like T> inline T operator|(T v) const { return v | (T) value; }
+	template<is_numeric_like T> inline T operator^(T v) const { return v ^ (T) value; }
 
+	// strings
 	inline bool operator==(stringlit lit) const { return (stringref) string == lit; }
 	inline bool operator!=(stringlit lit) const { return (stringref) string != lit; }
 
 	inline bool operator==(const stringref &ref) const { return ref == string; }
 	inline bool operator!=(const stringref &ref) const { return ref != string; }
 };
+
+template<is_numeric_like T> inline bool operator==(T v, cvarref &cvar) { return v == (T) cvar.value; }
+template<is_numeric_like T> inline bool operator!=(T v, cvarref &cvar) { return v != (T) cvar.value; }
+template<is_numeric_like T> inline bool operator<(T v, cvarref &cvar) { return v < (T) cvar.value; }
+template<is_numeric_like T> inline bool operator>(T v, cvarref &cvar) { return v > (T) cvar.value; }
+template<is_numeric_like T> inline bool operator<=(T v, cvarref &cvar) { return v <= (T) cvar.value; }
+template<is_numeric_like T> inline bool operator>=(T v, cvarref &cvar) { return v >= (T) cvar.value; }
+template<is_numeric_like T> inline T operator-(T v, cvarref &cvar) { return v - (T) cvar.value; }
+template<is_numeric_like T> inline T operator+(T v, cvarref &cvar) { return v + (T) cvar.value; }
+template<is_numeric_like T> inline T operator*(T v, cvarref &cvar) { return v * (T) cvar.value; }
+template<is_numeric_like T> inline T operator/(T v, cvarref &cvar) { return v / (T) cvar.value; }
+template<is_numeric_like T> inline T operator&(T v, cvarref &cvar) { return v & (T) cvar.value; }
+template<is_numeric_like T> inline T operator|(T v, cvarref &cvar) { return v | (T) cvar.value; }
+template<is_numeric_like T> inline T operator^(T v, cvarref &cvar) { return v ^ (T) cvar.value; }
 
 // print level
 enum print_level : uint8_t
@@ -417,7 +458,7 @@ struct surface
 	int32_t			value;
 };
 
-constexpr surface null_surface { stringarray<16>({ '\0' }), SURF_NONE, 0 };
+constexpr surface null_surface { { }, SURF_NONE, 0 };
 
 // a trace is returned when a box is swept through the world
 struct trace
@@ -453,12 +494,12 @@ struct trace
 	// surface normal at impact
 	vector			normal;
 private:
-	int32_t			plane_padding[2] = { 0, 0 };
+	[[maybe_unused]] int32_t plane_padding[2] = { 0, 0 };
 public:
 	// surface hit
 	const surface &surface;
 	// contents on other side of surface hit
-	content_flags	contents;
+	content_flags contents;
 	// entity hit
 	entity &ent;
 };
@@ -868,19 +909,19 @@ MAKE_ENUM_BITWISE(button_bits);
 // usercmd_t is sent to the server each client frame
 extern "C" struct usercmd
 {
-	uint8_t				msec;
-	button_bits			buttons;
+	uint8_t		msec;
+	button_bits	buttons;
 private:
 	array<int16_t, 3>	angles;
 public:
 	vector get_angles() const;
 	void set_angles(vector v);
 
-	int16_t				forwardmove, sidemove, upmove;
+	int16_t	forwardmove, sidemove, upmove;
 	// these are used, but bad
 private:
-	uint8_t				impulse;
-	uint8_t				lightlevel;
+	[[maybe_unused]] uint8_t impulse;
+	[[maybe_unused]] uint8_t lightlevel;
 };
 
 constexpr size_t MAX_TOUCH = 32;
@@ -1184,7 +1225,7 @@ struct player_stat
 // For engine compatibility, these 18 IDs should remain the same
 // and keep their described usage.
 // These are macros so they can be embedded in the static statusbar strings.
-enum
+enum stat_index
 {
 	STAT_HEALTH_ICON,
 	STAT_HEALTH,
@@ -1321,8 +1362,9 @@ public:
 	area_index		areanum, areanum2;
 
 	server_flags	svflags;
-	vector			mins, maxs;
-	vector			absmin, absmax, size;
+	bbox			bounds;
+	bbox			absbounds;
+	vector			size;
 	solidity		solid;
 	content_flags	clipmask;
 	entityref		owner;

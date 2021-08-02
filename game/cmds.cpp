@@ -12,6 +12,7 @@
 #include "lib/string/format.h"
 #include "items/weaponry.h"
 #include "combat.h"
+#include "spawn.h"
 #include "player_frames.h"
 #include "game/items/entity.h"
 
@@ -23,10 +24,10 @@ static string ClientTeam(entity &ent)
 	string team = Info_ValueForKey(ent.client->pers.userinfo, "skin");
 	size_t p = strchr(team, '/');
 
-	if (p == -1)
+	if (p == (size_t) -1)
 		return team;
 
-	if ((dm_flags)dmflags & DF_MODELTEAMS)
+	if (dmflags & DF_MODELTEAMS)
 		return substr(team, 0, p);
 
 	return substr(team, p + 1);
@@ -50,7 +51,7 @@ bool OnSameTeam(entity &ent1, entity &ent2)
 			return true;
 		else
 #endif
-		if ((dm_flags)dmflags & (DF_MODELTEAMS | DF_SKINTEAMS))
+		if (dmflags & (DF_MODELTEAMS | DF_SKINTEAMS))
 			return ClientTeam(ent1) == ClientTeam(ent2);
 	}
 
@@ -688,13 +689,9 @@ static void Cmd_Players_f(entity &ent)
 {
 	dynarray<entityref> index;
 
-	for (uint32_t i = 0 ; i < game.maxclients; i++)
-	{
-		entity &cl = itoe(i + 1);
-
-		if (cl.is_client() && cl.client->pers.connected)
+	for (entity &cl : entity_range(1, game.maxclients))
+		if (cl.client->pers.connected)
 			index.push_back(cl);
-	}
 
 	// sort by frags
 	std::sort(index.begin(), index.end(), PlayerSort);
@@ -776,7 +773,7 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 	if (gi.argc() < 2 && !arg0)
 		return;
 
-	team = team && ((dm_flags)dmflags & (DF_MODELTEAMS | DF_SKINTEAMS));
+	team = team && (dmflags & (DF_MODELTEAMS | DF_SKINTEAMS));
 
 	string text;
 
@@ -811,15 +808,15 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 			return;
 		}
 
-		int32_t i = (int32_t) (ent.client->flood_whenhead - (int32_t)flood_msgs + 1);
+		int32_t i = (int32_t) (ent.client->flood_whenhead - flood_msgs + 1);
 
 		if (i < 0)
 			i = (int32_t) (ent.client->flood_when.size() + i);
 
-		if (ent.client->flood_when[i] && level.time - ent.client->flood_when[i] < (int32_t)flood_persecond)
+		if (ent.client->flood_when[i] && level.time - ent.client->flood_when[i] < flood_persecond)
 		{
-			ent.client->flood_locktill = level.time + (float)flood_waitdelay;
-			gi.cprintf(ent, PRINT_CHAT, "You can't talk for %d more seconds.\n", (int32_t)flood_waitdelay);
+			ent.client->flood_locktill = level.time + flood_waitdelay;
+			gi.cprintf(ent, PRINT_CHAT, "You can't talk for %d more seconds.\n", (int32_t) flood_waitdelay);
 			return;
 		}
 
@@ -830,9 +827,8 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 	if (dedicated)
 		gi.dprintf("%s", text.ptr());
 
-	for (size_t i = 1; i <= game.maxclients; i++)
+	for (entity &other : entity_range(1, game.maxclients))
 	{
-		entity &other = itoe(i);
 		if (!other.inuse)
 			continue;
 		if (team && !OnSameTeam(ent, other))
@@ -847,10 +843,8 @@ static void Cmd_PlayerList_f(entity &ent)
 	// connect time, ping, score, name
 	string text;
 
-	for (size_t i = 0; i < game.maxclients; i++)
+	for (entity &e2 : entity_range(1, game.maxclients))
 	{
-		entity &e2 = itoe(i + 1);
-
 		if (!e2.inuse)
 			continue;
 
@@ -874,9 +868,6 @@ static void Cmd_PlayerList_f(entity &ent)
 	gi.cprintf(ent, PRINT_HIGH, "%s", text.ptr());
 }
 
-// spawn.qc
-bool ED_CallSpawn(entity &ent);
-
 static void Cmd_Spawn_f(entity &ent)
 {
 	if (
@@ -899,11 +890,12 @@ static void Cmd_Spawn_f(entity &ent)
 	e.s.angles[YAW] = ent.s.angles[YAW];
 	
 	ED_CallSpawn(e);
+
 	gi.linkentity(e);
 };
 
 #ifdef OFFHAND_HOOK
-import ctf.grapple;
+#include "game/ctf/grapple.h"
 #endif
 
 /*

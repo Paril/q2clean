@@ -5,6 +5,8 @@
 #include "lib/math/random.h"
 #include "lib/gi.h"
 #include "game.h"
+#include "game/func.h"
+#include "game/misc.h"
 
 void G_InitEdict(entity &e)
 {
@@ -14,36 +16,45 @@ void G_InitEdict(entity &e)
 	e.__init();
 	e.inuse = true;
 	e.gravity = 1.0f;
-#ifdef GROUND_ZERO
+#ifdef ROGUE_AI
 	e.gravityVector = MOVEDIR_DOWN;
 #endif
 }
 
 entity &G_Spawn()
 {
-	size_t i;
+	// fatal if we ever hit this point
+	if (num_entities == max_entities)
+		gi.error("%s: reached max entity slots", __func__);
 
-	for (i = game.maxclients + 1; i < num_entities; i++)
+	// guaranteed to have a free entity at the end, but
+	// let's try to re-use IDs first
+	entityref best;
+	// the first couple seconds of server time can involve a lot of
+	// freeing and allocating
+	const bool quick_replace = level.framenum < 10;
+
+	for (entity &e : entity_range(game.maxclients + 1, num_entities - 1))
 	{
-		entity &e = itoe(i);
+		if (e.inuse)
+			continue;
 
-		// the first couple seconds of server time can involve a lot of
-		// freeing and allocating, so relax the replacement policy
-		if (!e.inuse && (e.freeframenum < (2 * BASE_FRAMERATE) || (level.framenum - e.freeframenum) >(gtime)(0.5f * BASE_FRAMERATE)))
+		// if this is a really good entity, mark it down immediately
+		if (quick_replace || (level.framenum - e.freeframenum) > (gtime)(0.5f * BASE_FRAMERATE))
 		{
-			G_InitEdict(e);
-			return e;
+			best = e;
+			break;
 		}
+		// otherwise we may have no choice but to re-use the first free one we come across
+		else if (!best.has_value())
+			best = e;
 	}
 
-	if (i == max_entities)
-		gi.error("%s: no free edicts", __func__);
+	if (!best.has_value())
+		best = itoe(num_entities++);
 
-	entity &e = itoe(i);
-	num_entities++;
-	G_InitEdict(e);
-
-	return e;
+	G_InitEdict(best);
+	return best;
 }
 
 void G_FreeEdict(entity &e)
@@ -57,7 +68,7 @@ void G_FreeEdict(entity &e)
 
 	e.__free();
 	e.inuse = false;
-	e.type = ET_FREED;
+	e.type = ET_UNKNOWN;
 	e.freeframenum = level.framenum;
 }
 
@@ -76,9 +87,12 @@ entityref findradius(entityref from, vector org, float rad)
 			continue;
 		if (from->solid == SOLID_NOT)
 			continue;
-		vector eorg = org - (from->s.origin + (from->mins + from->maxs) * 0.5f);
+
+		vector eorg = org - (from->s.origin + from->bounds.center());
+
 		if (VectorLength(eorg) > rad)
 			continue;
+
 		return from;
 	}
 
@@ -114,7 +128,7 @@ static void Think_Delay(entity &ent)
 	G_FreeEdict(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Think_Delay);
+static REGISTER_SAVABLE_FUNCTION(Think_Delay);
 
 void G_UseTargets(entity &ent, entity &cactivator)
 {
@@ -125,9 +139,8 @@ void G_UseTargets(entity &ent, entity &cactivator)
 	{
 		// create a temp object to fire at a later time
 		entity &t = G_Spawn();
-		t.type = ET_DELAYED_USE;
 		t.nextthink = level.framenum + (gtime) (ent.delay * BASE_FRAMERATE);
-		t.think = Think_Delay_savable;
+		t.think = SAVABLE(Think_Delay);
 		t.activator = cactivator;
 		t.message = ent.message;
 		t.target = ent.target;
@@ -154,7 +167,6 @@ void G_UseTargets(entity &ent, entity &cactivator)
 	{
 #ifdef GROUND_ZERO
 		bool done = false;
-		entity master;
 #endif
 		entityref t;
 
@@ -162,17 +174,19 @@ void G_UseTargets(entity &ent, entity &cactivator)
 		{
 #ifdef GROUND_ZERO
 			// PMM - if this entity is part of a train, cleanly remove it
-			if ((t.flags & FL_TEAMSLAVE) && t.teammaster)
+			if ((t->flags & FL_TEAMSLAVE) && t->teammaster.has_value())
 			{
-				master = t.teammaster;
+				entityref master = t->teammaster;
+
 				while (!done)
 				{
-					if (master.teamchain == t)
+					if (master->teamchain == t)
 					{
-						master.teamchain = t.teamchain;
+						master->teamchain = t->teamchain;
 						done = true;
 					}
-					master = master.teamchain;
+
+					master = master->teamchain;
 				}
 			}
 #endif
@@ -289,7 +303,7 @@ void G_TouchTriggers(entity &ent)
 	if ((ent.is_client() || (ent.svflags & SVF_MONSTER)) && (ent.health <= 0))
 		return;
 
-	dynarray<entityref> touches = gi.BoxEdicts(ent.absmin, ent.absmax, AREA_TRIGGERS);
+	dynarray<entityref> touches = gi.BoxEdicts(ent.absbounds, AREA_TRIGGERS);
 
 	// be careful, it is possible to have an entity in this
 	// list removed before we get to it (killtriggered)
@@ -307,7 +321,7 @@ bool KillBox(entity &ent)
 {
 	while (1)
 	{
-		trace tr = gi.trace(ent.s.origin, ent.mins, ent.maxs, ent.s.origin, world, MASK_PLAYERSOLID);
+		trace tr = gi.trace(ent.s.origin, ent.bounds, ent.s.origin, world, MASK_PLAYERSOLID);
 
 		if (tr.ent.is_world())
 			break;

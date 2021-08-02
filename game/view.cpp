@@ -199,8 +199,8 @@ static inline float SV_CalcRoll(vector velocity)
 	side = fabs(side);
 	const float &value = sv_rollangle.value;
 
-	if (side < (float) sv_rollspeed)
-		side = side * value / (float) sv_rollspeed;
+	if (side < sv_rollspeed)
+		side = side * value / sv_rollspeed;
 	else
 		side = value;
 
@@ -276,7 +276,7 @@ static inline void P_FallingDamage(entity &ent)
 			damage = 1;
 		dir = { 0, 0, 1 };
 
-		if (!((dm_flags) dmflags & DF_NO_FALLING))
+		if (!(dmflags & DF_NO_FALLING))
 			T_Damage(ent, world, world, dir, ent.s.origin, vec3_origin, damage, 0, DAMAGE_NONE, MOD_FALLING);
 	}
 	else
@@ -485,18 +485,18 @@ static inline void SV_CalcViewOffset(entity &ent)
 		// add angles based on velocity
 
 		delta = ent.velocity * forward;
-		ent.client->ps.kick_angles[PITCH] += delta * (float) run_pitch;
+		ent.client->ps.kick_angles[PITCH] += delta * run_pitch;
 
 		delta = ent.velocity * right;
-		ent.client->ps.kick_angles[ROLL] += delta * (float) run_roll;
+		ent.client->ps.kick_angles[ROLL] += delta * run_roll;
 
 		// add angles based on bob
 
-		delta = bobfracsin * (float) bob_pitch * xyspeed;
+		delta = bobfracsin * bob_pitch * xyspeed;
 		if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 			delta *= 6;     // crouching
 		ent.client->ps.kick_angles[PITCH] += delta;
-		delta = bobfracsin * (float) bob_roll * xyspeed;
+		delta = bobfracsin * bob_roll * xyspeed;
 		if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 			delta *= 6;     // crouching
 		if (bobcycle & 1)
@@ -560,7 +560,7 @@ static inline void SV_CalcGunOffset(entity &ent)
 	// gun angles from bobbing
 #ifdef GROUND_ZERO
 	//ROGUE - heatbeam shouldn't bob so the beam looks right
-	if (ent.client.pers.weapon && ent.client.pers.weapon->id != ITEM_PLASMA_BEAM)
+	if (ent.client->pers.weapon && ent.client->pers.weapon->id != ITEM_PLASMA_BEAM)
 	{
 #endif
 		ent.client->ps.gunangles[ROLL] = xyspeed * bobfracsin * 0.005f;
@@ -590,11 +590,10 @@ static inline void SV_CalcGunOffset(entity &ent)
 				ent.client->ps.gunangles[ROLL] += 0.1f * delta;
 			ent.client->ps.gunangles[i] += 0.2f * delta;
 		}
-
 #ifdef GROUND_ZERO
 	}
 	else
-		ent.client.ps.gunangles = vec3_origin;
+		ent.client->ps.gunangles = vec3_origin;
 #endif
 
 	// gun height
@@ -606,12 +605,12 @@ static inline void SV_CalcGunOffset(entity &ent)
 SV_AddBlend
 =============
 */
-static inline void SV_AddBlend(vector rgb, float a, float *v_blend)
+static inline void SV_AddBlend(vector rgb, float a, array<float, 4> &v_blend)
 {
 	float a2 = v_blend[3] + (1 - v_blend[3]) * a; // new total alpha
 	float a3 = v_blend[3] / a2;   // fraction of color from old
 
-	*((vector *) v_blend) = (*((vector *) v_blend) * a3) + (rgb * (1 - a3));
+	((vector &) v_blend) = (((vector &) v_blend) * a3) + (rgb * (1 - a3));
 
 	v_blend[3] = a2;
 }
@@ -626,13 +625,13 @@ constexpr vector enviro_blend = { 0, 1, 0 };
 constexpr vector breather_blend = { 0.4f, 1, 0.4f };
 
 #ifdef THE_RECKONING
-constexpr vector quadfire_blend = '1 0.2 0.5';
+constexpr vector quadfire_blend = { 1, 0.2f, 0.5f };
 #endif
 
 #ifdef GROUND_ZERO
-constexpr vector double_blend = '0.9 0.7 0';
-constexpr vector nuke_blend = '1 1 1';
-constexpr vector ir_blend = '1 0 0';
+constexpr vector double_blend = { 0.9f, 0.7f, 0 };
+constexpr vector nuke_blend = { 1, 1, 1 };
+constexpr vector ir_blend = { 1, 0, 0 };
 #endif
 
 /*
@@ -657,11 +656,11 @@ static inline void SV_CalcBlend(entity &ent)
 		ent.client->ps.rdflags &= ~RDF_UNDERWATER;
 
 	if (contents & (CONTENTS_SOLID | CONTENTS_LAVA))
-		SV_AddBlend(lava_blend, 0.6f, &ent.client->ps.blend[0]);
+		SV_AddBlend(lava_blend, 0.6f, ent.client->ps.blend);
 	else if (contents & CONTENTS_SLIME)
-		SV_AddBlend(slime_blend, 0.6f, &ent.client->ps.blend[0]);
+		SV_AddBlend(slime_blend, 0.6f, ent.client->ps.blend);
 	else if (contents & CONTENTS_WATER)
-		SV_AddBlend(water_blend, 0.4f, &ent.client->ps.blend[0]);
+		SV_AddBlend(water_blend, 0.4f, ent.client->ps.blend);
 
 	// add for powerups
 	if (ent.client->quad_framenum > level.framenum)
@@ -670,27 +669,27 @@ static inline void SV_CalcBlend(entity &ent)
 		if (remaining == 30)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage2.wav"), 1, ATTN_NORM, 0);
 		if (remaining > 30 || (remaining & 4))
-			SV_AddBlend(quad_blend, 0.08f, &ent.client->ps.blend[0]);
+			SV_AddBlend(quad_blend, 0.08f, ent.client->ps.blend);
 	}
 #ifdef THE_RECKONING
 	// RAFAEL
-	else if (ent.client.quadfire_framenum > level.framenum)
+	else if (ent.client->quadfire_framenum > level.framenum)
 	{
-		remaining = ent.client.quadfire_framenum - level.framenum;
+		remaining = ent.client->quadfire_framenum - level.framenum;
 		if (remaining == 30)	// beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/quadfire2.wav"), 1, ATTN_NORM, 0);
 		if (remaining > 30 || (remaining & 4))
-			SV_AddBlend(quadfire_blend, 0.08f, &ent.client.ps.blend[0]);
+			SV_AddBlend(quadfire_blend, 0.08f, ent.client->ps.blend);
 	}
 #endif
 #ifdef GROUND_ZERO
-	else if (ent.client.double_framenum > level.framenum)
+	else if (ent.client->double_framenum > level.framenum)
 	{
-		remaining = ent.client.double_framenum - level.framenum;
+		remaining = ent.client->double_framenum - level.framenum;
 		if (remaining == 30)	// beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage2.wav"), 1, ATTN_NORM, 0);
 		if (remaining > 30 || (remaining & 4))
-			SV_AddBlend(double_blend, 0.08f, &ent.client.ps.blend[0]);
+			SV_AddBlend(double_blend, 0.08f, ent.client->ps.blend);
 	}
 #endif
 	else if (ent.client->invincible_framenum > level.framenum)
@@ -699,7 +698,7 @@ static inline void SV_CalcBlend(entity &ent)
 		if (remaining == 30)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect2.wav"), 1, ATTN_NORM, 0);
 		if (remaining > 30 || (remaining & 4))
-			SV_AddBlend(invul_blend, 0.08f, &ent.client->ps.blend[0]);
+			SV_AddBlend(invul_blend, 0.08f, ent.client->ps.blend);
 	}
 	else if (ent.client->enviro_framenum > level.framenum)
 	{
@@ -707,7 +706,7 @@ static inline void SV_CalcBlend(entity &ent)
 		if (remaining == 30)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
 		if (remaining > 30 || (remaining & 4))
-			SV_AddBlend(enviro_blend, 0.08f, &ent.client->ps.blend[0]);
+			SV_AddBlend(enviro_blend, 0.08f, ent.client->ps.blend);
 	}
 	else if (ent.client->breather_framenum > level.framenum)
 	{
@@ -715,37 +714,37 @@ static inline void SV_CalcBlend(entity &ent)
 		if (remaining == 30)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
 		if (remaining > 30 || (remaining & 4))
-			SV_AddBlend(breather_blend, 0.04f, &ent.client->ps.blend[0]);
+			SV_AddBlend(breather_blend, 0.04f, ent.client->ps.blend);
 	}
 
 #ifdef GROUND_ZERO
-	if (ent.client.nuke_framenum > level.framenum)
+	if (ent.client->nuke_framenum > level.framenum)
 	{
-		float brightness = (ent.client.nuke_framenum - level.framenum) / 20.0;
-		SV_AddBlend(nuke_blend, brightness, &ent.client.ps.blend[0]);
+		float brightness = (ent.client->nuke_framenum - level.framenum) / 20.0f;
+		SV_AddBlend(nuke_blend, brightness, ent.client->ps.blend);
 	}
 
-	if (ent.client.ir_framenum > level.framenum)
+	if (ent.client->ir_framenum > level.framenum)
 	{
-		remaining = ent.client.ir_framenum - level.framenum;
+		remaining = ent.client->ir_framenum - level.framenum;
 		if (remaining > 30 || (remaining & 4))
 		{
-			ent.client.ps.rdflags |= RDF_IRGOGGLES;
-			SV_AddBlend(ir_blend, 0.2, &ent.client.ps.blend[0]);
+			ent.client->ps.rdflags |= RDF_IRGOGGLES;
+			SV_AddBlend(ir_blend, 0.2, ent.client->ps.blend);
 		}
 		else
-			ent.client.ps.rdflags &= ~RDF_IRGOGGLES;
+			ent.client->ps.rdflags &= ~RDF_IRGOGGLES;
 	}
 	else
-		ent.client.ps.rdflags &= ~RDF_IRGOGGLES;
+		ent.client->ps.rdflags &= ~RDF_IRGOGGLES;
 #endif
 
 	// add for damage
 	if (ent.client->damage_alpha > 0)
-		SV_AddBlend(ent.client->damage_blend, ent.client->damage_alpha, &ent.client->ps.blend[0]);
+		SV_AddBlend(ent.client->damage_blend, ent.client->damage_alpha, ent.client->ps.blend);
 
 	if (ent.client->bonus_alpha > 0)
-		SV_AddBlend(bonus_blend, ent.client->bonus_alpha, &ent.client->ps.blend[0]);
+		SV_AddBlend(bonus_blend, ent.client->bonus_alpha, ent.client->ps.blend);
 
 	// drop the damage value
 	ent.client->damage_alpha -= 0.06f;
@@ -809,23 +808,23 @@ static inline void G_SetClientEffects(entity &ent)
 
 #ifdef THE_RECKONING
 	// RAFAEL
-	if (ent.client.quadfire_framenum > level.framenum)
+	if (ent.client->quadfire_framenum > level.framenum)
 	{
-		remaining = ent.client.quadfire_framenum - level.framenum;
+		remaining = ent.client->quadfire_framenum - level.framenum;
 		if (remaining > 30 || (remaining & 4))
 			ent.s.effects |= EF_QUAD;
 	}
 #endif
 
 #ifdef GROUND_ZERO
-	if (ent.client.double_framenum > level.framenum)
+	if (ent.client->double_framenum > level.framenum)
 	{
-		remaining = ent.client.double_framenum - level.framenum;
+		remaining = ent.client->double_framenum - level.framenum;
 		if (remaining > 30 || (remaining & 4))
 			ent.s.effects |= EF_DOUBLE;
 	}
 
-	if (ent.client.tracker_pain_framenum > level.framenum)
+	if (ent.client->tracker_pain_framenum > level.framenum)
 		ent.s.effects |= EF_TRACKERTRAIL;
 #endif
 

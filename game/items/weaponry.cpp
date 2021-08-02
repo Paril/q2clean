@@ -25,7 +25,7 @@ bool Pickup_Ammo(entity &ent, entity &other)
 	const bool weapon = (ent.item->flags & IT_WEAPON);
 	int32_t ammocount;
 
-	if (weapon && ((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (weapon && (dmflags & DF_INFINITE_AMMO))
 		ammocount = 1000;
 	else if (ent.count)
 		ammocount = ent.count;
@@ -85,9 +85,9 @@ bool Pickup_Weapon(entity &ent, entity &other)
 	const gitem_id index = ent.item->id;
 
 #ifdef SINGLE_PLAYER
-	if ((((dm_flags) dmflags & DF_WEAPONS_STAY) || coop) &&
+	if (((dmflags & DF_WEAPONS_STAY) || coop) &&
 #else
-	if (((dm_flags) dmflags & DF_WEAPONS_STAY) &&
+	if ((dmflags & DF_WEAPONS_STAY) &&
 #endif
 		other.client->pers.inventory[index])
 	{
@@ -112,7 +112,7 @@ bool Pickup_Weapon(entity &ent, entity &other)
 				if (deathmatch)
 				{
 #endif
-					if ((dm_flags) dmflags & DF_WEAPONS_STAY)
+					if (dmflags & DF_WEAPONS_STAY)
 						ent.flags |= FL_RESPAWN;
 					else
 						SetRespawn(ent, 30);
@@ -151,7 +151,7 @@ enum use_weap_result : uint8_t
 	USEWEAP_OUT_OF_ITEM
 };
 
-use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
+static inline use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
 {
 	if (it == ent.client->pers.weapon)
 		return USEWEAP_IS_ACTIVE;
@@ -159,7 +159,7 @@ use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
 	if (!ent.client->pers.inventory[it.id])
 		return USEWEAP_OUT_OF_ITEM;
 
-	if (it.ammo && !(int32_t) g_select_empty && !(it.flags & IT_AMMO))
+	if (it.ammo && !g_select_empty && !(it.flags & IT_AMMO))
 	{
 		if (!ent.client->pers.inventory[it.ammo])
 			return USEWEAP_NO_AMMO;
@@ -171,32 +171,32 @@ use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
 };
 
 #ifdef THE_RECKONING
-const std::initializer_list<gitem_id> rail_chain = { ITEM_RAILGUN, ITEM_PHALANX };
+constexpr std::initializer_list<gitem_id> rail_chain = { ITEM_RAILGUN, ITEM_PHALANX };
 #endif
 
 #ifdef GROUND_ZERO
-const std::initializer_list<gitem_id> grenadelauncher_chain = { ITEM_GRENADE_LAUNCHER, ITEM_PROX_LAUNCHER };
-const std::initializer_list<gitem_id> machinegun_chain = { ITEM_MACHINEGUN, ITEM_ETF_RIFLE };
-const std::initializer_list<gitem_id> bfg_chain = { ITEM_BFG, ITEM_DISRUPTOR };
+constexpr std::initializer_list<gitem_id> grenadelauncher_chain = { ITEM_GRENADE_LAUNCHER, ITEM_PROX_LAUNCHER };
+constexpr std::initializer_list<gitem_id> machinegun_chain = { ITEM_MACHINEGUN, ITEM_ETF_RIFLE };
+constexpr std::initializer_list<gitem_id> bfg_chain = { ITEM_BFG, ITEM_DISRUPTOR };
 #endif
 
 #if defined(GROUND_ZERO) && defined(GRAPPLE)
-const std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_CHAINFIST, ITEM_GRAPPLE };
+constexpr std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_CHAINFIST, ITEM_GRAPPLE };
 #elif defined(GRAPPLE)
-const std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_GRAPPLE };
+constexpr std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_GRAPPLE };
 #elif defined(GROUND_ZERO)
-const std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_CHAINFIST };
+constexpr std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_CHAINFIST };
 #endif
 
 #if defined(GROUND_ZERO) && defined(THE_RECKONING)
-const std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TRAP, ITEM_TESLA };
-const std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_BOOMER, ITEM_PLASMA_BEAM };
+constexpr std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TRAP, ITEM_TESLA };
+constexpr std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_BOOMER, ITEM_PLASMA_BEAM };
 #elif defined(GROUND_ZERO)
-const std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TESLA };
-const std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_PLASMA_BEAM };
+constexpr std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TESLA };
+constexpr std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_PLASMA_BEAM };
 #elif defined(THE_RECKONING)
-const std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TRAP };
-const std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_BOOMER };
+constexpr std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TRAP };
+constexpr std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_BOOMER };
 #endif
 
 constexpr bool GetChain(entity &ent [[maybe_unused]], const gitem_t &it [[maybe_unused]], std::initializer_list<gitem_id> &chain [[maybe_unused]] )
@@ -282,15 +282,19 @@ void Use_Weapon(entity &ent, const gitem_t &it)
 	case USEWEAP_NOT_ENOUGH_AMMO:
 		gi.cprintf(ent, PRINT_HIGH, "Not enough %s for %s.\n", ammo_item.pickup_name, it.pickup_name);
 		return;
+	case USEWEAP_OUT_OF_ITEM:
+		gi.cprintf(ent, PRINT_HIGH, "Out of item: %s.\n", it.pickup_name);
+		return;
+	default:
+		// change to this weapon when down
+		ent.client->newweapon = it;
+		break;
 	}
-
-	// change to this weapon when down
-	ent.client->newweapon = it;
 }
 
 void Drop_Weapon(entity &ent, const gitem_t &it)
 {
-	if ((dm_flags) dmflags & DF_WEAPONS_STAY)
+	if (dmflags & DF_WEAPONS_STAY)
 		return;
 
 	// see if we're already using it

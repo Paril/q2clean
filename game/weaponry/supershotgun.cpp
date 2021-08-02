@@ -6,6 +6,7 @@
 #include "lib/math/vector.h"
 #include "lib/math/random.h"
 #include "game/ballistics/bullet.h"
+#include "supershotgun.h"
 
 static void weapon_supershotgun_fire(entity &ent)
 {
@@ -50,11 +51,11 @@ static void weapon_supershotgun_fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index] -= 2;
 }
 
 void Weapon_SuperShotgun(entity &ent)
 {
-	Weapon_Generic(ent, 6, 17, 57, 61, { 29, 42, 57 }, { 7 }, weapon_supershotgun_fire);
+	Weapon_Generic(ent, 6, 17, 57, 61, G_IsAnyFrame<29, 42, 57>, G_IsAnyFrame<7>, weapon_supershotgun_fire);
 }

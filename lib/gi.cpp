@@ -99,7 +99,7 @@ extern "C" struct game_import_impl
 #endif
 };
 
-game_import_impl impl;
+static game_import_impl impl;
 
 void game_import::set_impl(game_import_impl *implptr)
 {
@@ -225,13 +225,13 @@ void game_import::unlinkentity(entity &ent)
 	impl.unlinkentity(&ent);
 }
 // return entities within the specified box
-dynarray<entityref> game_import::BoxEdicts(vector mins, vector maxs, box_edicts_area areatype, uint32_t allocate)
+dynarray<entityref> game_import::BoxEdicts(bbox bounds, box_edicts_area areatype, uint32_t allocate)
 {
 	dynarray<entityref> ents;
 	ents.reserve(allocate);
 	size_t size;
 
-	while ((size = (size_t) impl.BoxEdicts(&mins.x, &maxs.x, (entity **) ents.data(), (int) allocate, areatype)) == (int) allocate)
+	while ((size = (size_t) impl.BoxEdicts(&bounds.mins.x, &bounds.maxs.x, (entity **) ents.data(), (int32_t) allocate, areatype)) == allocate)
 	{
 		allocate *= 2;
 		ents.reserve(allocate);
@@ -250,17 +250,17 @@ void game_import::Pmove(pmove_t &pmove)
 // perform a line trace
 [[nodiscard]] trace game_import::traceline(vector start, vector end, entityref passent, content_flags contentmask)
 {
-	return trace(start, vec3_origin, vec3_origin, end, passent, contentmask);
+	return trace(start, bbox_point, end, passent, contentmask);
 }
 // perform a box trace
-[[nodiscard]] trace game_import::trace(vector start, vector mins, vector maxs, vector end, entityref passent, content_flags contentmask)
+[[nodiscard]] trace game_import::trace(vector start, bbox bounds, vector end, entityref passent, content_flags contentmask)
 {
-	::trace tr = impl.trace(&start.x, &mins.x, &maxs.x, &end.x, passent, contentmask);
+	::trace tr = impl.trace(&start.x, &bounds.mins.x, &bounds.maxs.x, &end.x, passent, contentmask);
 
-	if (tr.fraction == 1.0f && &tr.surface == nullptr)
+	if (tr.fraction == 1.0f && *(void **)(&tr.contents - 1) == nullptr)
 	{
 		gi.dprintf("Q2PRO runaway trace trapped, re-tracing...\n");
-		tr = impl.trace(&start.x, &mins.x, &maxs.x, &end.x, passent, contentmask);
+		tr = impl.trace(&start.x, &bounds.mins.x, &bounds.maxs.x, &end.x, passent, contentmask);
 	}
 
 	return tr;
@@ -410,6 +410,7 @@ void game_import::DebugGraph(float value, int color)
 	va_list	argptr;
 	va_start(argptr, fmt);
 	string b = va(fmt, argptr);
-	impl.error("%s", b.ptr());
 	va_end(argptr);
+	impl.error("%s", b.ptr());
+	exit(0);
 }

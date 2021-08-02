@@ -7,6 +7,7 @@
 #include "game/player_frames.h"
 #include "game/entity.h"
 #include "game/game.h"
+#include "chaingun.h"
 
 static void Chaingun_Fire(entity &ent)
 {
@@ -120,11 +121,11 @@ static void Chaingun_Fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index] -= shots;
 }
 
 void Weapon_Chaingun(entity &ent)
 {
-	Weapon_Generic(ent, 4, 31, 61, 64, { 38, 43, 51, 61 }, { 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 }, Chaingun_Fire);
+	Weapon_Generic(ent, 4, 31, 61, 64, G_IsAnyFrame<38, 43, 51, 61>, G_IsAnyFrame<5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21>, Chaingun_Fire);
 }

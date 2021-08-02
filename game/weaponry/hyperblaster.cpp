@@ -7,8 +7,9 @@
 #include "lib/math/vector.h"
 #include "lib/math/random.h"
 #include "game/player_frames.h"
+#include "hyperblaster.h"
 
-void Weapon_HyperBlaster_Fire(entity &ent)
+static void Weapon_HyperBlaster_Fire(entity &ent)
 {
 	ent.client->weapon_sound = gi.soundindex("weapons/hyprbl1a.wav");
 
@@ -49,7 +50,7 @@ void Weapon_HyperBlaster_Fire(entity &ent)
 #endif
 			Blaster_Fire(ent, offset, damage, true, effect);
 
-			if (!((dm_flags) dmflags & DF_INFINITE_AMMO))
+			if (!(dmflags & DF_INFINITE_AMMO))
 				ent.client->pers.inventory[ent.client->ammo_index]--;
 
 			ent.client->anim_priority = ANIM_ATTACK;
@@ -80,5 +81,5 @@ void Weapon_HyperBlaster_Fire(entity &ent)
 
 void Weapon_HyperBlaster(entity &ent)
 {
-	Weapon_Generic(ent, 5, 20, 49, 53, {}, { 6, 7, 8, 9, 10, 11 }, Weapon_HyperBlaster_Fire);
+	Weapon_Generic(ent, 5, 20, 49, 53, G_IsAnyFrame, G_IsAnyFrame<6, 7, 8, 9, 10, 11>, Weapon_HyperBlaster_Fire);
 }

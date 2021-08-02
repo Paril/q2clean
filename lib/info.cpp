@@ -17,7 +17,7 @@ string Info_ValueForKey(const stringref &s, stringlit key)
 	string key_string = va("\\%s\\", key);
 	size_t key_start = strstr(s, key_string);
 	
-	if (key_start == -1)
+	if (key_start == (size_t) -1)
 		return "";
 
 	size_t value_start = key_start + strlen(key_string), value_end = value_start + 1;
@@ -46,7 +46,7 @@ string Info_RemoveKey(const stringref &s, stringlit key)
 	string key_string = va("\\%s\\", key);
 	
 	size_t key_start;
-	while ((key_start = strstr(result, key_string)) != -1)
+	while ((key_start = strstr(result, key_string)) != (size_t) -1)
 	{
 		size_t value_end = key_start + strlen(key_string) + 1;
 		

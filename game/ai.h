@@ -144,4 +144,19 @@ The monster has an enemy it is trying to kill
 =============
 */
 void ai_run(entity &self, float dist);
+
+#ifdef ROGUE_AI
+// this determines how long to wait after a duck to duck again.  this needs to be longer than
+// the time after the monster_duck_up in all of the animation sequences
+constexpr float DUCK_INTERVAL	= 0.5f;
+#endif
+
+#ifdef GROUND_ZERO
+// this is for the count of monsters
+inline int SELF_SLOTS_LEFT(entity &self)
+{
+	return (self.monsterinfo.monster_slots - self.monsterinfo.monster_used);
+};
+#endif
+
 #endif

@@ -8,6 +8,7 @@ extern "C" struct game_import_impl;
 #include "lib/protocol.h"
 #include "lib/types/dynarray.h"
 #include "lib/math/vector.h"
+#include "lib/math/bbox.h"
 #include "lib/types.h"
 #include "game/entity_types.h"
 
@@ -80,7 +81,7 @@ struct game_import
 	// call before removing an interactive edict
 	void unlinkentity(entity &ent);
 	// return entities within the specified box
-	dynarray<entityref> BoxEdicts(vector mins, vector maxs, box_edicts_area areatype, uint32_t allocate = 16);
+	dynarray<entityref> BoxEdicts(bbox bounds, box_edicts_area areatype, uint32_t allocate = 16);
 	// player movement code common with client prediction
 	void Pmove(pmove_t &pmove);
 
@@ -89,7 +90,7 @@ struct game_import
 	// perform a line trace
 	[[nodiscard]] trace traceline(vector start, vector end, entityref passent, content_flags contentmask);
 	// perform a box trace
-	[[nodiscard]] trace trace(vector start, vector mins, vector maxs, vector end, entityref passent, content_flags contentmask);
+	[[nodiscard]] trace trace(vector start, bbox bounds, vector end, entityref passent, content_flags contentmask);
 	// fetch the brush contents at the specified point
 	[[nodiscard]] content_flags pointcontents(vector point);
 	// check whether the two vectors are in the same PVS

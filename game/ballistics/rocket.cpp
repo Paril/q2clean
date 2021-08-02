@@ -8,8 +8,9 @@
 #include "game/game.h"
 #include "game/entity.h"
 #include "game/misc.h"
+#include "rocket.h"
 
-void rocket_touch(entity &ent, entity &other, vector normal, const surface &surf)
+static void rocket_touch(entity &ent, entity &other, vector normal, const surface &surf)
 {
 	vector	origin;
 
@@ -58,7 +59,7 @@ void rocket_touch(entity &ent, entity &other, vector normal, const surface &surf
 	G_FreeEdict(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(rocket_touch);
+static REGISTER_SAVABLE_FUNCTION(rocket_touch);
 
 entity &fire_rocket(entity &self, vector start, vector dir, int32_t damage, int32_t speed, float damage_radius, int radius_damage)
 {
@@ -70,18 +71,15 @@ entity &fire_rocket(entity &self, vector start, vector dir, int32_t damage, int3
 	rocket.clipmask = MASK_SHOT;
 	rocket.solid = SOLID_BBOX;
 	rocket.s.effects |= EF_ROCKET;
-	rocket.mins = vec3_origin;
-	rocket.maxs = vec3_origin;
 	rocket.s.modelindex = gi.modelindex("models/objects/rocket/tris.md2");
 	rocket.owner = self;
-	rocket.touch = rocket_touch_savable;
+	rocket.touch = SAVABLE(rocket_touch);
 	rocket.nextthink = level.framenum + BASE_FRAMERATE * 8000 / speed;
-	rocket.think = G_FreeEdict_savable;
+	rocket.think = SAVABLE(G_FreeEdict);
 	rocket.dmg = damage;
 	rocket.radius_dmg = radius_damage;
 	rocket.dmg_radius = damage_radius;
 	rocket.s.sound = gi.soundindex("weapons/rockfly.wav");
-	rocket.type = ET_ROCKET;
 
 #ifdef SINGLE_PLAYER
 	if (self.is_client())

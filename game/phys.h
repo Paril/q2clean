@@ -12,3 +12,12 @@ constexpr size_t MAX_CLIP_PLANES = 5;
 void SV_AddGravity(entity &ent);
 
 void G_RunEntity(entity &ent);
+
+/*
+==================
+SV_Impact
+
+Two entities have touched, so run their touch functions
+==================
+*/
+void SV_Impact(entity &e1, const trace &tr);

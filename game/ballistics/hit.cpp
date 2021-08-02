@@ -9,6 +9,7 @@
 #include "game/combat.h"
 #include "game/entity.h"
 #include "game/game.h"
+#include "hit.h"
 
 /*
 =================
@@ -33,14 +34,14 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 	if (range > aim.x)
 		return false;
 
-	if (aim.y > self.mins.x && aim.y < self.maxs.x)
+	if (aim.y > self.bounds.mins.x && aim.y < self.bounds.maxs.x)
 		// the hit is straight on so back the range up to the edge of their bbox
-		range -= self.enemy->maxs.x;
+		range -= self.enemy->bounds.maxs.x;
 	// this is a side hit so adjust the "right" value out to the edge of their bbox
 	else if (aim.y < 0)
-		aim.y = self.enemy->mins.x;
+		aim.y = self.enemy->bounds.mins.x;
 	else
-		aim.y = self.enemy->maxs.x;
+		aim.y = self.enemy->bounds.maxs.x;
 
 	point = self.s.origin + (range * dir);
 
@@ -70,8 +71,7 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 		return false;
 
 	// do our special form of knockback here
-	v = self.enemy->absmin + (0.5f * self.enemy->size);
-	v -= point;
+	v = (self.enemy->absbounds.mins + (0.5f * self.enemy->size)) - point;
 	VectorNormalize(v);
 	self.enemy->velocity += (kick * v);
 	if (self.enemy->velocity.z > 0)
