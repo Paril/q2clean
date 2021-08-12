@@ -51,7 +51,7 @@ Marks the edict as free
 */
 void G_FreeEdict(entity &e);
 
-DECLARE_SAVABLE_FUNCTION(G_FreeEdict);
+DECLARE_SAVABLE(G_FreeEdict);
 
 constexpr vector G_ProjectSource(vector point, vector distance, vector forward, vector right, vector up = { 0, 0, 1 })
 {
@@ -66,17 +66,18 @@ struct entity_chain_sentinel { };
 template<typename T> requires std::is_invocable_r_v<entityref, T, entityref>
 struct entity_chain_iterator
 {
-	entityref e;
 	T func;
+	entityref e;
 
 	entity_chain_iterator() :
-		e(null_entity),
-		func(nullptr)
+		func(nullptr),
+		e(null_entity)
 	{
 	}
 
 	entity_chain_iterator(T func) :
-		func(func)
+		func(func),
+		e(func(nullptr))
 	{
 	}
 

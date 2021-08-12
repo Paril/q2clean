@@ -52,3 +52,30 @@ inline size_t lengthof(T(&)[S])
 {
 	return S;
 }
+
+// takes inputs that can be convertable to booleans and
+// constructs an integer out of them.
+template<std::convertible_to<bool> ...Args>
+constexpr auto boolbits(Args... args)
+{
+	static_assert(sizeof...(args) <= 64, "Too many booleans to encode into bits");
+
+	uint8_t index = 0;
+
+	if constexpr (sizeof...(args) > 32)
+	{
+		int64_t bits = 0;
+
+		((bits |= args ? 1ull << index : 0, index++), ...);
+
+		return bits;
+	}
+	else
+	{
+		int32_t bits = 0;
+
+		((bits |= args ? 1 << index : 0, index++), ...);
+
+		return bits;
+	}
+}

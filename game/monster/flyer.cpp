@@ -33,21 +33,21 @@ static sound_index  sound_die;
 
 static void flyer_sight(entity &self, entity &)
 {
-	gi.sound(self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_sight);
+REGISTER_STATIC_SAVABLE(flyer_sight);
 
 static void flyer_idle(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_idle, 1, ATTN_IDLE, 0);
+	gi.sound(self, CHAN_VOICE, sound_idle, ATTN_IDLE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_idle);
+REGISTER_STATIC_SAVABLE(flyer_idle);
 
 static void flyer_pop_blades(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_sproing, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_sproing);
 }
 
 constexpr mframe_t flyer_frames_stand [] = {
@@ -99,7 +99,7 @@ constexpr mframe_t flyer_frames_stand [] = {
 };
 constexpr mmove_t flyer_move_stand = { FRAME_stand01, FRAME_stand45, flyer_frames_stand };
 
-static REGISTER_SAVABLE_DATA(flyer_move_stand);
+REGISTER_STATIC_SAVABLE(flyer_move_stand);
 
 constexpr mframe_t flyer_frames_walk [] = {
 	{ ai_walk, 5 },
@@ -150,7 +150,7 @@ constexpr mframe_t flyer_frames_walk [] = {
 };
 constexpr mmove_t flyer_move_walk = { FRAME_stand01, FRAME_stand45, flyer_frames_walk };
 
-static REGISTER_SAVABLE_DATA(flyer_move_walk);
+REGISTER_STATIC_SAVABLE(flyer_move_walk);
 
 constexpr mframe_t flyer_frames_run [] = {
 	{ ai_run, 10 },
@@ -201,7 +201,7 @@ constexpr mframe_t flyer_frames_run [] = {
 };
 constexpr mmove_t flyer_move_run = { FRAME_stand01, FRAME_stand45, flyer_frames_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_run);
+REGISTER_STATIC_SAVABLE(flyer_move_run);
 
 #ifdef GROUND_ZERO
 constexpr mframe_t flyer_frames_kamizake [] =
@@ -214,18 +214,18 @@ constexpr mframe_t flyer_frames_kamizake [] =
 };
 constexpr mmove_t flyer_move_kamikaze = { FRAME_rollr02, FRAME_rollr06, flyer_frames_kamizake };
 
-static REGISTER_SAVABLE_DATA(flyer_move_kamikaze);
+REGISTER_STATIC_SAVABLE(flyer_move_kamikaze);
 
 static void kamikaze_touch(entity &self, entity &, vector, const surface &)
 {
-	T_RadiusDamage(self, self, (self.mass / 2), nullptr, self.mass, MOD_ROCKET, DAMAGE_NO_RADIUS_HALF | DAMAGE_RADIUS);
+	T_RadiusDamage(self, self, (self.mass / 2), nullptr, self.mass, MOD_EXPLOSIVE, { DAMAGE_NO_RADIUS_HALF | DAMAGE_RADIUS });
 
 	// just in case he's still alive... (he usually is because of the way T_RadiusDamage is calculated)
 	if (self.health > 0)
-		T_Damage(self, self, self, vec3_origin, self.s.origin, vec3_origin, self.health, 0, DAMAGE_NO_PROTECTION, MOD_ROCKET);
+		T_Damage(self, self, self, vec3_origin, self.origin, vec3_origin, self.health, 0, { DAMAGE_NO_PROTECTION }, MOD_EXPLOSIVE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(kamikaze_touch);
+REGISTER_STATIC_SAVABLE(kamikaze_touch);
 #endif
 
 static void flyer_run(entity &self)
@@ -244,7 +244,7 @@ static void flyer_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_run);
+REGISTER_STATIC_SAVABLE(flyer_run);
 
 static void flyer_walk(entity &self)
 {
@@ -256,7 +256,7 @@ static void flyer_walk(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_walk);
+REGISTER_STATIC_SAVABLE(flyer_walk);
 
 static void flyer_stand(entity &self)
 {
@@ -268,7 +268,7 @@ static void flyer_stand(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_stand);
+REGISTER_STATIC_SAVABLE(flyer_stand);
 
 constexpr mframe_t flyer_frames_pain3 [] = {
 	{ ai_move },
@@ -278,7 +278,7 @@ constexpr mframe_t flyer_frames_pain3 [] = {
 };
 constexpr mmove_t flyer_move_pain3 = { FRAME_pain301, FRAME_pain304, flyer_frames_pain3, flyer_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_pain3);
+REGISTER_STATIC_SAVABLE(flyer_move_pain3);
 
 constexpr mframe_t flyer_frames_pain2 [] = {
 	{ ai_move },
@@ -288,7 +288,7 @@ constexpr mframe_t flyer_frames_pain2 [] = {
 };
 constexpr mmove_t flyer_move_pain2 = { FRAME_pain201, FRAME_pain204, flyer_frames_pain2, flyer_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_pain2);
+REGISTER_STATIC_SAVABLE(flyer_move_pain2);
 
 constexpr mframe_t flyer_frames_pain1 [] = {
 	{ ai_move },
@@ -303,7 +303,7 @@ constexpr mframe_t flyer_frames_pain1 [] = {
 };
 constexpr mmove_t flyer_move_pain1 = { FRAME_pain101, FRAME_pain109, flyer_frames_pain1, flyer_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_pain1);
+REGISTER_STATIC_SAVABLE(flyer_move_pain1);
 
 inline void flyer_fire(entity &self, monster_muzzleflash flash_number)
 {
@@ -316,15 +316,15 @@ inline void flyer_fire(entity &self, monster_muzzleflash flash_number)
 	if (!self.enemy.has_value() || !self.enemy->inuse)
 		return;
 
-	if ((self.s.frame == FRAME_attak204) || (self.s.frame == FRAME_attak207) || (self.s.frame == FRAME_attak210))
+	if ((self.frame == FRAME_attak204) || (self.frame == FRAME_attak207) || (self.frame == FRAME_attak210))
 		effect = EF_HYPERBLASTER;
 	else
 		effect = EF_NONE;
 
-	AngleVectors(self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource(self.s.origin, monster_flash_offset[flash_number], forward, right);
+	AngleVectors(self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource(self.origin, monster_flash_offset[flash_number], forward, right);
 
-	end = self.enemy->s.origin;
+	end = self.enemy->origin;
 	end.z += self.enemy->viewheight;
 	dir = end - start;
 
@@ -362,7 +362,7 @@ constexpr mframe_t flyer_frames_attack2 [] = {
 };
 constexpr mmove_t flyer_move_attack2 = { FRAME_attak201, FRAME_attak217, flyer_frames_attack2, flyer_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_attack2);
+REGISTER_STATIC_SAVABLE(flyer_move_attack2);
 
 #ifdef ROGUE_AI
 constexpr mframe_t flyer_frames_attack3 [] =
@@ -387,21 +387,21 @@ constexpr mframe_t flyer_frames_attack3 [] =
 };
 constexpr mmove_t flyer_move_attack3 = { FRAME_attak201, FRAME_attak217, flyer_frames_attack3, flyer_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_attack3);
+REGISTER_STATIC_SAVABLE(flyer_move_attack3);
 #endif
 
 static void flyer_slash_left(entity &self)
 {
 	const vector aim { MELEE_DISTANCE, self.bounds.mins.x, 0 };
 	fire_hit(self, aim, 5, 0);
-	gi.sound(self, CHAN_WEAPON, sound_slash, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_slash);
 }
 
 static void flyer_slash_right(entity &self)
 {
 	const vector  aim { MELEE_DISTANCE, self.bounds.maxs.x, 0 };
 	fire_hit(self, aim, 5, 0);
-	gi.sound(self, CHAN_WEAPON, sound_slash, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_slash);
 }
 
 static void flyer_loop_melee(entity &self);
@@ -416,7 +416,7 @@ constexpr mframe_t flyer_frames_start_melee [] = {
 };
 constexpr mmove_t flyer_move_start_melee = { FRAME_attak101, FRAME_attak106, flyer_frames_start_melee, flyer_loop_melee };
 
-static REGISTER_SAVABLE_DATA(flyer_move_start_melee);
+REGISTER_STATIC_SAVABLE(flyer_move_start_melee);
 
 constexpr mframe_t flyer_frames_end_melee [] = {
 	{ ai_charge },
@@ -425,7 +425,7 @@ constexpr mframe_t flyer_frames_end_melee [] = {
 };
 constexpr mmove_t flyer_move_end_melee = { FRAME_attak119, FRAME_attak121, flyer_frames_end_melee, flyer_run };
 
-static REGISTER_SAVABLE_DATA(flyer_move_end_melee);
+REGISTER_STATIC_SAVABLE(flyer_move_end_melee);
 
 static void flyer_check_melee(entity &self);
 
@@ -445,7 +445,7 @@ constexpr mframe_t flyer_frames_loop_melee [] = {
 };
 constexpr mmove_t flyer_move_loop_melee = { FRAME_attak107, FRAME_attak118, flyer_frames_loop_melee, flyer_check_melee };
 
-static REGISTER_SAVABLE_DATA(flyer_move_loop_melee);
+REGISTER_STATIC_SAVABLE(flyer_move_loop_melee);
 
 static void flyer_loop_melee(entity &self)
 {
@@ -489,7 +489,7 @@ static void flyer_attack(entity &self)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_attack);
+REGISTER_STATIC_SAVABLE(flyer_attack);
 
 static void flyer_melee(entity &self)
 {
@@ -501,7 +501,7 @@ static void flyer_melee(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_start_melee);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_melee);
+REGISTER_STATIC_SAVABLE(flyer_melee);
 
 static void flyer_check_melee(entity &self)
 {
@@ -514,7 +514,7 @@ static void flyer_check_melee(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_end_melee);
 }
 
-static void flyer_pain(entity &self, entity &, float, int32_t)
+static void flyer_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
 #ifdef GROUND_ZERO
 	// kamikaze's don't feel pain
@@ -522,40 +522,39 @@ static void flyer_pain(entity &self, entity &, float, int32_t)
 		return;
 #endif
 
-	int     n;
-
-	if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
-
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
+
+	int32_t n = Q_rand() % 3;
+	if (n == 0)
+		gi.sound(self, CHAN_VOICE, sound_pain1);
+	else if (n == 1)
+		gi.sound(self, CHAN_VOICE, sound_pain2);
+	else
+		gi.sound(self, CHAN_VOICE, sound_pain1);
 
 	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
 	if (skill == 3)
 		return;     // no pain anims in nightmare
 
 	n = Q_rand() % 3;
-	if (n == 0) {
-		gi.sound(self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
+	if (n == 0)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_pain1);
-	} else if (n == 1) {
-		gi.sound(self, CHAN_VOICE, sound_pain2, 1, ATTN_NORM, 0);
+	else if (n == 1)
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_pain2);
-	} else {
-		gi.sound(self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
+	else
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_pain3);
-	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_pain);
+REGISTER_STATIC_SAVABLE(flyer_reacttodamage);
 
 static void flyer_die(entity &self, entity &, entity &, int32_t, vector)
 {
-	gi.sound(self, CHAN_VOICE, sound_die, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_die);
 	BecomeExplosion1(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_die);
+REGISTER_STATIC_SAVABLE(flyer_die);
 
 #ifdef ROGUE_AI
 // PMM - kamikaze code .. blow up if blocked	
@@ -574,7 +573,7 @@ static bool flyer_blocked (entity &self, float)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(flyer_blocked);
+REGISTER_STATIC_SAVABLE(flyer_blocked);
 #endif
 
 /*QUAKED monster_flyer (1 .5 0) (-16 -16 -24) (16 16 32) Ambush Trigger_Spawn Sight
@@ -587,7 +586,7 @@ static void SP_monster_flyer(entity &self)
 	}
 
 	// fix a map bug in jail5.bsp
-	if (striequals(level.mapname, "jail5") && (self.s.origin[2] == -104)) {
+	if (striequals(level.mapname, "jail5") && (self.origin[2] == -104)) {
 		self.targetname = self.target;
 		self.target = 0;
 	}
@@ -602,7 +601,7 @@ static void SP_monster_flyer(entity &self)
 
 	gi.soundindex("flyer/flyatck3.wav");
 
-	self.s.modelindex = gi.modelindex("models/monsters/flyer/tris.md2");
+	self.modelindex = gi.modelindex("models/monsters/flyer/tris.md2");
 	self.bounds = {
 		.mins = { -16, -16, -24 },
 #ifdef ROGUE_AI
@@ -614,12 +613,12 @@ static void SP_monster_flyer(entity &self)
 	self.movetype = MOVETYPE_STEP;
 	self.solid = SOLID_BBOX;
 
-	self.s.sound = gi.soundindex("flyer/flyidle1.wav");
+	self.sound = gi.soundindex("flyer/flyidle1.wav");
 
 	self.health = 50;
 	self.mass = 50;
 
-	self.pain = SAVABLE(flyer_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(flyer_die);
 
 	self.monsterinfo.stand = SAVABLE(flyer_stand);
@@ -633,6 +632,8 @@ static void SP_monster_flyer(entity &self)
 #ifdef ROGUE_AI
 	self.monsterinfo.blocked = SAVABLE(flyer_blocked);
 #endif
+
+	self.monsterinfo.reacttodamage = SAVABLE(flyer_reacttodamage);
 
 	gi.linkentity(self);
 
@@ -649,7 +650,7 @@ static void SP_monster_kamikaze(entity &self)
 {
 	SP_monster_flyer(self);
 
-	self.s.effects |= EF_ROCKET;
+	self.effects |= EF_ROCKET;
 	self.mass = 100;
 }
 

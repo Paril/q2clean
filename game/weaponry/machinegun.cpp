@@ -9,6 +9,8 @@
 #include "game/ballistics/bullet.h"
 #include "machinegun.h"
 
+constexpr means_of_death MOD_MACHINEGUN { .other_kill_fmt = "{0} was machinegunned by {3}.\n" };
+
 static void Machinegun_Fire(entity &ent)
 {
 	vector	start;
@@ -34,7 +36,7 @@ static void Machinegun_Fire(entity &ent)
 		ent.client->ps.gunframe = 6;
 		if (level.framenum >= ent.pain_debounce_framenum)
 		{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
 			ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
 		}
 		NoAmmoWeaponChange(ent);
@@ -69,14 +71,11 @@ static void Machinegun_Fire(entity &ent)
 	angles = ent.client->v_angle + ent.client->kick_angles;
 	AngleVectors(angles, &forward, &right, nullptr);
 	offset = { 0, 8, ent.viewheight - 8.f };
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	fire_bullet(ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_MACHINEGUN);
 
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte(MZ_MACHINEGUN | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_MACHINEGUN | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 #ifdef SINGLE_PLAYER
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -88,17 +87,17 @@ static void Machinegun_Fire(entity &ent)
 	ent.client->anim_priority = ANIM_ATTACK;
 	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 	{
-		ent.s.frame = FRAME_crattak1 - (int) random(0.25f, 1.25f);
+		ent.frame = FRAME_crattak1 - (int) random(0.25f, 1.25f);
 		ent.client->anim_end = FRAME_crattak9;
 	}
 	else
 	{
-		ent.s.frame = FRAME_attack1 - (int) random(0.25f, 1.25f);
+		ent.frame = FRAME_attack1 - (int) random(0.25f, 1.25f);
 		ent.client->anim_end = FRAME_attack8;
 	}
 }
 
 void Weapon_Machinegun(entity &ent)
 {
-	Weapon_Generic(ent, 3, 5, 45, 49, G_IsAnyFrame<23, 45>, G_IsAnyFrame<4, 5>, Machinegun_Fire);
+	Weapon_Generic(ent, 3, 5, 45, 49, G_FrameIsOneOf<23, 45>, G_FrameIsOneOf<4, 5>, Machinegun_Fire);
 }

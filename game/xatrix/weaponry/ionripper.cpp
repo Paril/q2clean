@@ -46,15 +46,12 @@ static void weapon_ionripper_fire(entity &ent)
 	ent.client->kick_angles[0] = -3;
 
 	vector offset { 16, 7, ent.viewheight - 8.f };
-	vector start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	vector start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	fire_ionripper(ent, start, forward, damage, 500, EF_IONRIPPER);
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort(ent.s.number);
-	gi.WriteByte(MZ_IONRIPPER | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_IONRIPPER | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 	ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -70,6 +67,6 @@ static void weapon_ionripper_fire(entity &ent)
 
 void Weapon_Ionripper(entity &ent)
 {
-	Weapon_Generic(ent, 4, 6, 36, 39, G_IsAnyFrame<36>, G_IsAnyFrame<5>, weapon_ionripper_fire);
+	Weapon_Generic(ent, 4, 6, 36, 39, G_FrameIsOneOf<36>, G_FrameIsOneOf<5>, weapon_ionripper_fire);
 }
 #endif

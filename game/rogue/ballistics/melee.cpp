@@ -9,7 +9,7 @@
 #endif
 #include "melee.h"
 
-void fire_player_melee(entity &self, vector start, vector aim, int32_t reach, int32_t damage, int32_t kick, means_of_death mod)
+void fire_player_melee(entity &self, vector start, vector aim, int32_t reach, int32_t damage, int32_t kick, means_of_death_ref mod)
 {
 	vector v = vectoangles (aim);
 	vector forward, right, up;
@@ -28,25 +28,12 @@ void fire_player_melee(entity &self, vector start, vector aim, int32_t reach, in
 	if (tr.ent.takedamage)
 	{
 		// pull the player forward if you do damage
-		self.velocity += forward * 75;
-		self.velocity += up * 75;
-
-		damage_flags dflags = DAMAGE_NO_KNOCKBACK;
-
-		if (mod == MOD_CHAINFIST)
-			dflags |= DAMAGE_DESTROY_ARMOR;
+		self.velocity += (forward * 75) + (up * 75);
 
 		// do the damage
-		T_Damage (tr.ent, self, self, vec3_origin, tr.ent.s.origin, vec3_origin, damage, kick / 2, dflags, mod);
+		T_Damage (tr.ent, self, self, vec3_origin, tr.ent.origin, vec3_origin, damage, kick / 2, { .flags = DAMAGE_NO_KNOCKBACK | DAMAGE_DESTROY_ARMOR, .blood = TE_MOREBLOOD }, mod);
 	}
 	else
-	{
-		point = tr.normal * 256;
-		gi.WriteByte (svc_temp_entity);
-		gi.WriteByte (TE_GUNSHOT);
-		gi.WritePosition (tr.endpos);
-		gi.WriteDir (point);
-		gi.multicast (tr.endpos, MULTICAST_PVS);
-	}
+		gi.ConstructMessage(svc_temp_entity, TE_GUNSHOT, tr.endpos, vecdir { tr.normal }).multicast(tr.endpos, MULTICAST_PVS);
 }
 #endif

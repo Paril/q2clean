@@ -15,7 +15,7 @@
 
 void WipeEntities();
 
-extern "C" struct game_export
+struct game_export
 {
 	int	apiversion = 3;
 
@@ -115,7 +115,7 @@ void entity::__init()
 {
 	::client *cl = client;
 	new(this) entity();
-	this->s.number = (uint32_t) (this - ge.edicts);
+	this->number = (uint32_t) (this - ge.edicts);
 	this->client = cl;
 }
 
@@ -124,7 +124,7 @@ void entity::__free()
 	::client *cl = client;
 	this->~entity();
 	memset(this, 0, sizeof(*this));
-	this->s.number = (uint32_t) (this - ge.edicts);
+	this->number = (uint32_t) (this - ge.edicts);
 	this->client = cl;
 }
 
@@ -184,7 +184,7 @@ extern "C" game_export *GetGameAPI(game_import_impl *impl)
 
 	// s.number must always be assigned
 	for (auto &e : entity_range(0, max_entities - 1))
-		e.s.number = (int) (&e - ge.edicts);
+		e.number = (int) (&e - ge.edicts);
 
 	world = ge.edicts[0];
 

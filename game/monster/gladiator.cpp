@@ -41,28 +41,28 @@ static sound_index sound_plasgun;
 
 static void gladiator_idle(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_idle, 1, ATTN_IDLE, 0);
+	gi.sound(self, CHAN_VOICE, sound_idle, ATTN_IDLE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_idle);
+REGISTER_STATIC_SAVABLE(gladiator_idle);
 
 static void gladiator_sight(entity &self, entity &)
 {
-	gi.sound(self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_sight);
+REGISTER_STATIC_SAVABLE(gladiator_sight);
 
 static void gladiator_search(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_search, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_search);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_search);
+REGISTER_STATIC_SAVABLE(gladiator_search);
 
 static void gladiator_cleaver_swing(entity &self)
 {
-	gi.sound(self, CHAN_WEAPON, sound_cleaver_swing, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_cleaver_swing);
 }
 
 constexpr mframe_t gladiator_frames_stand[] = {
@@ -76,14 +76,14 @@ constexpr mframe_t gladiator_frames_stand[] = {
 };
 constexpr mmove_t gladiator_move_stand = { FRAME_stand1, FRAME_stand7, gladiator_frames_stand };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_stand);
+REGISTER_STATIC_SAVABLE(gladiator_move_stand);
 
 static void gladiator_stand(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_stand);
+REGISTER_STATIC_SAVABLE(gladiator_stand);
 
 constexpr mframe_t gladiator_frames_walk [] = {
 	{ ai_walk, 15 },
@@ -105,14 +105,14 @@ constexpr mframe_t gladiator_frames_walk [] = {
 };
 constexpr mmove_t gladiator_move_walk = { FRAME_walk1, FRAME_walk16, gladiator_frames_walk };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_walk);
+REGISTER_STATIC_SAVABLE(gladiator_move_walk);
 
 static void gladiator_walk(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_walk);
+REGISTER_STATIC_SAVABLE(gladiator_walk);
 
 constexpr mframe_t gladiator_frames_run [] = {
 	{ ai_run, 23 },
@@ -124,7 +124,7 @@ constexpr mframe_t gladiator_frames_run [] = {
 };
 constexpr mmove_t gladiator_move_run = { FRAME_run1, FRAME_run6, gladiator_frames_run };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_run);
+REGISTER_STATIC_SAVABLE(gladiator_move_run);
 
 static void gladiator_run(entity &self)
 {
@@ -134,16 +134,16 @@ static void gladiator_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(gladiator_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_run);
+REGISTER_STATIC_SAVABLE(gladiator_run);
 
 static void GaldiatorMelee(entity &self)
 {
 	const vector aim { MELEE_DISTANCE, self.bounds.mins.x, -4 };
 
 	if (fire_hit(self, aim, (20 + (Q_rand() % 5)), 300))
-		gi.sound(self, CHAN_AUTO, sound_cleaver_hit, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_AUTO, sound_cleaver_hit);
 	else
-		gi.sound(self, CHAN_AUTO, sound_cleaver_miss, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_AUTO, sound_cleaver_miss);
 }
 
 constexpr mframe_t gladiator_frames_attack_melee [] = {
@@ -167,14 +167,14 @@ constexpr mframe_t gladiator_frames_attack_melee [] = {
 };
 constexpr mmove_t gladiator_move_attack_melee = { FRAME_melee1, FRAME_melee17, gladiator_frames_attack_melee, gladiator_run };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_attack_melee);
+REGISTER_STATIC_SAVABLE(gladiator_move_attack_melee);
 
 static void gladiator_melee(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_attack_melee);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_melee);
+REGISTER_STATIC_SAVABLE(gladiator_melee);
 
 static void GladiatorGun(entity &self)
 {
@@ -187,8 +187,8 @@ static void GladiatorGun(entity &self)
 	vector  dir;
 	vector  forward, right;
 
-	AngleVectors(self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource(self.s.origin, monster_flash_offset[MZ2_GLADIATOR_RAILGUN_1], forward, right);
+	AngleVectors(self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource(self.origin, monster_flash_offset[MZ2_GLADIATOR_RAILGUN_1], forward, right);
 
 	// calc direction to where we targted
 	dir = self.pos1 - start;
@@ -207,8 +207,8 @@ static void gladbGun(entity &self)
 	vector	dir;
 	vector	forward, right;
 
-	AngleVectors (self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource (self.s.origin, monster_flash_offset[MZ2_GLADIATOR_RAILGUN_1], forward, right);
+	AngleVectors (self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource (self.origin, monster_flash_offset[MZ2_GLADIATOR_RAILGUN_1], forward, right);
 
 	// calc direction to where we targted
 	dir = self.pos1 - start;
@@ -251,7 +251,7 @@ constexpr mframe_t gladiator_frames_attack_gun[] = {
 };
 constexpr mmove_t gladiator_move_attack_gun = { FRAME_attack1, FRAME_attack9, gladiator_frames_attack_gun, gladiator_run };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_attack_gun);
+REGISTER_STATIC_SAVABLE(gladiator_move_attack_gun);
 
 static void gladiator_attack(entity &self)
 {
@@ -259,7 +259,7 @@ static void gladiator_attack(entity &self)
 	vector  v;
 
 	// a small safe zone
-	v = self.s.origin - self.enemy->s.origin;
+	v = self.origin - self.enemy->origin;
 	range = VectorLength(v);
 	if (range <= (MELEE_DISTANCE + 32))
 		return;
@@ -267,16 +267,16 @@ static void gladiator_attack(entity &self)
 	// charge up the railgun
 #ifdef THE_RECKONING
 	if (self.mass == 350)
-		gi.sound(self, CHAN_WEAPON, sound_plasgun, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_WEAPON, sound_plasgun);
 	else
 #endif
-		gi.sound(self, CHAN_WEAPON, sound_gun, 1, ATTN_NORM, 0);
-	self.pos1 = self.enemy->s.origin;  //save for aiming the shot
+		gi.sound(self, CHAN_WEAPON, sound_gun);
+	self.pos1 = self.enemy->origin;  //save for aiming the shot
 	self.pos1[2] += self.enemy->viewheight;
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_attack_gun);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_attack);
+REGISTER_STATIC_SAVABLE(gladiator_attack);
 
 constexpr mframe_t gladiator_frames_pain[] = {
 	{ ai_move },
@@ -288,7 +288,7 @@ constexpr mframe_t gladiator_frames_pain[] = {
 };
 constexpr mmove_t gladiator_move_pain = { FRAME_pain1, FRAME_pain6, gladiator_frames_pain, gladiator_run };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_pain);
+REGISTER_STATIC_SAVABLE(gladiator_move_pain);
 
 constexpr mframe_t gladiator_frames_pain_air [] = {
 	{ ai_move },
@@ -301,13 +301,10 @@ constexpr mframe_t gladiator_frames_pain_air [] = {
 };
 constexpr mmove_t gladiator_move_pain_air = { FRAME_painup1, FRAME_painup7, gladiator_frames_pain_air, gladiator_run };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_pain_air);
+REGISTER_STATIC_SAVABLE(gladiator_move_pain_air);
 
-static void gladiator_pain(entity &self, entity &, float, int32_t)
+static void gladiator_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
-	if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
-
 	if (level.framenum < self.pain_debounce_framenum)
 	{
 		if ((self.velocity[2] > 100) && (self.monsterinfo.currentmove == &gladiator_move_pain))
@@ -318,9 +315,9 @@ static void gladiator_pain(entity &self, entity &, float, int32_t)
 	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
 
 	if (random() < 0.5f)
-		gi.sound(self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain1);
 	else
-		gi.sound(self, CHAN_VOICE, sound_pain2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain2);
 
 	if (skill == 3)
 		return;     // no pain anims in nightmare
@@ -331,7 +328,7 @@ static void gladiator_pain(entity &self, entity &, float, int32_t)
 		self.monsterinfo.currentmove = &SAVABLE(gladiator_move_pain);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_pain);
+REGISTER_STATIC_SAVABLE(gladiator_reacttodamage);
 
 static void gladiator_dead(entity &self)
 {
@@ -371,7 +368,7 @@ constexpr mframe_t gladiator_frames_death[] = {
 };
 constexpr mmove_t gladiator_move_death = { FRAME_death1, FRAME_death22, gladiator_frames_death, gladiator_dead };
 
-static REGISTER_SAVABLE_DATA(gladiator_move_death);
+REGISTER_STATIC_SAVABLE(gladiator_move_death);
 
 static void gladiator_die(entity &self, entity &, entity &, int32_t damage, vector)
 {
@@ -380,7 +377,7 @@ static void gladiator_die(entity &self, entity &, entity &, int32_t damage, vect
 // check for gib
 	if (self.health <= self.gib_health)
 	{
-		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"));
 		for (n = 0; n < 2; n++)
 			ThrowGib(self, "models/objects/gibs/bone/tris.md2", damage, GIB_ORGANIC);
 		for (n = 0; n < 4; n++)
@@ -394,14 +391,14 @@ static void gladiator_die(entity &self, entity &, entity &, int32_t damage, vect
 		return;
 
 // regular death
-	gi.sound(self, CHAN_VOICE, sound_die, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_die);
 	self.deadflag = DEAD_DEAD;
 	self.takedamage = true;
 
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_death);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_die);
+REGISTER_STATIC_SAVABLE(gladiator_die);
 
 #ifdef GROUND_ZERO
 static bool gladiator_blocked(entity &self, float dist)
@@ -415,7 +412,7 @@ static bool gladiator_blocked(entity &self, float dist)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(gladiator_blocked);
+REGISTER_STATIC_SAVABLE(gladiator_blocked);
 #endif
 
 /*QUAKED monster_gladiator (1 .5 0) (-32 -32 -24) (32 32 64) Ambush Trigger_Spawn Sight
@@ -442,7 +439,7 @@ static void SP_monster_gladiator(entity &self)
 	if (self.type == ET_MONSTER_GLADIATOR_BETA)
 	{
 		sound_plasgun = gi.soundindex ("weapons/plasshot.wav");
-		self.s.modelindex = gi.modelindex ("models/monsters/gladb/tris.md2");
+		self.modelindex = gi.modelindex ("models/monsters/gladb/tris.md2");
 
 		self.health = 800;
 		self.gib_health = -175;
@@ -455,7 +452,7 @@ static void SP_monster_gladiator(entity &self)
 	{
 #endif
 		sound_gun = gi.soundindex("gladiator/railgun.wav");
-		self.s.modelindex = gi.modelindex("models/monsters/gladiatr/tris.md2");
+		self.modelindex = gi.modelindex("models/monsters/gladiatr/tris.md2");
 
 		self.health = 400;
 		self.gib_health = -175;
@@ -471,7 +468,7 @@ static void SP_monster_gladiator(entity &self)
 		.maxs = { 32, 32, 64 }
 	};
 
-	self.pain = SAVABLE(gladiator_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(gladiator_die);
 
 	self.monsterinfo.stand = SAVABLE(gladiator_stand);
@@ -485,6 +482,7 @@ static void SP_monster_gladiator(entity &self)
 #ifdef GROUND_ZERO
 	self.monsterinfo.blocked = SAVABLE(gladiator_blocked);
 #endif
+	self.monsterinfo.reacttodamage = SAVABLE(gladiator_reacttodamage);
 
 	gi.linkentity(self);
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_stand);

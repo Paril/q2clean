@@ -54,10 +54,10 @@ void DoRespawn(entity &item)
 	gi.linkentity(ent);
 
 	// send an effect
-	ent->s.event = EV_ITEM_RESPAWN;
+	ent->event = EV_ITEM_RESPAWN;
 }
 
-static REGISTER_SAVABLE_FUNCTION(DoRespawn);
+REGISTER_STATIC_SAVABLE(DoRespawn);
 
 void SetRespawn(entity &ent, float delay)
 {
@@ -95,7 +95,7 @@ void Touch_Item(entity &ent, entity &other, vector, const surface &)
 			other.client->ps.stats[STAT_SELECTED_ITEM] = other.client->pers.selected_item = ent.item->id;
 
 		if (ent.item->pickup_sound)
-			gi.sound(other, CHAN_ITEM, gi.soundindex(ent.item->pickup_sound), 1, ATTN_NORM, 0);
+			gi.sound(other, CHAN_ITEM, gi.soundindex(ent.item->pickup_sound));
 	}
 
 	if (!(ent.spawnflags & ITEM_TARGETS_USED))
@@ -117,7 +117,7 @@ void Touch_Item(entity &ent, entity &other, vector, const surface &)
 		G_FreeEdict(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(Touch_Item);
+REGISTER_SAVABLE(Touch_Item);
 
 static void drop_temp_touch(entity &ent, entity &other, vector plane, const surface &surf)
 {
@@ -127,7 +127,7 @@ static void drop_temp_touch(entity &ent, entity &other, vector plane, const surf
 	Touch_Item(ent, other, plane, surf);
 }
 
-static REGISTER_SAVABLE_FUNCTION(drop_temp_touch);
+REGISTER_STATIC_SAVABLE(drop_temp_touch);
 
 static void drop_make_touchable(entity &ent)
 {
@@ -144,7 +144,7 @@ static void drop_make_touchable(entity &ent)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(drop_make_touchable);
+REGISTER_STATIC_SAVABLE(drop_make_touchable);
 
 entity &Drop_Item(entity &ent, const gitem_t &it)
 {
@@ -152,8 +152,8 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 
 	dropped.item = it;
 	dropped.spawnflags = DROPPED_ITEM;
-	dropped.s.effects = it.world_model_flags;
-	dropped.s.renderfx = RF_GLOW
+	dropped.effects = it.world_model_flags;
+	dropped.renderfx = RF_GLOW
 #ifdef GROUND_ZERO
 		| RF_IR_VISIBLE
 #endif
@@ -171,15 +171,15 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 	{
 		vector right;
 		AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
-		dropped.s.origin = G_ProjectSource(ent.s.origin, { 24, 0, -16 }, forward, right);
+		dropped.origin = G_ProjectSource(ent.origin, { 24, 0, -16 }, forward, right);
 
-		trace tr = gi.trace(ent.s.origin, dropped.bounds, dropped.s.origin, ent, CONTENTS_SOLID);
-		dropped.s.origin = tr.endpos;
+		trace tr = gi.trace(ent.origin, dropped.bounds, dropped.origin, ent, CONTENTS_SOLID);
+		dropped.origin = tr.endpos;
 	}
 	else
 	{
-		AngleVectors(ent.s.angles, &forward, nullptr, nullptr);
-		dropped.s.origin = ent.s.origin;
+		AngleVectors(ent.angles, &forward, nullptr, nullptr);
+		dropped.origin = ent.origin;
 	}
 
 	dropped.velocity = forward * 100;
@@ -211,7 +211,7 @@ static void Use_Item(entity &ent, entity &, entity &)
 	gi.linkentity(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Use_Item);
+REGISTER_STATIC_SAVABLE(Use_Item);
 
 void droptofloor(entity &ent)
 {
@@ -226,23 +226,23 @@ void droptofloor(entity &ent)
 	ent.movetype = MOVETYPE_TOSS;
 	ent.touch = SAVABLE(Touch_Item);
 
-	vector dest = ent.s.origin;
+	vector dest = ent.origin;
 	dest[2] -= 128;
 
-	trace tr = gi.trace(ent.s.origin, ent.bounds, dest, ent, MASK_SOLID);
+	trace tr = gi.trace(ent.origin, ent.bounds, dest, ent, MASK_SOLID);
 
 	if (tr.startsolid)
 	{
 #ifdef THE_RECKONING
 		if (ent.item->id == ITEM_FOODCUBE)
 		{
-			tr.endpos = ent.s.origin;
+			tr.endpos = ent.origin;
 			ent.velocity[2] = 0;
 		}
 		else
 		{
 #endif
-			gi.dprintf("droptofloor: %i startsolid at %s\n", ent.type, vtos(ent.s.origin).ptr());
+			gi.dprintfmt("{}: {} startsolid\n", ent, __func__);
 			G_FreeEdict(ent);
 			return;
 #ifdef THE_RECKONING
@@ -250,7 +250,7 @@ void droptofloor(entity &ent)
 #endif
 	}
 
-	ent.s.origin = tr.endpos;
+	ent.origin = tr.endpos;
 
 	if (ent.team)
 	{
@@ -271,8 +271,8 @@ void droptofloor(entity &ent)
 	{
 		ent.solid = SOLID_BBOX;
 		ent.touch = nullptr;
-		ent.s.effects &= ~EF_ROTATE;
-		ent.s.renderfx &= ~RF_GLOW;
+		ent.effects &= ~EF_ROTATE;
+		ent.renderfx &= ~RF_GLOW;
 	}
 
 	if (ent.spawnflags & ITEM_TRIGGER_SPAWN)
@@ -285,7 +285,7 @@ void droptofloor(entity &ent)
 	gi.linkentity(ent);
 }
 
-REGISTER_SAVABLE_FUNCTION(droptofloor);
+REGISTER_SAVABLE(droptofloor);
 
 /*
 ===============
@@ -328,7 +328,7 @@ void PrecacheItem(const gitem_t &it)
 
 		if (v_len >= MAX_QPATH || v_len < 5)
 		{
-			gi.dprintf("PrecacheItem: %s has bad precache string \"%s\"", it.classname, it.precaches);
+			gi.dprintfmt("PrecacheItem: {} has bad precache string \"{}\"", it.classname, it.precaches);
 			break;
 		}
 
@@ -342,7 +342,7 @@ void PrecacheItem(const gitem_t &it)
 		else if (ext == "pcx")
 			gi.imageindex(v);
 		else
-			gi.dprintf("PrecacheItem: %s has bad precache entry \"%s\"", it.classname, v.ptr());
+			gi.dprintfmt("PrecacheItem: {} has bad precache entry \"{}\"", it.classname, v);
 	}
 }
 
@@ -361,8 +361,12 @@ be on an entity that hasn't spawned yet.
 void(entity) CTFFlagSetup;
 #endif
 
+entity_type ET_ITEM("item");
+
 void SpawnItem(entity &ent, const gitem_t &it)
 {
+	ent.type = it.type;
+
 	if (ent.spawnflags
 #ifdef GROUND_ZERO
 		> ITEM_TRIGGER_SPAWN
@@ -373,7 +377,7 @@ void SpawnItem(entity &ent, const gitem_t &it)
 		)
 	{
 		ent.spawnflags = NO_SPAWNFLAGS;
-		gi.dprintf("%s at %s has invalid spawnflags set\n", it.classname, vtos(ent.s.origin).ptr());
+		gi.dprintfmt("{}: invalid spawnflags set\n", ent);
 	}
 
 #ifdef SINGLE_PLAYER
@@ -436,8 +440,8 @@ void SpawnItem(entity &ent, const gitem_t &it)
 	ent.item = it;
 	ent.nextthink = level.framenum + 2;    // items start after other solids
 	ent.think = SAVABLE(droptofloor);
-	ent.s.effects = it.world_model_flags;
-	ent.s.renderfx = RF_GLOW;
+	ent.effects = it.world_model_flags;
+	ent.renderfx = RF_GLOW;
 
 	if (ent.model)
 		gi.modelindex(ent.model);

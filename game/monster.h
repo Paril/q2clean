@@ -15,11 +15,11 @@ void monster_fire_bfg(entity &self, vector start, vector aimdir, int damage, int
 
 void M_FliesOff(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(M_FliesOff);
+DECLARE_SAVABLE(M_FliesOff);
 
 void M_FliesOn(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(M_FliesOn);
+DECLARE_SAVABLE(M_FliesOn);
 
 void M_FlyCheck(entity &self);
 
@@ -31,13 +31,30 @@ void M_WorldEffects(entity &ent);
 
 void M_droptofloor(entity &ent);
 
-DECLARE_SAVABLE_FUNCTION(M_droptofloor);
+DECLARE_SAVABLE(M_droptofloor);
 
 void M_SetEffects(entity &ent);
 
+/*
+==============
+M_ReactToDamage
+
+The default handler for monsters reacting to getting hit and changing
+their targets appropriately.
+==============
+*/
+void M_ReactToDamage(entity &targ, entity &attacker, entity &inflictor, int32_t knockback, int32_t take);
+
+// default pain implementation, which just toggles the
+// pain skin depending on our current health. this assumes that
+// every odd numbered skin is a pain skin.
+void monster_pain(entity &self, entity &attacker, float knockback, int32_t take);
+
+DECLARE_SAVABLE(monster_pain);
+
 void monster_think(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(monster_think);
+DECLARE_SAVABLE(monster_think);
 
 /*
 ================
@@ -48,7 +65,7 @@ Using a monster makes it angry at the current activator
 */
 void monster_use(entity &self, entity &other, entity &cactivator);
 
-DECLARE_SAVABLE_FUNCTION(monster_use);
+DECLARE_SAVABLE(monster_use);
 
 /*
 ================

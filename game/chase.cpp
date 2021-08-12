@@ -24,7 +24,7 @@ void UpdateChaseCam(entity &ent)
 		targ = ent.client->chase_target;
 	}
 
-	vector ownerv = targ->s.origin;
+	vector ownerv = targ->origin;
 	ownerv.z += targ->viewheight;
 
 	vector angles = targ->client->v_angle;
@@ -36,8 +36,8 @@ void UpdateChaseCam(entity &ent)
 	VectorNormalize(forward);
 	vector o = ownerv + (-30 * forward);
 
-	if (o.z < targ->s.origin[2] + 20.f)
-		o.z = targ->s.origin[2] + 20.f;
+	if (o.z < targ->origin[2] + 20.f)
+		o.z = targ->origin[2] + 20.f;
 
 	// jump animation lifts
 	if (!targ->groundentity.has_value())
@@ -71,7 +71,7 @@ void UpdateChaseCam(entity &ent)
 	else
 		ent.client->ps.pmove.pm_type = PM_FREEZE;
 
-	ent.s.origin = goal;
+	ent.origin = goal;
 	ent.client->ps.pmove.set_delta_angles(targ->client->v_angle - ent.client->resp.cmd_angles);
 
 	if (targ->deadflag)
@@ -101,9 +101,7 @@ void UpdateChaseCam(entity &ent)
 		!(level.framenum & 31)))
 	{
 		ent.client->update_chase = false;
-		gi.WriteByte(svc_layout);
-		gi.WriteString(strconcat("xv 0 yb -68 string2 \"Chasing ", targ->client->pers.netname, "\""));
-		gi.unicast(ent, false);
+		gi.ConstructMessage(svc_layout, format("xv 0 yb -68 string2 \"Chasing {0}\"", targ->client->pers.netname)).unicast(ent, false);
 	}
 }
 
@@ -112,7 +110,7 @@ void ChaseNext(entity &ent)
 	if (!ent.client->chase_target.has_value())
 		return;
 
-	uint32_t i = ent.client->chase_target->s.number;
+	uint32_t i = ent.client->chase_target->number;
 	entityref e;
 
 	do
@@ -136,7 +134,7 @@ void ChasePrev(entity &ent)
 	if (!ent.client->chase_target.has_value())
 		return;
 
-	uint32_t i = ent.client->chase_target->s.number;
+	uint32_t i = ent.client->chase_target->number;
 	entityref e;
 	
 	do
@@ -168,5 +166,5 @@ void GetChaseTarget(entity &ent)
 		}
 	}
 
-	gi.centerprintf(ent, "No other players to chase.");
+	gi.centerprint(ent, "No other players to chase.");
 }

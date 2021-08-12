@@ -44,7 +44,7 @@ void Use_IR(entity &ent, const gitem_t &it)
 	else
 		ent.client->ir_framenum = level.framenum + 600;
 
-	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ir_start.wav"), 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ir_start.wav"));
 }
 
 void Use_Double(entity &ent, const gitem_t &it)
@@ -57,7 +57,7 @@ void Use_Double(entity &ent, const gitem_t &it)
 	else
 		ent.client->double_framenum = level.framenum + 300;
 
-	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage1.wav"), 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage1.wav"));
 }
 
 void Use_Nuke(entity &ent, const gitem_t &it)
@@ -69,13 +69,13 @@ void Use_Nuke(entity &ent, const gitem_t &it)
 
 	AngleVectors (ent.client->v_angle, &forward, nullptr, nullptr);
 
-	fire_nuke (ent, ent.s.origin, forward, 100.f);
+	fire_nuke (ent, ent.origin, forward, 100.f);
 }
 
 static void Item_TriggeredSpawn(entity &self, entity &, entity &)
 {
 	self.svflags &= ~SVF_NOCLIENT;
-	self.use = 0;
+	self.use = nullptr;
 
 	if (self.item->id == ITEM_POWER_CUBE)
 		self.spawnflags = NO_SPAWNFLAGS;
@@ -83,7 +83,7 @@ static void Item_TriggeredSpawn(entity &self, entity &, entity &)
 	droptofloor (self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Item_TriggeredSpawn);
+REGISTER_STATIC_SAVABLE(Item_TriggeredSpawn);
 
 void SetTriggeredSpawn(entity &ent)
 {
@@ -91,7 +91,7 @@ void SetTriggeredSpawn(entity &ent)
 	if (ent.item->id == ITEM_POWER_CUBE)
 		return;
 
-	ent.think = 0;
+	ent.think = nullptr;
 	ent.nextthink = 0;
 	ent.use = SAVABLE(Item_TriggeredSpawn);
 	ent.svflags |= SVF_NOCLIENT;

@@ -157,7 +157,7 @@ static void Cmd_Give_f(entity &ent)
 #endif
 		!sv_cheats)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprint(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -242,14 +242,14 @@ static void Cmd_Give_f(entity &ent)
 
 		if (!it)
 		{
-			gi.cprintf(ent, PRINT_HIGH, "unknown item\n");
+			gi.cprint(ent, PRINT_HIGH, "unknown item\n");
 			return;
 		}
 	}
 
 	if (!it->pickup)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "non-pickup item\n");
+		gi.cprint(ent, PRINT_HIGH, "non-pickup item\n");
 		return;
 	}
 
@@ -290,7 +290,7 @@ static void Cmd_God_f(entity &ent)
 #endif
 		!sv_cheats)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprint(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -303,7 +303,7 @@ static void Cmd_God_f(entity &ent)
 	else
 		msg = "godmode ON\n";
 
-	gi.cprintf(ent, PRINT_HIGH, msg);
+	gi.cprint(ent, PRINT_HIGH, msg);
 }
 
 #if defined(SINGLE_PLAYER)
@@ -324,7 +324,7 @@ static void Cmd_Notarget_f(entity &ent)
 #endif
 		!sv_cheats)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprint(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -337,7 +337,7 @@ static void Cmd_Notarget_f(entity &ent)
 	else
 		msg = "notarget ON\n";
 
-	gi.cprintf (ent, PRINT_HIGH, msg);
+	gi.cprint(ent, PRINT_HIGH, msg);
 }
 #endif
 
@@ -356,7 +356,7 @@ static void Cmd_Noclip_f(entity &ent)
 #endif
 		!sv_cheats)
 	{
-		gi.cprintf(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprint(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -373,7 +373,7 @@ static void Cmd_Noclip_f(entity &ent)
 		msg = "noclip ON\n";
 	}
 
-	gi.cprintf (ent, PRINT_HIGH, msg);
+	gi.cprint(ent, PRINT_HIGH, msg);
 }
 
 /*
@@ -390,14 +390,14 @@ static void Cmd_Use_f(entity &ent)
 
 	if (!it)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "unknown item: %s\n", s);
+		gi.cprintfmt(ent, PRINT_HIGH, "Unknown item: {}\n", s);
 		return;
 	}
 
 	if (!ent.client->pers.inventory[it->id])
-		gi.cprintf (ent, PRINT_HIGH, "Out of item: %s\n", s);
+		gi.cprintfmt(ent, PRINT_HIGH, "Out of item: {}\n", s);
 	else if (!it->use)
-		gi.cprintf (ent, PRINT_HIGH, "Item is not usable.\n");
+		gi.cprint(ent, PRINT_HIGH, "Item is not usable.\n");
 	else
 		it->use(ent, it);
 }
@@ -428,14 +428,14 @@ static void Cmd_Drop_f(entity &ent)
 
 	if (!it)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "unknown item: %s\n", s.ptr());
+		gi.cprintfmt(ent, PRINT_HIGH, "unknown item: {}\n", s);
 		return;
 	}
 
 	if (!ent.client->pers.inventory[it->id])
-		gi.cprintf (ent, PRINT_HIGH, "Out of item: %s\n", s.ptr());
+		gi.cprintfmt(ent, PRINT_HIGH, "Out of item: {}\n", s);
 	else if (!it->drop)
-		gi.cprintf (ent, PRINT_HIGH, "Item is not droppable.\n");
+		gi.cprint(ent, PRINT_HIGH, "Item is not droppable.\n");
 	else
 		it->drop(ent, it);
 }
@@ -476,15 +476,12 @@ static void Cmd_Inven_f(entity& ent)
 
 	ent.client->showinventory = true;
 
-	gi.WriteByte(svc_inventory);
-	for (size_t i = 0; i < MAX_ITEMS; i++)
-	{
-		if (i < item_list().size())
-			gi.WriteShort((int16_t)ent.client->pers.inventory[i]);
-		else
-			gi.WriteShort(0);
-	}
-	gi.unicast(ent, true);
+	auto &inventory = ent.client->pers.inventory;
+
+	gi.ConstructMessage(svc_inventory, [&inventory]() {
+		for (size_t i = 0; i < MAX_ITEMS; i++)
+			gi.WriteShort((int16_t) (i < item_list().size() ? inventory[i] : 0));
+	}).unicast(ent, true);
 }
 
 /*
@@ -506,14 +503,14 @@ static void Cmd_InvUse_f(entity &ent)
 
 	if (!ent.client->pers.selected_item)
 	{
-		gi.cprintf(ent, PRINT_HIGH, "No item to use.\n");
+		gi.cprint(ent, PRINT_HIGH, "No item to use.\n");
 		return;
 	}
 
 	const gitem_t &it = GetItemByIndex(ent.client->pers.selected_item);
 
 	if (!it.use)
-		gi.cprintf (ent, PRINT_HIGH, "Item is not usable.\n");
+		gi.cprint(ent, PRINT_HIGH, "Item is not usable.\n");
 	else
 		it.use(ent, it);
 }
@@ -622,17 +619,19 @@ static void Cmd_InvDrop_f(entity &ent)
 
 	if (!ent.client->pers.selected_item)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "No item to drop.\n");
+		gi.cprint(ent, PRINT_HIGH, "No item to drop.\n");
 		return;
 	}
 
 	const gitem_t &it = GetItemByIndex(ent.client->pers.selected_item);
 
 	if (!it.drop)
-		gi.cprintf (ent, PRINT_HIGH, "Item is not dropable.\n");
+		gi.cprint(ent, PRINT_HIGH, "Item is not dropable.\n");
 	else
 		it.drop(ent, it);
 }
+
+constexpr means_of_death MOD_SUICIDE { .self_kill_fmt = "{0} suicides.\n" };
 
 /*
 =================
@@ -646,10 +645,7 @@ static void Cmd_Kill_f(entity &ent)
 	if ((level.framenum - ent.client->respawn_framenum) < 5 * BASE_FRAMERATE)
 		return;
 
-	ent.flags &= ~FL_GODMODE;
-	ent.health = 0;
-	meansOfDeath = MOD_SUICIDE;
-	player_die (ent, ent, ent, 100000, vec3_origin);
+	T_Damage(ent, ent, ent, vec3_origin, ent.origin, vec3_origin, ent.health, 0, { DAMAGE_NO_PROTECTION }, MOD_SUICIDE);
 }
 
 /*
@@ -697,23 +693,23 @@ static void Cmd_Players_f(entity &ent)
 	std::sort(index.begin(), index.end(), PlayerSort);
 
 	// print information
-	string large;
+	mutable_string large;
 
 	for (auto &e : index)
 	{
-		string small = va("%3i %s\n", e->client->resp.score, e->client->pers.netname.ptr());
+		mutable_string small = format("{:3} {}\n", e->client->resp.score, e->client->pers.netname);
 
 		if (strlen(small) + strlen(large) > 1280 - 100)
 		{
 			// can't print all of them in one packet
-			large = strconcat(large, "...\n");
+			large += "...\n";
 			break;
 		}
 
-		large = strconcat(large, small);
+		large += small;
 	}
 
-	gi.cprintf(ent, PRINT_HIGH, "%s\n%u players\n", large.ptr(), index.size());
+	gi.cprintfmt(ent, PRINT_HIGH, "{}\n{} players\n", large.data(), index.size());
 }
 
 /*
@@ -732,35 +728,22 @@ static void Cmd_Wave_f(entity &ent)
 
 	ent.client->anim_priority = ANIM_WAVE;
 
-	switch (atoi(gi.argv(1)))
-	{
-	case 0:
-		gi.cprintf (ent, PRINT_HIGH, "flipoff\n");
-		ent.s.frame = FRAME_flip01-1;
-		ent.client->anim_end = FRAME_flip12;
-		break;
-	case 1:
-		gi.cprintf (ent, PRINT_HIGH, "salute\n");
-		ent.s.frame = FRAME_salute01-1;
-		ent.client->anim_end = FRAME_salute11;
-		break;
-	case 2:
-		gi.cprintf (ent, PRINT_HIGH, "taunt\n");
-		ent.s.frame = FRAME_taunt01-1;
-		ent.client->anim_end = FRAME_taunt17;
-		break;
-	case 3:
-		gi.cprintf (ent, PRINT_HIGH, "wave\n");
-		ent.s.frame = FRAME_wave01-1;
-		ent.client->anim_end = FRAME_wave11;
-		break;
-	case 4:
-	default:
-		gi.cprintf (ent, PRINT_HIGH, "point\n");
-		ent.s.frame = FRAME_point01-1;
-		ent.client->anim_end = FRAME_point12;
-		break;
-	}
+	constexpr struct {
+		stringlit	name;
+		int32_t		start, end;
+	} taunts[] = {
+		{ "flipoff", FRAME_flip01, FRAME_flip12 },
+		{ "salute", FRAME_salute01, FRAME_salute11 },
+		{ "taunt", FRAME_taunt01, FRAME_taunt17 },
+		{ "wave", FRAME_wave01, FRAME_wave11 },
+		{ "point", FRAME_point01, FRAME_point12 }
+	};
+
+	int32_t taunt_id = clamp(0, atoi(gi.argv(1)), 4);
+
+	gi.cprintfmt(ent, PRINT_HIGH, "{}\n", taunts[taunt_id].name);
+	ent.frame = taunts[taunt_id].start - 1;
+	ent.client->anim_end = taunts[taunt_id].end;
 }
 
 /*
@@ -773,38 +756,12 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 	if (gi.argc() < 2 && !arg0)
 		return;
 
-	team = team && (dmflags & (DF_MODELTEAMS | DF_SKINTEAMS));
-
-	string text;
-
-	if (team)
-		text = va("(%s): ", ent.client->pers.netname.ptr());
-	else
-		text = va("%s: ", ent.client->pers.netname.ptr());
-
-	if (arg0)
-		text = va("%s%s %s", text.ptr(), gi.argv(0), gi.args());
-	else
-	{
-		string p = gi.args();
-
-		if (p[0] == '"')
-			p = substr(p, 1, strlen(p) - 2);
-
-		text = va("%s%s", text.ptr(), p.ptr());
-	}
-
-	// don't let text be too long for malicious reasons
-	if (strlen(text) > 150)
-		text = va("%.150s", text.ptr());
-
-	text = va("%s\n", text.ptr());
-
+	// check flooding first
 	if (flood_msgs)
 	{
 		if (level.time < ent.client->flood_locktill)
 		{
-			gi.cprintf(ent, PRINT_HIGH, "You can't talk for %d more seconds\n", (int32_t)(ent.client->flood_locktill - level.time));
+			gi.cprintfmt(ent, PRINT_HIGH, "You can't talk for {} more seconds\n", (int32_t) (ent.client->flood_locktill - level.time));
 			return;
 		}
 
@@ -816,7 +773,7 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 		if (ent.client->flood_when[i] && level.time - ent.client->flood_when[i] < flood_persecond)
 		{
 			ent.client->flood_locktill = level.time + flood_waitdelay;
-			gi.cprintf(ent, PRINT_CHAT, "You can't talk for %d more seconds.\n", (int32_t) flood_waitdelay);
+			gi.cprintfmt(ent, PRINT_CHAT, "You can't talk for {} more seconds.\n", (int32_t) flood_waitdelay);
 			return;
 		}
 
@@ -824,8 +781,35 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 		ent.client->flood_when[ent.client->flood_whenhead] = level.time;
 	}
 
+
+	// don't let text be too long for malicious reasons
+	constexpr size_t max_length = 149;
+
+	team = team && (dmflags & (DF_MODELTEAMS | DF_SKINTEAMS));
+
+	mutable_string text;
+
+	if (team)
+		format_to_n(text, max_length, "({}): ", ent.client->pers.netname);
+	else
+		format_to_n(text, max_length, "{}: ", ent.client->pers.netname);
+
+	if (arg0)
+		format_to_n(text, max_length, "{} {}", gi.argv(0), gi.args());
+	else
+	{
+		string p = gi.args();
+
+		if (p[0] == '"')
+			p = substr(p, 1, strlen(p) - 2);
+
+		format_to_n(text, max_length, "{}", p);
+	}
+
+	text += '\n';
+
 	if (dedicated)
-		gi.dprintf("%s", text.ptr());
+		gi.dprint(text);
 
 	for (entity &other : entity_range(1, game.maxclients))
 	{
@@ -834,38 +818,38 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 		if (team && !OnSameTeam(ent, other))
 			continue;
 
-		gi.cprintf(other, PRINT_CHAT, "%s", text.ptr());
+		gi.cprint(other, PRINT_CHAT, text);
 	}
 }
 
 static void Cmd_PlayerList_f(entity &ent)
 {
 	// connect time, ping, score, name
-	string text;
+	mutable_string text;
 
 	for (entity &e2 : entity_range(1, game.maxclients))
 	{
 		if (!e2.inuse)
 			continue;
 
-		string str = va("%02d:%02d %4d %3d %s%s\n",
+		mutable_string str = format("{:02}:{:02} {:4} {:3} {}{}\n",
 			(level.framenum - e2.client->resp.enterframe) / 600,
 			((level.framenum - e2.client->resp.enterframe) % 600) / 10,
 			e2.client->ping,
 			e2.client->resp.score,
-			e2.client->pers.netname.ptr(),
+			e2.client->pers.netname,
 			e2.client->resp.spectator ? " (spectator)" : "");
 
 		if (strlen(text) + strlen(str) > MESSAGE_LIMIT - 50)
 		{
-			text = strconcat(text, "And more...\n");
+			text += "And more...\n";
 			break;
 		}
 
-		text = strconcat(text, str);
+		text += str;
 	}
 
-	gi.cprintf(ent, PRINT_HIGH, "%s", text.ptr());
+	gi.cprint(ent, PRINT_HIGH, text);
 }
 
 static void Cmd_Spawn_f(entity &ent)
@@ -876,7 +860,7 @@ static void Cmd_Spawn_f(entity &ent)
 #endif
 		!sv_cheats)
 	{
-		gi.cprintf (ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprint(ent, PRINT_HIGH, "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -886,8 +870,8 @@ static void Cmd_Spawn_f(entity &ent)
 	vector forward;
 	AngleVectors(ent.client->v_angle, &forward, nullptr, nullptr);
 	
-	e.s.origin = ent.s.origin + (forward * 128);
-	e.s.angles[YAW] = ent.s.angles[YAW];
+	e.origin = ent.origin + (forward * 128);
+	e.angles[YAW] = ent.angles[YAW];
 	
 	ED_CallSpawn(e);
 

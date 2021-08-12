@@ -9,5 +9,5 @@ void ServerCommand()
 	string s = gi.argv(1);
 
 	if (s == "mem")
-		gi.dprintf("%u, %u\n", internal::game_count, internal::non_game_count);
+		gi.dprintfmt("{}, {}\n", internal::game_count, internal::non_game_count);
 }

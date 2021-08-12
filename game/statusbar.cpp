@@ -29,17 +29,18 @@ struct axis
 struct statusbar
 {
 private:
-	string	strval;
+	mutable_string strval;
 
 	bool		in_conditional = false;
 
-	inline void append(const stringref &ref)
+	template<typename ...Args>
+	inline void append(stringlit fmt, const Args &...args)
 	{
-		strval = strconcat(strval, " ", ref);
+		format_to(strval, " ");
+		format_to(strval, fmt, std::forward<const Args>(args)...);
 	}
 
-	axis	last_vertical = {};
-	axis	last_horizontal = {};
+	axis	last_vertical = {}, last_horizontal = {};
 
 	inline void write_axis(axis &current)
 	{
@@ -53,7 +54,7 @@ private:
 
 		constexpr stringlit x[] = { "xl", "xr", "xv" }, y[] = { "yt", "yb", "yv" };
 
-		append(va("%s %i", ((&current == &horizontal) ? x : y)[((int32_t) current.anchor) - 1], current.offset));
+		append("{} {}", ((&current == &horizontal) ? x : y)[((int32_t) current.anchor) - 1], current.offset);
 
 		if (&current == &horizontal)
 			last_horizontal = current;
@@ -70,10 +71,9 @@ private:
 	axis	backup_vertical, backup_last_vertical, backup_horizontal, backup_last_horizontal;
 
 public:
-	axis	vertical;
-	axis	horizontal;
+	axis	vertical, horizontal;
 
-	inline stringref str()
+	inline string str()
 	{
 		if (in_conditional)
 			gi.error("Invalid statusbar format: conditional not finished");
@@ -87,7 +87,7 @@ public:
 			gi.error("Invalid statusbar format: nested conditionals not supported");
 
 		in_conditional = true;
-		append(va("if %i", stat));
+		append("if {}", (int32_t) stat);
 
 		backup_vertical = vertical;
 		backup_horizontal = horizontal;
@@ -130,49 +130,49 @@ public:
 	inline void pic(const stat_index &stat)
 	{
 		write_position();
-		append(va("pic %i", stat));
+		append("pic {}", (int32_t) stat);
 	}
 
 	inline void num(const stat_index &stat, const int32_t &width)
 	{
 		write_position();
-		append(va("num %i %i", width, stat));
+		append("num {} {}", width, (int32_t) stat);
 	}
 
 	inline void picn(const stringref &str)
 	{
 		write_position();
-		append(va("picn %s", str.ptr()));
+		append("picn {}", str);
 	}
 
 	inline void stat_string(const stat_index &stat)
 	{
 		write_position();
-		append(va("stat_string %i", stat));
+		append("stat_string {}", (int32_t) stat);
 	}
 
 	inline void string(const stringref &str)
 	{
 		write_position();
-		append(va("string \"%s\"", str.ptr()));
+		append("string \"{}\"", str);
 	}
 
 	inline void string2(const stringref &str)
 	{
 		write_position();
-		append(va("string2 \"%s\"", str.ptr()));
+		append("string2 \"{}\"", str);
 	}
 
 	inline void cstring(const stringref &str)
 	{
 		write_position();
-		append(va("cstring \"%s\"", str.ptr()));
+		append("cstring \"{}\"", str);
 	}
 
 	inline void cstring2(const stringref &str)
 	{
 		write_position();
-		append(va("cstring2 \"%s\"", str.ptr()));
+		append("cstring2 \"{}\"", str);
 	}
 };
 
@@ -266,7 +266,7 @@ inline statusbar compile_statusbar()
 	return sb;
 }
 
-stringref G_GetStatusBar()
+string G_GetStatusBar()
 {
 	return compile_statusbar().str();
 }

@@ -20,13 +20,10 @@ Fire an origin based temp entity event to the clients.
 */
 static void Use_Target_Tent(entity &ent, entity &, entity &)
 {
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte((uint8_t)ent.style);
-	gi.WritePosition(ent.s.origin);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, (uint8_t) ent.style, ent.origin).multicast(ent.origin, MULTICAST_PVS);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Use_Target_Tent);
+REGISTER_STATIC_SAVABLE(Use_Target_Tent);
 
 static void SP_target_temp_entity(entity &ent)
 {
@@ -64,10 +61,10 @@ static void Use_Target_Speaker(entity &ent, entity &, entity &)
 	if (ent.spawnflags & (SPEAKER_LOOPED_ON | SPEAKER_LOOPED_OFF))
 	{
 		// looping sound toggles
-		if (ent.s.sound)
-			ent.s.sound = SOUND_NONE;   // turn it off
+		if (ent.sound)
+			ent.sound = SOUND_NONE;   // turn it off
 		else
-			ent.s.sound = ent.noise_index;    // start it
+			ent.sound = ent.noise_index;    // start it
 	}
 	else
 	{
@@ -79,24 +76,25 @@ static void Use_Target_Speaker(entity &ent, entity &, entity &)
 
 		// use a positioned_sound, because this entity won't normally be
 		// sent to any clients because it is invisible
-		gi.positioned_sound(ent.s.origin, ent, chan, ent.noise_index, ent.volume, ent.attenuation, 0);
+		gi.positioned_sound(ent.origin, ent, chan, ent.noise_index, ent.volume, ent.attenuation);
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(Use_Target_Speaker);
+REGISTER_STATIC_SAVABLE(Use_Target_Speaker);
 
 static void SP_target_speaker(entity &ent)
 {
-	string	buffer = st.noise;
+	string buffer = st.noise;
 
 	if (!buffer)
 	{
-		gi.dprintf("target_speaker with no noise set at %s\n", vtos(ent.s.origin).ptr());
+		gi.dprintfmt("{}: no noise\n", ent);
 		return;
 	}
 
+	// fix bad noises
 	if (strstr(st.noise, ".wav") == (size_t) -1)
-		buffer = va("%s.wav", st.noise.ptr());
+		buffer = format("{}.wav", st.noise);
 
 	ent.noise_index = gi.soundindex(buffer);
 
@@ -105,12 +103,12 @@ static void SP_target_speaker(entity &ent)
 
 	if (!ent.attenuation)
 		ent.attenuation = ATTN_NORM;
-	else if (ent.attenuation == (sound_attn)-1)    // use -1 so 0 defaults to 1
+	else if (ent.attenuation == (sound_attn) -1)    // use -1 so 0 defaults to 1
 		ent.attenuation = ATTN_NONE;
 
 	// check for prestarted looping sound
 	if (ent.spawnflags & SPEAKER_LOOPED_ON)
-		ent.s.sound = ent.noise_index;
+		ent.sound = ent.noise_index;
 
 	ent.use = SAVABLE(Use_Target_Speaker);
 
@@ -134,7 +132,7 @@ static void Use_Target_Help(entity &ent, entity &, entity &)
 	game.helpchanged++;
 }
 
-static REGISTER_SAVABLE_FUNCTION(Use_Target_Help);
+REGISTER_STATIC_SAVABLE(Use_Target_Help);
 
 /*QUAKED target_help (1 0 1) (-16 -16 -24) (16 16 24) help1
 When fired, the "message" key becomes the current personal computer string, and the message light will be set on all clients status bars.
@@ -150,7 +148,7 @@ static void SP_target_help(entity &ent)
 
 	if (!ent.message)
 	{
-		gi.dprintf("%s with no message at %s\n", st.classname.ptr(), vtos(ent.s.origin).ptr());
+		gi.dprintfmt("{}: no message\n", ent);
 		G_FreeEdict(ent);
 		return;
 	}
@@ -167,7 +165,7 @@ These are single use targets.
 */
 static void use_target_secret(entity &ent, entity &, entity &cactivator)
 {
-	gi.sound(ent, CHAN_VOICE, ent.noise_index, 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_VOICE, ent.noise_index);
 
 	level.found_secrets++;
 
@@ -175,7 +173,7 @@ static void use_target_secret(entity &ent, entity &, entity &cactivator)
 	G_FreeEdict(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_secret);
+REGISTER_STATIC_SAVABLE(use_target_secret);
 
 static void SP_target_secret(entity &ent)
 {
@@ -193,7 +191,7 @@ static void SP_target_secret(entity &ent)
 	ent.svflags = SVF_NOCLIENT;
 	level.total_secrets++;
 	// map bug hack
-	if (striequals(level.mapname, "mine3") && ent.s.origin[0] == 280 && ent.s.origin[1] == -2048 && ent.s.origin[2] == -624)
+	if (striequals(level.mapname, "mine3") && ent.origin[0] == 280 && ent.origin[1] == -2048 && ent.origin[2] == -624)
 		ent.message = "You have found a secret area.";
 }
 
@@ -207,7 +205,7 @@ These are single use targets.
 */
 static void use_target_goal(entity &ent, entity &, entity &cactivator)
 {
-	gi.sound(ent, CHAN_VOICE, ent.noise_index, 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_VOICE, ent.noise_index);
 
 	level.found_goals++;
 
@@ -218,7 +216,7 @@ static void use_target_goal(entity &ent, entity &, entity &cactivator)
 	G_FreeEdict(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_goal);
+REGISTER_STATIC_SAVABLE(use_target_goal);
 
 static void SP_target_goal(entity &ent)
 {
@@ -251,10 +249,7 @@ Spawns an explosion temporary entity when used.
 */
 static void target_explosion_explode(entity &self)
 {
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte(TE_EXPLOSION1);
-	gi.WritePosition(self.s.origin);
-	gi.multicast(self.s.origin, MULTICAST_PHS);
+	gi.ConstructMessage(svc_temp_entity, TE_EXPLOSION1, self.origin).multicast(self.origin, MULTICAST_PHS);
 
 	T_RadiusDamage(self, self.activator, (float)self.dmg, 0, (float)(self.dmg + 40), MOD_EXPLOSIVE);
 
@@ -264,7 +259,7 @@ static void target_explosion_explode(entity &self)
 	self.delay = save;
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_explosion_explode);
+REGISTER_STATIC_SAVABLE(target_explosion_explode);
 
 static void use_target_explosion(entity &self, entity &, entity &cactivator)
 {
@@ -280,7 +275,7 @@ static void use_target_explosion(entity &self, entity &, entity &cactivator)
 	self.nextthink = level.framenum + (gtime)(self.delay * BASE_FRAMERATE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_explosion);
+REGISTER_STATIC_SAVABLE(use_target_explosion);
 
 static void SP_target_explosion(entity &ent)
 {
@@ -291,6 +286,8 @@ static void SP_target_explosion(entity &ent)
 static REGISTER_ENTITY(TARGET_EXPLOSION, target_explosion);
 
 //==========================================================
+
+constexpr means_of_death MOD_EXIT { .self_kill_fmt = "{0} found a way out.\n" };
 
 /*QUAKED target_changelevel (1 0 0) (-8 -8 -8) (8 8 8)
 Changes level to "map" when fired
@@ -313,13 +310,13 @@ static void use_target_changelevel(entity &self, entity &other, entity &cactivat
 #endif
 		if (!(dmflags & DF_ALLOW_EXIT) && !other.is_world())
 		{
-			T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, 10 * other.max_health, 1000, DAMAGE_NONE, MOD_EXIT);
+			T_Damage(other, self, self, vec3_origin, other.origin, vec3_origin, 10 * other.max_health, 1000, { }, MOD_EXIT);
 			return;
 		}
 
 		// if multiplayer, let everyone know who hit the exit
 		if (cactivator.is_client())
-			gi.bprintf(PRINT_HIGH, "%s exited the level.\n", cactivator.client->pers.netname.ptr());
+			gi.bprintfmt(PRINT_HIGH, "{} exited the level.\n", cactivator.client->pers.netname);
 #ifdef SINGLE_PLAYER
 	}
 
@@ -331,13 +328,13 @@ static void use_target_changelevel(entity &self, entity &other, entity &cactivat
 	BeginIntermission(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_changelevel);
+REGISTER_STATIC_SAVABLE(use_target_changelevel);
 
 static void SP_target_changelevel(entity &ent)
 {
 	if (!ent.map)
 	{
-		gi.dprintf("target_changelevel with no map at %s\n", vtos(ent.s.origin).ptr());
+		gi.dprintfmt("{}: no map\n", ent);
 		G_FreeEdict(ent);
 		return;
 	}
@@ -374,24 +371,18 @@ Set "sounds" to one of the following:
 
 static void use_target_splash(entity &self, entity &, entity &cactivator)
 {
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte(TE_SPLASH);
-	gi.WriteByte((uint8_t)self.count);
-	gi.WritePosition(self.s.origin);
-	gi.WriteDir(self.movedir);
-	gi.WriteByte((uint8_t)self.sounds);
-	gi.multicast(self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_SPLASH, (uint8_t) self.count, self.origin, vecdir { self.movedir }, (uint8_t) self.sounds).multicast(self.origin, MULTICAST_PVS);
 
 	if (self.dmg)
-		T_RadiusDamage(self, cactivator, (float)self.dmg, 0, (float)(self.dmg + 40), MOD_SPLASH);
+		T_RadiusDamage(self, cactivator, (float)self.dmg, 0, (float)(self.dmg + 40));
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_splash);
+REGISTER_STATIC_SAVABLE(use_target_splash);
 
 static void SP_target_splash(entity &self)
 {
 	self.use = SAVABLE(use_target_splash);
-	G_SetMovedir(self.s.angles, self.movedir);
+	G_SetMovedir(self.angles, self.movedir);
 
 	if (!self.count)
 		self.count = 32;
@@ -426,8 +417,8 @@ static void use_target_spawner(entity &self, entity &, entity &)
 #ifdef THE_RECKONING
 	ent.flags = self.flags;
 #endif
-	ent.s.origin = self.s.origin;
-	ent.s.angles = self.s.angles;
+	ent.origin = self.origin;
+	ent.angles = self.angles;
 	ED_CallSpawn(ent);
 	gi.unlinkentity(ent);
 	KillBox(ent);
@@ -436,11 +427,11 @@ static void use_target_spawner(entity &self, entity &, entity &)
 		ent.velocity = self.movedir;
 
 #ifdef GROUND_ZERO
-	ent.s.renderfx |= RF_IR_VISIBLE;
+	ent.renderfx |= RF_IR_VISIBLE;
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_spawner);
+REGISTER_STATIC_SAVABLE(use_target_spawner);
 
 static void SP_target_spawner(entity &self)
 {
@@ -448,7 +439,7 @@ static void SP_target_spawner(entity &self)
 	self.svflags = SVF_NOCLIENT;
 	if (self.speed)
 	{
-		G_SetMovedir(self.s.angles, self.movedir);
+		G_SetMovedir(self.angles, self.movedir);
 		self.movedir *= self.speed;
 	}
 }
@@ -466,16 +457,16 @@ speed   default is 1000
 
 static void use_target_blaster(entity &self, entity &, entity &)
 {
-	fire_blaster(self, self.s.origin, self.movedir, self.dmg, (int32_t)self.speed, EF_BLASTER, MOD_TARGET_BLASTER, false);
-	gi.sound(self, CHAN_VOICE, self.noise_index, 1, ATTN_NORM, 0);
+	fire_blaster(self, self.origin, self.movedir, self.dmg, (int32_t)self.speed, EF_BLASTER, false);
+	gi.sound(self, CHAN_VOICE, self.noise_index);
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_target_blaster);
+REGISTER_STATIC_SAVABLE(use_target_blaster);
 
 static void SP_target_blaster(entity &self)
 {
 	self.use = SAVABLE(use_target_blaster);
-	G_SetMovedir(self.s.angles, self.movedir);
+	G_SetMovedir(self.angles, self.movedir);
 	self.noise_index = gi.soundindex("weapons/laser2.wav");
 
 	if (!self.dmg)
@@ -500,7 +491,7 @@ static void trigger_crosslevel_trigger_use(entity &self, entity &, entity &)
 	G_FreeEdict(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_crosslevel_trigger_use);
+REGISTER_STATIC_SAVABLE(trigger_crosslevel_trigger_use);
 
 static void SP_target_crosslevel_trigger(entity &self)
 {
@@ -524,7 +515,7 @@ static void target_crosslevel_target_think(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_crosslevel_target_think);
+REGISTER_STATIC_SAVABLE(target_crosslevel_target_think);
 
 static void SP_target_crosslevel_target(entity &self)
 {
@@ -564,15 +555,15 @@ void target_laser_think(entity &self)
 	if (self.enemy.has_value())
 	{
 		last_movedir = self.movedir;
-		point = self.enemy->absmin + (0.5f * self.enemy->size);
-		self.movedir = point - self.s.origin;
+		point = self.enemy->absbounds.center();
+		self.movedir = point - self.origin;
 		VectorNormalize(self.movedir);
 		if (self.movedir != last_movedir)
 			self.spawnflags |= LASER_BZZT;
 	}
 
 	ignore = self;
-	start = self.s.origin;
+	start = self.origin;
 	end = start + (2048 * self.movedir);
 	while (1)
 	{
@@ -588,7 +579,7 @@ void target_laser_think(entity &self)
 
 		// hurt it if we can
 		if (tr.ent.takedamage && !(tr.ent.flags & FL_IMMUNE_LASER))
-			T_Damage(tr.ent, self, self.activator, self.movedir, tr.endpos, vec3_origin, self.dmg, 1, DAMAGE_ENERGY, MOD_TARGET_LASER);
+			T_Damage(tr.ent, self, self.activator, self.movedir, tr.endpos, vec3_origin, self.dmg, 1, { DAMAGE_ENERGY }, MOD_TARGET_LASER);
 
 		// if we hit something that's not a monster or player or is immune to lasers, we're done
 		if (!(tr.ent.svflags & SVF_MONSTER) && !tr.ent.is_client()
@@ -600,13 +591,7 @@ void target_laser_think(entity &self)
 			if (self.spawnflags & LASER_BZZT)
 			{
 				self.spawnflags &= ~LASER_BZZT;
-				gi.WriteByte(svc_temp_entity);
-				gi.WriteByte(TE_LASER_SPARKS);
-				gi.WriteByte((uint8_t)count);
-				gi.WritePosition(tr.endpos);
-				gi.WriteDir(tr.normal);
-				gi.WriteByte((uint8_t)self.s.skinnum);
-				gi.multicast(tr.endpos, MULTICAST_PVS);
+				gi.ConstructMessage(svc_temp_entity, TE_LASER_SPARKS, (uint8_t) count, tr.endpos, vecdir { tr.normal }, (uint8_t) self.skinnum).multicast(tr.endpos, MULTICAST_PVS);
 			}
 			break;
 		}
@@ -615,12 +600,12 @@ void target_laser_think(entity &self)
 		start = tr.endpos;
 	}
 
-	self.s.old_origin = tr.endpos;
+	self.old_origin = tr.endpos;
 
 	self.nextthink = level.framenum + 1;
 }
 
-REGISTER_SAVABLE_FUNCTION(target_laser_think);
+REGISTER_SAVABLE(target_laser_think);
 
 static void target_laser_on(entity &self)
 {
@@ -647,32 +632,32 @@ static void target_laser_use(entity &self, entity &, entity &cactivator)
 		target_laser_on(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_laser_use);
+REGISTER_STATIC_SAVABLE(target_laser_use);
 
 static void target_laser_start(entity &self)
 {
 	self.movetype = MOVETYPE_NONE;
 	self.solid = SOLID_NOT;
-	self.s.renderfx |= RF_BEAM | RF_TRANSLUCENT;
-	self.s.modelindex = MODEL_WORLD;         // must be non-zero
+	self.renderfx |= RF_BEAM | RF_TRANSLUCENT;
+	self.modelindex = MODEL_WORLD;         // must be non-zero
 
 	// set the beam diameter
 	if (self.spawnflags & 64)
-		self.s.frame = 16;
+		self.frame = 16;
 	else
-		self.s.frame = 4;
+		self.frame = 4;
 
 	// set the color
 	if (self.spawnflags & LASER_RED)
-		self.s.skinnum = 0xf2f2f0f0;
+		self.skinnum = 0xf2f2f0f0;
 	else if (self.spawnflags & LASER_GREEN)
-		self.s.skinnum = 0xd0d1d2d3;
+		self.skinnum = 0xd0d1d2d3;
 	else if (self.spawnflags & LASER_BLUE)
-		self.s.skinnum = 0xf3f3f1f1;
+		self.skinnum = 0xf3f3f1f1;
 	else if (self.spawnflags & LASER_YELLOW)
-		self.s.skinnum = 0xdcdddedf;
+		self.skinnum = 0xdcdddedf;
 	else if (self.spawnflags & LASER_ORANGE)
-		self.s.skinnum = 0xe0e1e2e3;
+		self.skinnum = 0xe0e1e2e3;
 
 	if (!self.enemy.has_value())
 	{
@@ -680,11 +665,11 @@ static void target_laser_start(entity &self)
 		{
 			entityref ent = G_FindFunc<&entity::targetname>(world, self.target, striequals);
 			if (!ent.has_value())
-				gi.dprintf("%s at %s: %s is a bad target\n", st.classname.ptr(), vtos(self.s.origin).ptr(), self.target.ptr());
+				gi.dprintfmt("{}: {} is a bad target\n", self, self.target);
 			self.enemy = ent;
 		}
 		else
-			G_SetMovedir(self.s.angles, self.movedir);
+			G_SetMovedir(self.angles, self.movedir);
 	}
 
 	self.use = SAVABLE(target_laser_use);
@@ -693,8 +678,7 @@ static void target_laser_start(entity &self)
 	if (!self.dmg)
 		self.dmg = 1;
 
-	self.mins = { -8, -8, -8 };
-	self.maxs = { 8, 8, 8 };
+	self.bounds = bbox::sized(8.f);
 	gi.linkentity(self);
 
 	if (self.spawnflags & LASER_ON)
@@ -703,7 +687,7 @@ static void target_laser_start(entity &self)
 		target_laser_off(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_laser_start);
+REGISTER_STATIC_SAVABLE(target_laser_start);
 
 static void SP_target_laser(entity &self)
 {
@@ -726,7 +710,7 @@ static void target_lightramp_think(entity &self)
 {
 	float diff = (level.framenum - self.timestamp) * FRAMETIME;
 
-	string s = va("%c", (int)('a' + self.movedir.x + diff * self.movedir.z));
+	mutable_string s = format("{}", (char) ('a' + self.movedir.x + diff * self.movedir.z));
 	gi.configstring((config_string)(CS_LIGHTS + self.enemy->style), s);
 
 	if (diff < self.speed)
@@ -740,7 +724,7 @@ static void target_lightramp_think(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_lightramp_think);
+REGISTER_STATIC_SAVABLE(target_lightramp_think);
 
 static void target_lightramp_use(entity &self, entity &, entity &)
 {
@@ -752,17 +736,14 @@ static void target_lightramp_use(entity &self, entity &, entity &)
 		while ((e = G_FindFunc<&entity::targetname>(e, self.target, striequals)).has_value())
 		{
 			if (e->type != ET_LIGHT)
-			{
-				gi.dprintf("%i at %s ", self.type, vtos(self.s.origin).ptr());
-				gi.dprintf("target %s (%i at %s) is not a light\n", self.target.ptr(), e->type, vtos(e->s.origin).ptr());
-			}
+				gi.dprintfmt("{}: target \"{}\" ({}) is not a light\n", self, self.target, e);
 			else
 				self.enemy = e;
 		}
 
 		if (!self.enemy.has_value())
 		{
-			gi.dprintf("%i target %s not found at %s\n", self.type, self.target.ptr(), vtos(self.s.origin).ptr());
+			gi.dprintfmt("{}: target \"{}\" not found\n", self, self.target);
 			G_FreeEdict(self);
 			return;
 		}
@@ -772,13 +753,13 @@ static void target_lightramp_use(entity &self, entity &, entity &)
 	target_lightramp_think(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_lightramp_use);
+REGISTER_STATIC_SAVABLE(target_lightramp_use);
 
 static void SP_target_lightramp(entity &self)
 {
 	if (!self.message || strlen(self.message) != 2 || self.message[0] < 'a' || self.message[0] > 'z' || self.message[1] < 'a' || self.message[1] > 'z' || self.message[0] == self.message[1])
 	{
-		gi.dprintf("target_lightramp has bad ramp (%s) at %s\n", self.message.ptr(), vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: bad ramp \"{}\"\n", self, self.message);
 		G_FreeEdict(self);
 		return;
 	}
@@ -789,8 +770,9 @@ static void SP_target_lightramp(entity &self)
 		return;
 	}
 
-	if (!self.target) {
-		gi.dprintf("%s with no target at %s\n", st.classname.ptr(), vtos(self.s.origin).ptr());
+	if (!self.target)
+	{
+		gi.dprintfmt("{}: no target\n", self);
 		G_FreeEdict(self);
 		return;
 	}
@@ -823,7 +805,7 @@ static void target_earthquake_think(entity &self)
 #endif
 		self.last_move_framenum < level.framenum)
 	{
-		gi.positioned_sound(self.s.origin, self, CHAN_AUTO, self.noise_index, 1.0f, ATTN_NONE, 0);
+		gi.positioned_sound(self.origin, self, self.noise_index, ATTN_NONE);
 		self.last_move_framenum = level.framenum + (gtime)(0.5f * BASE_FRAMERATE);
 	}
 
@@ -847,7 +829,7 @@ static void target_earthquake_think(entity &self)
 		self.nextthink = level.framenum + 1;
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_earthquake_think);
+REGISTER_STATIC_SAVABLE(target_earthquake_think);
 
 static void target_earthquake_use(entity &self, entity &, entity &cactivator)
 {
@@ -857,12 +839,12 @@ static void target_earthquake_use(entity &self, entity &, entity &cactivator)
 	self.last_move_framenum = 0;
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_earthquake_use);
+REGISTER_STATIC_SAVABLE(target_earthquake_use);
 
 static void SP_target_earthquake(entity &self)
 {
 	if (!self.targetname)
-		gi.dprintf("untargeted %s at %s\n", st.classname.ptr(), vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: no targetname\n", self);
 
 	if (!self.count)
 		self.count = 5;
@@ -875,7 +857,7 @@ static void SP_target_earthquake(entity &self)
 	self.use = SAVABLE(target_earthquake_use);
 
 #ifdef GROUND_ZERO
-	if(!(self.spawnflags & 1))
+	if (!(self.spawnflags & 1))
 #endif
 		self.noise_index = gi.soundindex("world/quake.wav");
 }

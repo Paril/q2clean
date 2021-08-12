@@ -12,61 +12,46 @@
 constexpr spawn_flag GRENADE_IS_HAND = (spawn_flag) 1;
 constexpr spawn_flag GRENADE_IS_HELD = (spawn_flag) 2;
 
+constexpr means_of_death MOD_HELD_GRENADE { .self_kill_fmt = "{0} tried to put the pin back in.\n", .other_kill_fmt = "{0} feels {3}'s pain.\n" };
+constexpr means_of_death MOD_GRENADE_SPLASH { .self_kill_fmt = "{0} tripped on {1} own grenade.\n", .other_kill_fmt = "{0} was shredded by {3}'s shrapnel.\n" };
+constexpr means_of_death MOD_HANDGRENADE_SPLASH { .self_kill_fmt = "{0} tripped on {1} own handgrenade.\n", .other_kill_fmt = "{0} didn't see {3}'s handgrenade.\n" };
+
+constexpr means_of_death MOD_GRENADE { .other_kill_fmt = "{0} was popped by {3}'s grenade.\n" };
+constexpr means_of_death MOD_HANDGRENADE { .other_kill_fmt = "{0} caught {3}'s handgrenade.\n" };
+
 void Grenade_Explode(entity &ent)
 {
-	vector			origin;
-	means_of_death	mod;
 #ifdef SINGLE_PLAYER
-
 	if (ent.owner->is_client())
-		PlayerNoise(ent.owner, ent.s.origin, PNOISE_IMPACT);
-#endif
+		PlayerNoise(ent.owner, ent.origin, PNOISE_IMPACT);
 
-	//FIXME: if we are onground then raise our Z just a bit since we are a point?
+#endif
+	means_of_death_ref mod = (ent.spawnflags & GRENADE_IS_HELD) ? MOD_HELD_GRENADE :
+		(ent.spawnflags & GRENADE_IS_HAND) ? MOD_HANDGRENADE_SPLASH :
+		MOD_GRENADE_SPLASH;
+
 	if (ent.enemy.has_value())
 	{
-		vector v = ent.enemy->s.origin + ent.enemy->bounds.center();
-		v = ent.s.origin - v;
+		vector v = ent.enemy->origin + ent.enemy->bounds.center();
+		v = ent.origin - v;
 		float points = ent.dmg - 0.5f * VectorLength(v);
-		vector dir = ent.enemy->s.origin - ent.s.origin;
-		if (ent.spawnflags & GRENADE_IS_HAND)
-			mod = MOD_HANDGRENADE;
-		else
-			mod = MOD_GRENADE;
-		T_Damage(ent.enemy, ent, ent.owner, dir, ent.s.origin, vec3_origin, (int32_t) points, (int32_t) points, DAMAGE_RADIUS, mod);
+		vector dir = ent.enemy->origin - ent.origin;
+
+		T_Damage(ent.enemy, ent, ent.owner, dir, ent.origin, vec3_origin, (int32_t) points, (int32_t) points, { DAMAGE_RADIUS }, mod);
 	}
 
-	if (ent.spawnflags & GRENADE_IS_HELD)
-		mod = MOD_HELD_GRENADE;
-	else if (ent.spawnflags & GRENADE_IS_HAND)
-		mod = MOD_HG_SPLASH;
-	else
-		mod = MOD_G_SPLASH;
 	T_RadiusDamage(ent, ent.owner, (float) ent.dmg, ent.enemy, ent.dmg_radius, mod);
 
-	origin = ent.s.origin + (-0.02f * ent.velocity);
-	gi.WriteByte(svc_temp_entity);
-	if (ent.waterlevel)
-	{
-		if (ent.groundentity.has_value())
-			gi.WriteByte(TE_GRENADE_EXPLOSION_WATER);
-		else
-			gi.WriteByte(TE_ROCKET_EXPLOSION_WATER);
-	}
-	else
-	{
-		if (ent.groundentity.has_value())
-			gi.WriteByte(TE_GRENADE_EXPLOSION);
-		else
-			gi.WriteByte(TE_ROCKET_EXPLOSION);
-	}
-	gi.WritePosition(origin);
-	gi.multicast(ent.s.origin, MULTICAST_PHS);
+	vector origin = ent.origin + (-0.02f * ent.velocity);
+
+	constexpr temp_event events[] { TE_GRENADE_EXPLOSION, TE_ROCKET_EXPLOSION, TE_GRENADE_EXPLOSION_WATER, TE_ROCKET_EXPLOSION_WATER };
+
+	gi.ConstructMessage(svc_temp_entity, events[boolbits(ent.waterlevel, ent.groundentity.has_value())], origin).multicast(ent.origin, MULTICAST_PHS);
 
 	G_FreeEdict(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Grenade_Explode);
+REGISTER_STATIC_SAVABLE(Grenade_Explode);
 
 static void Grenade_Touch(entity &ent, entity &other, vector, const surface &surf)
 {
@@ -82,14 +67,9 @@ static void Grenade_Touch(entity &ent, entity &other, vector, const surface &sur
 	if (!other.takedamage)
 	{
 		if (ent.spawnflags & 1)
-		{
-			if (random() > 0.5f)
-				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
-			else
-				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/hgrenb2a.wav"), 1, ATTN_NORM, 0);
-		}
+			gi.sound(ent, CHAN_VOICE, gi.soundindex(random() > 0.5f ? "weapons/hgrenb1a.wav" : "weapons/hgrenb2a.wav"));
 		else
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/grenlb1b.wav"), 1, ATTN_NORM, 0);
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/grenlb1b.wav"));
 
 		return;
 	}
@@ -98,7 +78,7 @@ static void Grenade_Touch(entity &ent, entity &other, vector, const surface &sur
 	Grenade_Explode(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Grenade_Touch);
+REGISTER_STATIC_SAVABLE(Grenade_Touch);
 
 entity_type ET_GRENADE("grenade");
 
@@ -112,7 +92,7 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	AngleVectors(dir, &forward, &right, &up);
 
 	entity &grenade = G_Spawn();
-	grenade.s.origin = start;
+	grenade.origin = start;
 	grenade.velocity = aimdir * speed;
 	scale = random(190.f, 210.f);
 	grenade.velocity += (scale * up);
@@ -122,8 +102,8 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	grenade.movetype = MOVETYPE_BOUNCE;
 	grenade.clipmask = MASK_SHOT;
 	grenade.solid = SOLID_BBOX;
-	grenade.s.effects |= EF_GRENADE;
-	grenade.s.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
+	grenade.effects |= EF_GRENADE;
+	grenade.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
 	grenade.owner = self;
 	grenade.touch = SAVABLE(Grenade_Touch);
 	grenade.nextthink = level.framenum + (gtime) (timer * BASE_FRAMERATE);
@@ -145,7 +125,7 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	AngleVectors(dir, &forward, &right, &up);
 
 	entity &grenade = G_Spawn();
-	grenade.s.origin = start;
+	grenade.origin = start;
 	grenade.velocity = aimdir * speed;
 	scale = random(190.f, 210.f);
 	grenade.velocity += (scale * up);
@@ -155,8 +135,8 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	grenade.movetype = MOVETYPE_BOUNCE;
 	grenade.clipmask = MASK_SHOT;
 	grenade.solid = SOLID_BBOX;
-	grenade.s.effects |= EF_GRENADE;
-	grenade.s.modelindex = gi.modelindex("models/objects/grenade2/tris.md2");
+	grenade.effects |= EF_GRENADE;
+	grenade.modelindex = gi.modelindex("models/objects/grenade2/tris.md2");
 	grenade.owner = self;
 	grenade.touch = SAVABLE(Grenade_Touch);
 	grenade.nextthink = level.framenum + (gtime) (timer * BASE_FRAMERATE);
@@ -167,13 +147,13 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	grenade.spawnflags = GRENADE_IS_HAND;
 	if (held)
 		grenade.spawnflags |= GRENADE_IS_HELD;
-	grenade.s.sound = gi.soundindex("weapons/hgrenc1b.wav");
+	grenade.sound = gi.soundindex("weapons/hgrenc1b.wav");
 
 	if (timer <= 0.0f)
 		Grenade_Explode(grenade);
 	else
 	{
-		gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrent1a.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/hgrent1a.wav"));
 		gi.linkentity(grenade);
 	}
 }

@@ -13,8 +13,8 @@
 #include "game/target.h"
 #endif
 
-registered_save_data<void *> *registered_data_head;
-registered_save_function<void *> *registered_functions_head;
+registered_savable<void *> *registered_data_head;
+registered_savable<void(*)()> *registered_functions_head;
 
 #ifdef JSON_SAVE_FORMAT
 #define CJSON_HIDE_SYMBOLS
@@ -186,7 +186,7 @@ inline cJSON *json_serializer_write(serializer&, const entityref &v, const bool&
 	if (defaultable && !v.has_value())
 		return nullptr;
 
-	return cJSON_CreateNumber((double)v->s.number);
+	return cJSON_CreateNumber((double)v->number);
 }
 
 inline cJSON *json_serializer_write(serializer&, const itemref &v, const bool& defaultable = false)
@@ -221,24 +221,15 @@ inline cJSON *json_serializer_write(serializer&, const bbox &v, const bool& defa
 	return cJSON_CreateFloatArray(&v.mins.x, 6);
 }
 
-template<typename TFunc>
-inline cJSON *json_serializer_write(serializer&, const savable_function<TFunc> &str, const bool& defaultable = false)
-{
-	if (str)
-		return cJSON_CreateString(str.func->name);
-
-	return defaultable ? nullptr : cJSON_CreateStringReference("");
-}
-
 template<typename T>
-inline cJSON *json_serializer_write(serializer&, const savable_data<T> &str, const bool& defaultable = false)
+inline cJSON *json_serializer_write(serializer&, const savable<T> &str, const bool& defaultable = false)
 {
 	if (str)
-		return cJSON_CreateString(str.data->name);
+		return cJSON_CreateString(str.registry->name);
 
 	return defaultable ? nullptr : cJSON_CreateStringReference("");
 }
-	
+
 template<typename T, size_t N>
 inline cJSON *json_serializer_write(serializer &stream, const array<T, N> &arr, const bool &defaultable = false)
 {
@@ -308,7 +299,7 @@ inline void json_serializer_read(cJSON *json, serializer &, entity_type_ref &str
 		}
 	}
 
-	gi.dprintf("Warning: unknown entity type %s\n", s);
+	gi.dprintfmt("Warning: unknown entity type {}\n", s);
 	str = ET_UNKNOWN;
 }
 
@@ -333,37 +324,11 @@ inline void json_serializer_read(cJSON *json, serializer &stream, array<T, N> &a
 		json_serializer_read(cJSON_GetArrayItem(json, i++), stream, v);
 }
 
-template<typename TFunc>
-inline void json_serializer_read(cJSON *json, serializer &stream, savable_function<TFunc> &str)
-{
-	string s;
-
-	json_serializer_read(json, stream, s);
-
-	if (!s)
-	{
-		str = nullptr;
-		return;
-	}
-
-	for (auto p = registered_functions_head; p; p = p->next)
-	{
-		if (s == p->name)
-		{
-			savable_function<void *> t(*p);
-			str = *(savable_function<TFunc> *)&t;
-			return;
-		}
-	}
-
-	gi.error("No function matching %s\n", s.ptr());
-}
-	
 template<typename T>
-inline void json_serializer_read(cJSON *json, serializer &stream, savable_data<T> &str)
+inline void json_serializer_read(cJSON *json, serializer &stream, savable<T> &str)
 {
 	string s;
-	
+
 	json_serializer_read(json, stream, s);
 
 	if (!s)
@@ -372,18 +337,36 @@ inline void json_serializer_read(cJSON *json, serializer &stream, savable_data<T
 		return;
 	}
 
-	for (auto p = registered_data_head; p; p = p->next)
+	if constexpr(is_function_pointer_v<T>)
 	{
-		if (s == p->name)
+		for (auto p = registered_functions_head; p; p = p->next)
 		{
-			savable_data<void *> t(*p);
-			str = *(savable_data<T> *)&t;
-			return;
+			if (s == p->name)
+			{
+				decltype(*registered_functions_head) t(*p);
+				str = *(registered_savable<T> *) &t;
+				return;
+			}
 		}
-	}
 
-	gi.error("No data matching %s\n", s.ptr());
+		gi.errorfmt("No function matching {}\n", s);
+	}
+	else
+	{
+		for (auto p = registered_data_head; p; p = p->next)
+		{
+			if (s == p->name)
+			{
+				decltype(*registered_data_head) t(*p);
+				str = *(registered_savable<T> *) &t;
+				return;
+			}
+		}
+
+		gi.errorfmt("No data matching {}\n", s);
+	}
 }
+
 #else
 struct binary_serializer
 {
@@ -434,7 +417,7 @@ struct binary_serializer
 
 	inline void operator<<(const entityref &str)
 	{
-		int32_t entity_id = str.has_value() ? str->s.number : -1;
+		int32_t entity_id = str.has_value() ? str.number : -1;
 
 		stream.write((char *) &entity_id, sizeof(entity_id));
 	}
@@ -447,15 +430,9 @@ struct binary_serializer
 	}
 
 	template<typename TFunc>
-	inline void operator<<(const savable_function<TFunc> &str)
+	inline void operator<<(const savable<TFunc> &str)
 	{
 		this->operator<<(stringref(str ? str.func->name : ""));
-	}
-
-	template<typename T>
-	inline void operator<<(const savable_data<T> &str)
-	{
-		this->operator<<(stringref(str ? str.data->name : ""));
 	}
 
 	// read operators
@@ -518,8 +495,8 @@ struct binary_serializer
 			this->operator>>(v);
 	}
 	
-	template<typename TFunc>
-	inline void operator>>(savable_function<TFunc> &str)
+	template<typename T>
+	inline void operator>>(savable<T> &str)
 	{
 		string s;
 
@@ -531,45 +508,36 @@ struct binary_serializer
 			return;
 		}
 
-		for (auto p = registered_functions_head; p; p = p->next)
+		if constexpr(is_function_pointer_v<T>)
 		{
-			if (s == p->name)
+			for (auto p = registered_functions_head; p; p = p->next)
 			{
-				savable_function<void *> t(*p);
-				str = *(savable_function<TFunc> *)&t;
-				return;
+				if (s == p->name)
+				{
+					decltype(*registered_functions_head) t(*p);
+					str = *(registered_savable<T> *) &t;
+					return;
+				}
 			}
-		}
 
-		gi.error("No function matching %s\n", s.ptr());
+			gi.errorfmt("No function matching {}\n", s);
+		}
+		else
+		{
+			for (auto p = registered_data_head; p; p = p->next)
+			{
+				if (s == p->name)
+				{
+					decltype(*registered_data_head) t(*p);
+					str = *(registered_savable<T> *) &t;
+					return;
+				}
+			}
+
+			gi.errorfmt("No data matching {}\n", s);
+		}
 	}
 	
-	template<typename T>
-	inline void operator>>(savable_data<T> &str)
-	{
-		string s;
-
-		this->operator>>(s);
-
-		if (!s)
-		{
-			str = nullptr;
-			return;
-		}
-
-		for (auto p = registered_data_head; p; p = p->next)
-		{
-			if (s == p->name)
-			{
-				savable_data<void *> t(*p);
-				str = *(savable_data<T> *)&t;
-				return;
-			}
-		}
-
-		gi.error("No data matching %s\n", s.ptr());
-	}
-
 	// structs
 	void write_struct(const save_struct &struc, const void *ptr)
 	{
@@ -854,8 +822,6 @@ static save_member client_members[] = {
 	
 #ifdef THE_RECKONING
 	SAVE_MEMBER(client, quadfire_framenum),
-	SAVE_MEMBER(client, trap_framenum),
-	SAVE_MEMBER(client, trap_blew_up),
 #endif
 
 #ifdef GROUND_ZERO
@@ -873,31 +839,6 @@ static save_member client_members[] = {
 };
 
 DEFINE_SAVE_STRUCTURE(client);
-
-static save_member entity_state_members[] = {
-	SAVE_MEMBER(entity_state, origin),
-	SAVE_MEMBER(entity_state, angles),
-	SAVE_MEMBER(entity_state, old_origin),
-
-	SAVE_MEMBER(entity_state, modelindex),
-	SAVE_MEMBER(entity_state, modelindex2),
-	SAVE_MEMBER(entity_state, modelindex3),
-	SAVE_MEMBER(entity_state, modelindex4),
-
-	SAVE_MEMBER(entity_state, frame),
-	SAVE_MEMBER(entity_state, skinnum),
-
-	SAVE_MEMBER(entity_state, effects),
-	SAVE_MEMBER(entity_state, renderfx),
-
-	// solid skipped intentionally
-
-	SAVE_MEMBER(entity_state, sound),
-
-	SAVE_MEMBER(entity_state, event)
-};
-
-CREATE_STRUCTURE_SERIALIZE_FUNCS(entity_state);
 
 static save_member moveinfo_members[] = {
 	SAVE_MEMBER(moveinfo, start_origin),
@@ -950,6 +891,7 @@ static save_member monsterinfo_members[] = {
 
 	SAVE_MEMBER(monsterinfo, sight),
 	SAVE_MEMBER(monsterinfo, checkattack),
+	SAVE_MEMBER(monsterinfo, reacttodamage),
 
 	SAVE_MEMBER(monsterinfo, pause_framenum),
 	SAVE_MEMBER(monsterinfo, attack_finished),
@@ -1000,16 +942,37 @@ CREATE_STRUCTURE_SERIALIZE_FUNCS(monsterinfo);
 #endif
 
 static save_member entity_members[] = {
-	SAVE_MEMBER(entity, s),
-	SAVE_MEMBER(entity, linkcount),
+	// entity_state
+	SAVE_MEMBER(entity_state, origin),
+	SAVE_MEMBER(entity_state, angles),
+	SAVE_MEMBER(entity_state, old_origin),
 
-	SAVE_MEMBER(entity, svflags),
-	SAVE_MEMBER(entity, bounds),
+	SAVE_MEMBER(entity_state, modelindex),
+	SAVE_MEMBER(entity_state, modelindex2),
+	SAVE_MEMBER(entity_state, modelindex3),
+	SAVE_MEMBER(entity_state, modelindex4),
+
+	SAVE_MEMBER(entity_state, frame),
+	SAVE_MEMBER(entity_state, skinnum),
+
+	SAVE_MEMBER(entity_state, effects),
+	SAVE_MEMBER(entity_state, renderfx),
+
+	SAVE_MEMBER(entity_state, sound),
+
+	SAVE_MEMBER(entity_state, event),
+
+	// server_entity
+	SAVE_MEMBER(server_entity, linkcount),
+
+	SAVE_MEMBER(server_entity, svflags),
+	SAVE_MEMBER(server_entity, bounds),
 	// absmin, absmax and size skipped intentionally
-	SAVE_MEMBER(entity, solid),
-	SAVE_MEMBER(entity, clipmask),
-	SAVE_MEMBER(entity, owner),
+	SAVE_MEMBER(server_entity, solid),
+	SAVE_MEMBER(server_entity, clipmask),
+	SAVE_MEMBER(server_entity, owner),
 	
+	// entity
 	SAVE_MEMBER(entity, movetype),
 
 	SAVE_MEMBER(entity, flags),
@@ -1079,6 +1042,7 @@ static save_member entity_members[] = {
 	SAVE_MEMBER(entity, map),
 	SAVE_MEMBER(entity, viewheight),
 	SAVE_MEMBER(entity, takedamage),
+	SAVE_MEMBER(entity, bleed_style),
 	SAVE_MEMBER(entity, dmg),
 	SAVE_MEMBER(entity, radius_dmg),
 	SAVE_MEMBER(entity, dmg_radius),
@@ -1199,7 +1163,7 @@ inline void ReadGameStream(stringlit filename)
 	cJSON *clients = cJSON_GetObjectItem(stream.json, "clients");
 
 	for (auto &e : entity_range(1, game.maxclients))
-		stream.read_struct(cJSON_GetArrayItem(clients, e.s.number - 1), client_save, e.client);
+		stream.read_struct(cJSON_GetArrayItem(clients, e.number - 1), client_save, e.client);
 }
 #else
 inline void ReadGameStream(stringlit filename)
@@ -1240,7 +1204,7 @@ inline void WriteLevelStream(stringlit filename)
 
 	for (auto &ent : entity_range(0, num_entities - 1))
 		if (ent.inuse)
-			cJSON_AddItemToObject(entities_obj, itos(ent.s.number).ptr(), stream.write_struct(entity_save, &ent));
+			cJSON_AddItemToObject(entities_obj, format("{}", ent.number).data(), stream.write_struct(entity_save, &ent));
 
 	cJSON_AddItemToObject(stream.json, "entities", entities_obj);
 }
@@ -1259,7 +1223,7 @@ inline void WriteLevelStream(stringlit filename)
 		if (!ent.inuse)
 			continue;
 
-		stream << ent.s.number;
+		stream << ent.number;
 		stream.write_struct(entity_save, &ent);
 	}
 

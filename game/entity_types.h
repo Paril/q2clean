@@ -168,15 +168,24 @@ public:
 
 constexpr entityref null_entity;
 
+// special entity type that maps to an unknown entity.
+// it's also used as the head of the entity type list.
+extern struct entity_type ET_UNKNOWN;
+
 // special type to denote entities and register types that need run-time checking.
 // most entities don't need a custom ID. Entities can also "inherit" a parent type,
 // which allows for a very loose inheritence structure for comparison (for instance,
 // func_plat2 can inherit func_plat, which means that those .type comparisons to ET_FUNC_PLAT
-// will match both of them).
+// will match both of them). Note that there is no way to *un*register types: these must
+// be initialized during InitGame, otherwise loadgames will break.
 struct entity_type
 {
 private:
-	static void register_et(entity_type *type);
+	static constexpr void register_et(entity_type *type)
+	{
+		type->next = ET_UNKNOWN.next;
+		ET_UNKNOWN.next = type;
+	}
 
 	entity_type(const entity_type &) = delete;
 	entity_type(entity_type &&) = delete;
@@ -187,15 +196,20 @@ public:
 	const entity_type *next = nullptr;
 	const entity_type *parent = nullptr;
 
-	constexpr entity_type() : id("temp")
+	// this is an initializer for an empty type. these are not
+	// valid at runtime and aren't linked into the registry.
+	constexpr entity_type() : id(nullptr)
 	{
 	}
 
+	// this registers the specified type into the registry.
 	constexpr entity_type(stringlit id) : id(id)
 	{
 		register_et(this);
 	}
 
+	// register the specified type with the specified parent
+	// into the registry.
 	constexpr entity_type(stringlit id, const entity_type &parent) :
 		id(id),
 		parent(&parent)
@@ -223,10 +237,6 @@ public:
 	}
 };
 
-// special entity type that maps to an unknown entity.
-// it's also used as the head of the entity type list.
-extern entity_type ET_UNKNOWN;
-
 // simple wrapper to an entity_type-or-unknown
 struct entity_type_ref
 {
@@ -246,4 +256,6 @@ struct entity_type_ref
 	constexpr bool operator!=(const entity_type &rhs) const { return *type != rhs; }
 
 	constexpr operator const entity_type &() const { return *type; }
+
+	constexpr bool is_exact(const entity_type &rhs) const { return type->is_exact(rhs); }
 };

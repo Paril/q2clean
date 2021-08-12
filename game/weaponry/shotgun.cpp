@@ -8,6 +8,8 @@
 #include "game/ballistics/bullet.h"
 #include "shotgun.h"
 
+constexpr means_of_death MOD_SHOTGUN { .other_kill_fmt = "{0} was gunned down by {3}.\n" };
+
 static void weapon_shotgun_fire(entity &ent)
 {
 	vector	start;
@@ -27,8 +29,8 @@ static void weapon_shotgun_fire(entity &ent)
 	ent.client->kick_origin = forward * -2;
 	ent.client->kick_angles[0] = -2.f;
 
-	offset = { 0, 8,  ent.viewheight - 8.f };
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	offset = { 0, 8, ent.viewheight - 8.f };
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	if (is_quad)
 	{
@@ -39,10 +41,7 @@ static void weapon_shotgun_fire(entity &ent)
 	fire_shotgun(ent, start, forward, damage, kick, 500, 500, DEFAULT_SHOTGUN_COUNT, MOD_SHOTGUN);
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte(MZ_SHOTGUN | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_SHOTGUN | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 	ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -55,5 +54,5 @@ static void weapon_shotgun_fire(entity &ent)
 
 void Weapon_Shotgun(entity &ent)
 {
-	Weapon_Generic(ent, 7, 18, 36, 39, G_IsAnyFrame<22, 28, 34>, G_IsAnyFrame<8, 9>, weapon_shotgun_fire);
+	Weapon_Generic(ent, 7, 18, 36, 39, G_FrameIsOneOf<22, 28, 34>, G_FrameIsOneOf<8, 9>, weapon_shotgun_fire);
 }

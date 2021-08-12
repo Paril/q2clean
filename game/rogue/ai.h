@@ -40,7 +40,7 @@ void monster_done_dodge(entity &self);
 
 void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr);
 
-DECLARE_SAVABLE_FUNCTION(M_MonsterDodge);
+DECLARE_SAVABLE(M_MonsterDodge);
 
 void monster_duck_down(entity &self);
 
@@ -48,7 +48,7 @@ void monster_duck_hold(entity &self);
 
 void monster_duck_up(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(monster_duck_up);
+DECLARE_SAVABLE(monster_duck_up);
 
 void monster_jump_start(entity &self);
 

@@ -11,6 +11,8 @@
 #include "game/game.h"
 #include "hit.h"
 
+constexpr means_of_death MOD_HIT = { .other_kill_fmt = "{0} was hacked'n'slashed by {3}.\n" };
+
 /*
 =================
 fire_hit
@@ -28,7 +30,7 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 	vector	dir;
 
 	//see if enemy is in range
-	dir = self.enemy->s.origin - self.s.origin;
+	dir = self.enemy->origin - self.origin;
 	range = VectorLength(dir);
 
 	if (range > aim.x)
@@ -43,9 +45,9 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 	else
 		aim.y = self.enemy->bounds.maxs.x;
 
-	point = self.s.origin + (range * dir);
+	point = self.origin + (range * dir);
 
-	tr = gi.traceline(self.s.origin, point, self, MASK_SHOT);
+	tr = gi.traceline(self.origin, point, self, MASK_SHOT);
 
 	entityref hit_entity = tr.ent;
 
@@ -58,14 +60,12 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 			hit_entity = self.enemy;
 	}
 
-	AngleVectors(self.s.angles, &forward, &right, &up);
-	point = self.s.origin + (range * forward);
-	point = point + (aim.y * right);
-	point = point + (aim.z * up);
-	dir = point - self.enemy->s.origin;
+	AngleVectors(self.angles, &forward, &right, &up);
+	point = self.origin + (range * forward) + (aim.y * right) + (aim.z * up);
+	dir = point - self.enemy->origin;
 
 	// do the damage
-	T_Damage(hit_entity, self, self, dir, point, vec3_origin, damage, kick / 2, DAMAGE_NO_KNOCKBACK, MOD_HIT);
+	T_Damage(hit_entity, self, self, dir, point, vec3_origin, damage, kick / 2, { DAMAGE_NO_KNOCKBACK }, MOD_HIT);
 
 	if (!(hit_entity->svflags & SVF_MONSTER) && (!hit_entity->is_client()))
 		return false;

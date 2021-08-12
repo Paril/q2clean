@@ -12,6 +12,15 @@
 // Q2's engine uses an int32-wide value to represent booleans.
 using qboolean = int32_t;
 
+// water levels, from pmove and physics
+enum water_level : uint32_t
+{
+	WATER_NONE,
+	WATER_LEGS,
+	WATER_WAIST,
+	WATER_UNDER
+};
+
 // coordinate/angle compression interop
 constexpr float coord2short = 8.f;
 constexpr float angle2short = 65536.f / 360.f;
@@ -170,7 +179,7 @@ MAKE_ENUM_BITWISE(pmflags);
 // prediction stays in sync, so no floats are used.
 // if any part of the game code modifies this struct, it
 // will result in a prediction error of some degree.
-extern "C" struct pmove_state
+struct pmove_state
 {
 	pmtype	pm_type;
 
@@ -239,7 +248,7 @@ struct cvar
 };
 
 template<typename T>
-concept is_numeric_like = std::is_enum_v<T> || std::is_integral_v<T> || std::is_floating_point_v<T>;
+concept is_numeric_like = std::is_enum_v<T> || is_numeric<T>;
 
 // a wrapper for cvar that can perform conversions automatically.
 // this is the main way of interacting with cvars.
@@ -383,7 +392,9 @@ enum sound_channel : uint8_t
 	// send to all clients, not just ones in PHS (ATTN 0 will also do this)
 	CHAN_NO_PHS_ADD = 1 << 3,
 	// send by reliable message, not datagram
-	CHAN_RELIABLE = 1 << 4
+	CHAN_RELIABLE = 1 << 4,
+	// special ID for no bits (not the same as CHAN_AUTO)
+	CHAN_NONE = 0
 };
 
 MAKE_ENUM_BITWISE(sound_channel);
@@ -551,7 +562,7 @@ enum muzzleflash : uint8_t
 	//ROGUE
 
 	MZ_SILENCED = 128,	// bit flag ORed with one of the above numbers,
-	MZ_NONE = 0
+	MZ_NONE = 0			// stand-in for "no bit flags" (not the same as MZ_BLASTER technically)
 };
 
 MAKE_ENUM_BITWISE(muzzleflash)
@@ -879,17 +890,17 @@ enum svc_ops : uint8_t
 {
 	svc_bad,
 
-	svc_muzzleflash,
-	svc_muzzleflash2,
-	svc_temp_entity,
-	svc_layout,
-	svc_inventory,
+	svc_muzzleflash,	// [short] [byte]
+	svc_muzzleflash2,	// [short] [byte]
+	svc_temp_entity,	// [byte] ...
+	svc_layout,			// [string]
+	svc_inventory,		// [short[MAX_ITEMS]]
 
 	svc_sound = 9,			// <see code>
-	svc_print,			// [byte] id [string] null terminated string
+	svc_print,				// [byte] id [string] null terminated string
 	svc_stufftext,			// [string] stuffed into client's console buffer, should be \n terminated
-	svc_configstring = 13,		// [short] [string]
-	svc_centerprint = 15		// [string] to put in center of the screen
+	svc_configstring = 13,	// [short] [string]
+	svc_centerprint = 15	// [string] to put in center of the screen,
 };
 
 //
@@ -907,7 +918,7 @@ enum button_bits : uint8_t
 MAKE_ENUM_BITWISE(button_bits);
 
 // usercmd_t is sent to the server each client frame
-extern "C" struct usercmd
+struct usercmd
 {
 	uint8_t		msec;
 	button_bits	buttons;
@@ -926,11 +937,8 @@ private:
 
 constexpr size_t MAX_TOUCH = 32;
 
-extern "C" struct pmove_t
+struct pmove : public pmove_state
 {
-	// state (in / out)
-	pmove_state	s;
-
 	// command (in)
 	usercmd	cmd;
 
@@ -945,11 +953,11 @@ extern "C" struct pmove_t
 	vector	viewangles;         // clamped
 	float	viewheight;
 
-	vector	mins, maxs;         // bounding box size
+	bbox	bounds;         // bounding box size
 
 	entityref		groundentity;
 	content_flags	watertype;
-	int32_t			waterlevel;
+	water_level		waterlevel;
 
 	// callbacks to test the world
 	trace(*trace)(const vector &start, const vector &mins, const vector &maxs, const vector &end);
@@ -1114,6 +1122,7 @@ struct entity_state
 
 	vector	origin;
 	vector	angles;
+
 	// for lerping
 	vector	old_origin;
 
@@ -1131,7 +1140,7 @@ struct entity_state
 	render_effects	renderfx;
 private:
 	// solidity value sent over to clients. not used by game DLL.
-	int32_t	solid [[maybe_unused]];
+	int32_t	server_solid [[maybe_unused]];
 public:
 	sound_index	sound;			// for looping sounds, to guarantee shutoff
 #ifdef KMQUAKE2_ENGINE_MOD // Knightmare- added sound attenuation
@@ -1150,6 +1159,7 @@ struct area_list
 };
 
 constexpr size_t MAX_ENT_CLUSTERS = 16;
+constexpr size_t MAX_ENT_AREAS = 2;
 
 // entity server flags; the engine uses these, so don't change this.
 enum server_flags : uint32_t
@@ -1323,7 +1333,9 @@ struct server_client
 };
 
 // this is the structure used by all entities in Q2++.
-struct server_entity
+// this should not be modified as this has stuf used by
+// the server code!
+struct server_entity : public entity_state
 {
 	friend struct entity;
 
@@ -1342,8 +1354,6 @@ private:
 
 public:
 	// this data is shared between the game and engine
-
-	entity_state	s;
 	client			*client;
 	qboolean		inuse;
 	int32_t			linkcount;
@@ -1359,7 +1369,7 @@ private:
 
 	// back to shared members
 public:
-	area_index		areanum, areanum2;
+	array<area_index, MAX_ENT_AREAS>	areas;
 
 	server_flags	svflags;
 	bbox			bounds;
@@ -1373,7 +1383,7 @@ public:
 	// for QC compatibility mostly.
 	inline bool is_world() const
 	{
-		return s.number == 0;
+		return number == 0;
 	}
 
 	// check whether this entity is a client and
@@ -1389,6 +1399,6 @@ public:
 		return area.prev;
 	}
 
-	inline bool operator==(const server_entity &rhs) const { return s.number == rhs.s.number; }
-	inline bool operator!=(const server_entity &rhs) const { return s.number != rhs.s.number; }
+	inline bool operator==(const server_entity &rhs) const { return number == rhs.number; }
+	inline bool operator!=(const server_entity &rhs) const { return number != rhs.number; }
 };

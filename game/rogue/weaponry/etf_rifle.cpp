@@ -19,7 +19,7 @@ static void weapon_etf_rifle_fire(entity &ent)
 
 		if (level.framenum >= ent.pain_debounce_framenum)
 		{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
 			ent.pain_debounce_framenum = level.framenum + (1 * BASE_FRAMERATE);
 		}
 
@@ -49,16 +49,13 @@ static void weapon_etf_rifle_fire(entity &ent)
 	else										// left barrel
 		offset = { 15, 6, -8 };
 	
-	vector v = ent.s.origin;
+	vector v = ent.origin;
 	v[2] += ent.viewheight;
 	vector start = P_ProjectSource(ent, v, offset, forward, right, up);
 	fire_flechette (ent, start, forward, damage, 750, kick);
 
 	// send muzzle flash
-	gi.WriteByte (svc_muzzleflash);
-	gi.WriteShort (ent.s.number);
-	gi.WriteByte (MZ_ETF_RIFLE);
-	gi.multicast (ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_ETF_RIFLE).multicast(ent.origin, MULTICAST_PVS);
 #if defined(SINGLE_PLAYER)
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -71,23 +68,23 @@ static void weapon_etf_rifle_fire(entity &ent)
 	ent.client->anim_priority = ANIM_ATTACK;
 	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 	{
-		ent.s.frame = FRAME_crattak1 - 1;
+		ent.frame = FRAME_crattak1 - 1;
 		ent.client->anim_end = FRAME_crattak9;
 	}
 	else
 	{
-		ent.s.frame = FRAME_attack1 - 1;
+		ent.frame = FRAME_attack1 - 1;
 		ent.client->anim_end = FRAME_attack8;
 	}
 }
 
 void Weapon_ETF_Rifle(entity &ent)
 {
-	if (ent.client->weaponstate == WEAPON_FIRING)
-		if (ent.client->pers.inventory[ent.client->ammo_index] <= 0)
-			ent.client->ps.gunframe = 8;
+	if (ent.client->weaponstate == WEAPON_FIRING &&
+		ent.client->pers.inventory[ent.client->ammo_index] <= 0)
+		ent.client->ps.gunframe = 8;
 
-	Weapon_Generic(ent, 4, 7, 37, 41, G_IsAnyFrame<18, 28>, G_IsAnyFrame<6, 7>, weapon_etf_rifle_fire);
+	Weapon_Generic(ent, 4, 7, 37, 41, G_FrameIsOneOf<18, 28>, G_FrameIsOneOf<6, 7>, weapon_etf_rifle_fire);
 
 	if (ent.client->ps.gunframe == 8 && (ent.client->buttons & BUTTON_ATTACK))
 		ent.client->ps.gunframe = 6;

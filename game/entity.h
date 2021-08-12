@@ -55,15 +55,14 @@ enum entity_flags : uint32_t
 	FL_POWER_ARMOR = 1 << 11,
 
 #ifdef GROUND_ZERO
-	FL_MECHANICAL = 1 << 12,	// entity is mechanical, use sparks not blood
-	FL_DAMAGEABLE = 1 << 13,	// damageable, even if it normally couldn't be
+	FL_DAMAGEABLE = 1 << 12,	// damageable, even if it normally couldn't be
 #ifdef SINGLE_PLAYER
-	FL_DISGUISED = 1 << 14,	// entity is in disguise, monsters will not recognize.
+	FL_DISGUISED = 1 << 13,	// entity is in disguise, monsters will not recognize.
 #endif
-	FL_NOGIB = 1 << 15,		// player has been vaporized by a nuke, drop no gibs
+	FL_NOGIB = 1 << 14,		// player has been vaporized by a nuke, drop no gibs
 #endif
 	
-	FL_RESPAWN = 1 << 16
+	FL_RESPAWN = 1 << 15
 
 #ifdef SINGLE_PLAYER
 #ifdef GROUND_ZERO
@@ -209,6 +208,8 @@ using mdodgefunc = void(*)(entity &, entity &, float);
 using monster_func = void(*)(entity &);
 using monster_sightfunc = void(*)(entity &, entity &);
 using monster_checkattack = bool(*)(entity &);
+
+using monster_reacttodamage = void(*)(entity &, entity &, entity &, int32_t, int32_t);
 #endif
 
 enum move_state : uint8_t
@@ -248,28 +249,30 @@ struct moveinfo
 	float		remaining_distance;
 	float		decel_distance;
 
-	savable_function<mendfunc>	endfunc;
+	savable<mendfunc>	endfunc;
 };
 
 struct monsterinfo
 {
-	savable_data<const mmove_t>	currentmove;
+	savable<const mmove_t>	currentmove;
 	ai_flags	aiflags;
 	int         nextframe;
 	float       scale;
 
-	savable_function<monster_func>	stand;
-	savable_function<monster_func>	idle;
-	savable_function<monster_func>	search;
-	savable_function<monster_func>	walk;
-	savable_function<monster_func>	run;
-	savable_function<monster_func>	attack;
-	savable_function<monster_func>	melee;
+	savable<monster_func>	stand;
+	savable<monster_func>	idle;
+	savable<monster_func>	search;
+	savable<monster_func>	walk;
+	savable<monster_func>	run;
+	savable<monster_func>	attack;
+	savable<monster_func>	melee;
 
-	savable_function<mdodgefunc>	dodge;
+	savable<mdodgefunc>	dodge;
 
-	savable_function<monster_sightfunc>		sight;
-	savable_function<monster_checkattack>	checkattack;
+	savable<monster_sightfunc>		sight;
+	savable<monster_checkattack>	checkattack;
+
+	savable<monster_reacttodamage>	reacttodamage;
 
 	gtime	pause_framenum;
 	gtime	attack_finished;
@@ -287,15 +290,15 @@ struct monsterinfo
 	int			power_armor_power;
 
 #ifdef ROGUE_AI
-	savable_function<mblockedfunc> blocked;
+	savable<mblockedfunc> blocked;
 	gtime		last_hint_framenum;		// last time the monster checked for hintpaths.
 	entityref	goal_hint;			// which hint_path we're trying to get to
 	int32_t		medicTries;
 	entityref	badMedic1, badMedic2;	// these medics have declared this monster "unhealable"
 	entityref	healer;	// this is who is healing this monster
-	savable_function<mduckfunc>		duck;
-	savable_function<munduckfunc>	unduck;
-	savable_function<msidestepfunc>	sidestep;
+	savable<mduckfunc>		duck;
+	savable<munduckfunc>	unduck;
+	savable<msidestepfunc>	sidestep;
 	float	base_height;
 	gtime	next_duck_framenum;
 	gtime	duck_wait_framenum;
@@ -330,6 +333,18 @@ enum plat2flags : uint8_t
 
 MAKE_ENUM_BITWISE(plat2flags);
 #endif
+
+// this enum describes how this entity responds to damage.
+enum bleed_style : uint8_t
+{
+	// use the default damage visual response specified
+	// by the damage type
+	BLEED_DEFAULT,
+	// always use sparks for damage
+	BLEED_MECHANICAL,
+	// always use green blood for damage
+	BLEED_GREEN
+};
 
 // entity is inherited from the server entity, and contains game-local
 // data.
@@ -399,14 +414,14 @@ public:
 	float		ideal_yaw;
 
 	gtime		nextthink;
-	savable_function<ethinkfunc>	prethink;
-	savable_function<ethinkfunc>	think;
+	savable<ethinkfunc>	prethink;
+	savable<ethinkfunc>	think;
 
-	savable_function<blockedfunc>	blocked;
-	savable_function<touchfunc>		touch;
-	savable_function<usefunc>		use;
-	savable_function<painfunc>		pain;
-	savable_function<diefunc>		die;
+	savable<blockedfunc>	blocked;
+	savable<touchfunc>		touch;
+	savable<usefunc>		use;
+	savable<painfunc>		pain;
+	savable<diefunc>		die;
 
 	gtime	touch_debounce_framenum;
 	gtime	pain_debounce_framenum;
@@ -425,8 +440,9 @@ public:
 	gtime	powerarmor_framenum;
 
 	string	map;
-	int32_t	viewheight;
+	float	viewheight;
 	bool	takedamage;
+	bleed_style	bleed_style;
 	int32_t	dmg;
 	int32_t	radius_dmg;
 	float	dmg_radius;
@@ -457,7 +473,7 @@ public:
 	gtime	last_sound_framenum;
 
 	content_flags	watertype;
-	int32_t			waterlevel;
+	water_level		waterlevel;
 
 	vector	move_origin;
 	vector	move_angles;
@@ -505,7 +521,7 @@ entity &itoe(size_t index);
 // fetch an entity's number
 constexpr size_t etoi(const entity &ent)
 {
-	return ent.s.number;
+	return ent.number;
 }
 
 // fetch the entity that follows this one
@@ -541,3 +557,34 @@ extern const uint32_t &max_entities;
 void WipeEntities();
 
 #include "game/client.h"
+
+// formatter for entity
+#include "lib/string/format.h"
+
+template<>
+struct std::formatter<entity>
+{
+	template <typename FormatParseContext>
+	auto parse(FormatParseContext &pc)
+	{
+		return pc.end();
+	}
+
+	template<typename FormatContext>
+	auto format(const ::entity &v, FormatContext &ctx)
+	{
+		return std::vformat_to(ctx.out(), "{}[{}] @ {}", std::make_format_args(v.type.type->id, v.number, v.solid == SOLID_BSP ? v.absbounds.center() : v.origin));
+	}
+};
+
+template<>
+struct std::formatter<entityref> : std::formatter<entity>
+{
+	template<typename FormatContext>
+	auto format(const ::entityref &v, FormatContext &ctx)
+	{
+		if (!v.has_value())
+			return std::vformat_to(ctx.out(), "null entity", std::make_format_args());
+		return std::formatter<entity>::format(v, ctx);
+	}
+};

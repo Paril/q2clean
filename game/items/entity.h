@@ -20,11 +20,11 @@ void SetRespawn(entity &ent, float delay);
 
 void Touch_Item(entity &ent, entity &other, vector plane, const surface &surf);
 
-DECLARE_SAVABLE_FUNCTION(Touch_Item);
+DECLARE_SAVABLE(Touch_Item);
 
 void droptofloor(entity &ent);
 
-DECLARE_SAVABLE_FUNCTION(droptofloor);
+DECLARE_SAVABLE(droptofloor);
 
 entity &Drop_Item(entity &ent, const gitem_t &it);
 
@@ -50,3 +50,6 @@ be on an entity that hasn't spawned yet.
 ============
 */
 void SpawnItem(entity &ent, const gitem_t &it);
+
+// base type for item entities
+extern entity_type ET_ITEM;

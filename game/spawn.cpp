@@ -196,9 +196,9 @@ constexpr spawn_field spawn_fields[] =
 	SPAWN_EFIELD(volume),
 	SPAWN_EFIELD(attenuation),
 	SPAWN_EFIELD(map),
-	SPAWN_EFIELD_NAMED("origin", s.origin),
-	SPAWN_EFIELD_NAMED("angles", s.angles),
-	SPAWN_EFIELD_NAMED("angle", s.angles.y),
+	SPAWN_EFIELD(origin),
+	SPAWN_EFIELD(angles),
+	SPAWN_EFIELD_NAMED("angle", angles.y),
 	{ "light", nullptr, false },
 
 	// spawntemp fields
@@ -257,7 +257,7 @@ static void ED_ParseEdict(stringlit entities, size_t &entities_offset, entity &e
 		if (key == "}")
 			break;
 		else if (strempty(key))
-			gi.error("%s: EOF without closing brace", __func__);
+			gi.errorfmt("{}: EOF without closing brace");
 
 		init = true;
 		
@@ -272,7 +272,7 @@ static void ED_ParseEdict(stringlit entities, size_t &entities_offset, entity &e
 		string value = strtok(entities, entities_offset);
 		
 		if (!ED_ParseField(key, value, ent))
-			gi.dprintf("%s: %s is not a field\n", __func__, key.ptr());
+			gi.dprintfmt("{}: {} is not a field\n", __func__, key);
 	}
 	
 	if (!init)
@@ -310,7 +310,7 @@ bool ED_CallSpawn(entity &ent)
 	// no type, so determine it from classname
 	if (!st.classname)
 	{
-		gi.dprintf("%s: NULL classname\n", __func__);
+		gi.dprintfmt("{}: NULL classname\n", __func__);
 		G_FreeEdict(ent);
 		return false;
 	}
@@ -343,7 +343,7 @@ bool ED_CallSpawn(entity &ent)
 		}
 	}
 
-	gi.dprintf("%s: %s doesn't have a spawn function\n", __func__, st.classname.ptr());
+	gi.dprintfmt("{}: {} doesn't have a spawn function\n", __func__, st.classname);
 	G_FreeEdict(ent);
 	return false;
 }
@@ -434,7 +434,7 @@ static inline void G_FixTeams()
 		master.flags |= FL_TEAMSLAVE;
 	}
 
-	gi.dprintf ("%i teams repaired\n", c);
+	gi.dprintfmt("{} teams repaired\n", c);
 }
 
 static inline void G_FindTeams()
@@ -480,7 +480,7 @@ static inline void G_FindTeams()
 		}
 	}
 
-	gi.dprintf("%i teams with %i entities\n", c, c2);
+	gi.dprintfmt("{} teams with {} entities\n", c, c2);
 	
 	G_FixTeams();
 }
@@ -490,15 +490,10 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 	size_t entities_offset = 0;
 
 #ifdef SINGLE_PLAYER
-	int32_t skill_level = (int32_t)skill;
-
-	if (skill_level < 0)
-		skill_level = 0;
-	if (skill_level > 3)
-		skill_level = 3;
+	int32_t skill_level = clamp(0, (int32_t)skill, 3);
 
 	if (skill != skill_level)
-		gi.cvar_forceset("skill", itos(skill_level));
+		gi.cvar_forcesetfmt("skill", "{}", skill_level);
 #endif
 
 	level = {};
@@ -517,12 +512,12 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 			break;
 
 		if (token != "{")
-			gi.error("%s: found %s when expecting {", __func__, token.ptr());
+			gi.errorfmt("{}: found {} when expecting {", __func__, token);
 		
 		if (ent->inuse)
 			ent = G_Spawn();
 		else
-			G_InitEdict(ent);	
+			G_InitEdict(ent);
 		
 		ED_ParseEdict(entities, entities_offset, ent);
 
@@ -577,7 +572,7 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 			inhibit++;
 #ifdef GROUND_ZERO
 		else
-			ent->s.renderfx |= RF_IR_VISIBLE;
+			ent->renderfx |= RF_IR_VISIBLE;
 #endif
 	
 		ClearSpawnTemp();
@@ -585,7 +580,7 @@ void SpawnEntities(stringlit mapname, stringlit entities, stringlit spawnpoint)
 	
 	ClearSpawnTemp();
 
-	gi.dprintf("%i entities inhibited\n", inhibit);
+	gi.dprintfmt("{} entities inhibited\n", inhibit);
 
 	G_FindTeams();
 #ifdef SINGLE_PLAYER
@@ -617,7 +612,7 @@ static void SP_worldspawn(entity &ent)
 {
 	ent.movetype = MOVETYPE_PUSH;
 	ent.solid = SOLID_BSP;
-	ent.s.modelindex = MODEL_WORLD;      // world model is always index 1
+	ent.modelindex = MODEL_WORLD;      // world model is always index 1
 
 	//---------------
 
@@ -646,13 +641,13 @@ static void SP_worldspawn(entity &ent)
 	else
 		gi.configstring(CS_SKY, "unit1_");
 
-	gi.configstring(CS_SKYROTATE, va("%f", st.skyrotate));
+	gi.configstringfmt(CS_SKYROTATE, "{}", st.skyrotate);
 
-	gi.configstring(CS_SKYAXIS, va("%f %f %f", st.skyaxis[0], st.skyaxis[1], st.skyaxis[2]));
+	gi.configstringfmt(CS_SKYAXIS, "{}", st.skyaxis);
 
-	gi.configstring(CS_CDTRACK, va("%i", ent.sounds));
+	gi.configstringfmt(CS_CDTRACK, "{}", ent.sounds);
 
-	gi.configstring(CS_MAXCLIENTS, va("%i", game.maxclients));
+	gi.configstringfmt(CS_MAXCLIENTS, "{}", game.maxclients);
 
 	// status bar program
 	gi.configstring(CS_STATUSBAR, G_GetStatusBar());
@@ -708,9 +703,7 @@ static void SP_worldspawn(entity &ent)
 	gi.soundindex("*pain100_2.wav");
 
 	// sexed models
-	for (auto &item : item_list())
-		if (item.vwep_model)
-			gi.modelindex(item.vwep_model);
+	InitVWeps();
 
 	gi.soundindex("player/gasp1.wav");      // gasping for air
 	gi.soundindex("player/gasp2.wav");      // head breaking surface, not gasping
@@ -742,7 +735,6 @@ static void SP_worldspawn(entity &ent)
 	sm_meat_index = gi.modelindex("models/objects/gibs/sm_meat/tris.md2");
 	gi.modelindex("models/objects/gibs/arm/tris.md2");
 	gi.modelindex("models/objects/gibs/bone/tris.md2");
-	gi.modelindex("models/objects/gibs/bone2/tris.md2");
 	gi.modelindex("models/objects/gibs/chest/tris.md2");
 	gi.modelindex("models/objects/gibs/skull/tris.md2");
 	gi.modelindex("models/objects/gibs/head2/tris.md2");

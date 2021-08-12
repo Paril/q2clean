@@ -8,6 +8,8 @@
 #include "game/ballistics/bullet.h"
 #include "supershotgun.h"
 
+constexpr means_of_death MOD_SSHOTGUN { .other_kill_fmt = "{0} was blown away by {3}'s super shotgun.\n" };
+
 static void weapon_supershotgun_fire(entity &ent)
 {
 	vector	start;
@@ -23,7 +25,7 @@ static void weapon_supershotgun_fire(entity &ent)
 	ent.client->kick_angles[0] = -2.f;
 
 	offset = { 0, 8,  ent.viewheight - 8.f };
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	if (is_quad)
 	{
@@ -41,10 +43,7 @@ static void weapon_supershotgun_fire(entity &ent)
 	fire_shotgun(ent, start, forward, damage, kick, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, DEFAULT_SSHOTGUN_COUNT / 2, MOD_SSHOTGUN);
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte(MZ_SSHOTGUN | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_SSHOTGUN | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 	ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -57,5 +56,5 @@ static void weapon_supershotgun_fire(entity &ent)
 
 void Weapon_SuperShotgun(entity &ent)
 {
-	Weapon_Generic(ent, 6, 17, 57, 61, G_IsAnyFrame<29, 42, 57>, G_IsAnyFrame<7>, weapon_supershotgun_fire);
+	Weapon_Generic(ent, 6, 17, 57, 61, G_FrameIsOneOf<29, 42, 57>, G_FrameIsOneOf<7>, weapon_supershotgun_fire);
 }

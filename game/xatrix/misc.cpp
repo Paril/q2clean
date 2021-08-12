@@ -12,9 +12,9 @@ void ThrowGibACID(entity &self, stringlit gibname, int32_t damage, gib_type type
 {
 	entity &gib = ThrowGib(self, gibname, damage, type);
 
-	gib.s.effects &= ~EF_GIB;
-	gib.s.effects |= EF_GREENGIB;
-	gib.s.renderfx |= RF_FULLBRIGHT;
+	gib.effects &= ~EF_GIB;
+	gib.effects |= EF_GREENGIB;
+	gib.renderfx |= RF_FULLBRIGHT;
 
 	if (type == GIB_ORGANIC)
 	{
@@ -29,10 +29,10 @@ void ThrowHeadACID(entity &self, stringlit gibname, int32_t damage, gib_type typ
 {
 	ThrowHead(self, gibname, damage, type);
   
-	self.s.effects &= ~EF_GIB;
-	self.s.effects |= EF_GREENGIB;
-	self.s.renderfx |= RF_FULLBRIGHT;
-	self.s.sound = SOUND_NONE;
+	self.effects &= ~EF_GIB;
+	self.effects |= EF_GREENGIB;
+	self.renderfx |= RF_FULLBRIGHT;
+	self.sound = SOUND_NONE;
 }
 
 #include "game/func.h"
@@ -44,7 +44,7 @@ static void SP_misc_crashviper(entity &ent)
 {
 	if (!ent.target)
 	{
-		gi.dprintf ("misc_viper without a target at %s\n", vtos(ent.s.origin).ptr());
+		gi.dprintfmt("{}: no target\n", ent);
 		G_FreeEdict (ent);
 		return;
 	}
@@ -54,7 +54,7 @@ static void SP_misc_crashviper(entity &ent)
 
 	ent.movetype = MOVETYPE_PUSH;
 	ent.solid = SOLID_NOT;
-	ent.s.modelindex = gi.modelindex ("models/ships/bigviper/tris.md2");
+	ent.modelindex = gi.modelindex ("models/ships/bigviper/tris.md2");
 	ent.bounds = {
 		.mins = { -16, -16, 0 },
 		.maxs = { 16, 16, 32 }
@@ -83,10 +83,10 @@ static void misc_viper_missile_use(entity &self, entity &, entity &)
 {
 	self.enemy = G_FindEquals<&entity::targetname>(world, self.target);
 	
-	vector vec = self.enemy->s.origin;
+	vector vec = self.enemy->origin;
 	vec[2] += 16;	// Knightmare fixed
 	
-	vector start = self.s.origin;
+	vector start = self.origin;
 	vector dir = vec - start;
 	VectorNormalize (dir);
 	
@@ -96,7 +96,7 @@ static void misc_viper_missile_use(entity &self, entity &, entity &)
 	self.think = SAVABLE(G_FreeEdict);
 }
 
-static REGISTER_SAVABLE_FUNCTION(misc_viper_missile_use);
+REGISTER_STATIC_SAVABLE(misc_viper_missile_use);
 
 static void SP_misc_viper_missile(entity &self)
 {
@@ -107,7 +107,7 @@ static void SP_misc_viper_missile(entity &self)
 	if (!self.dmg)
 		self.dmg = 250;
 
-	self.s.modelindex = gi.modelindex ("models/objects/bomb/tris.md2");
+	self.modelindex = gi.modelindex ("models/objects/bomb/tris.md2");
 
 	self.use = SAVABLE(misc_viper_missile_use);
 	self.svflags |= SVF_NOCLIENT;
@@ -126,7 +126,7 @@ static void SP_misc_transport(entity &ent)
 {
 	if (!ent.target)
 	{
-		gi.dprintf ("%s without a target at %s\n", st.classname.ptr(), vtos(ent.s.origin).ptr());
+		gi.dprintfmt("{}: no target\n", ent);
 		G_FreeEdict (ent);
 		return;
 	}
@@ -136,7 +136,7 @@ static void SP_misc_transport(entity &ent)
 
 	ent.movetype = MOVETYPE_PUSH;
 	ent.solid = SOLID_NOT;
-	ent.s.modelindex = gi.modelindex ("models/objects/ship/tris.md2");
+	ent.modelindex = gi.modelindex ("models/objects/ship/tris.md2");
 
 	ent.bounds = {
 		.mins = { -16, -16, 0 },
@@ -165,10 +165,10 @@ static sound_index amb4sound;
 static void amb4_think(entity &ent)
 {
 	ent.nextthink = level.framenum + (gtime)(2.7 * BASE_FRAMETIME);
-	gi.sound(ent, CHAN_VOICE, amb4sound, 1, ATTN_NONE, 0);
+	gi.sound(ent, CHAN_VOICE, amb4sound, ATTN_NONE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(amb4_think);
+REGISTER_STATIC_SAVABLE(amb4_think);
 
 static void SP_misc_amb4(entity &ent)
 {
@@ -179,6 +179,8 @@ static void SP_misc_amb4(entity &ent)
 }
 
 static REGISTER_ENTITY(MISC_AMB4, misc_amb4);
+
+constexpr means_of_death MOD_NUKED { .self_kill_fmt = "{0} was de-atomized by a nuke.\n" };
 
 /*QUAKED misc_nuke (1 0 0) (-16 -16 -16) (16 16 16)
 */
@@ -192,15 +194,15 @@ static void use_nuke(entity &self, entity &, entity &)
 			continue;
 
 		if (from.is_client())
-			T_Damage (from, self, self, vec3_origin, from.s.origin, vec3_origin, 100000, 1, DAMAGE_NONE, MOD_TRAP);
+			T_Damage (from, self, self, vec3_origin, from.origin, vec3_origin, 100000, 1, { DAMAGE_NONE }, MOD_NUKED);
 		else if (from.svflags & SVF_MONSTER)
 			G_FreeEdict (from);
 	}
 
-	self.use = 0;
+	self.use = nullptr;
 }
 
-static REGISTER_SAVABLE_FUNCTION(use_nuke);
+REGISTER_STATIC_SAVABLE(use_nuke);
 
 static void SP_misc_nuke(entity &ent)
 {

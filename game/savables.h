@@ -2,147 +2,128 @@
 
 #include "config.h"
 #include "lib/protocol.h"
+#include <type_traits>
+
+template<typename T>
+struct is_function_pointer
+{
+	static constexpr bool value = std::is_pointer<T>::value ? std::is_function<typename std::remove_pointer<T>::type>::value : false;
+};
+
+template<typename T>
+constexpr bool is_function_pointer_v = is_function_pointer<T>::value;
 
 #ifdef SAVING
 
-#include <type_traits>
 #include "lib/types.h"
 #include "lib/string.h"
 
-template<typename TFunc>
-struct registered_save_function
+// savable piece of data
+template<typename T>
+struct registered_savable
 {
-	stringlit					name;
-	TFunc						address;
-	registered_save_function	*next;
+	static constexpr bool function_ptr = is_function_pointer_v<T>;
+	using address_type = std::conditional_t<function_ptr, T, const T &>;
 
-	registered_save_function(stringlit name, TFunc address);
+	stringlit			name;
+	address_type		address;
+	registered_savable	*next;
+
+	constexpr registered_savable(stringlit name, address_type address);
 };
 
-// linked list pointing to all savable functions.
-extern registered_save_function<void *> *registered_functions_head;
-
-template<typename TFunc>
-registered_save_function<TFunc>::registered_save_function(stringlit name, TFunc address) :
-	name(name),
-	address(address),
-	next((registered_save_function<TFunc> *)registered_functions_head)
-{
-	registered_functions_head = (registered_save_function<void *> *)this;
-}
+extern registered_savable<void *> *registered_data_head;
+extern registered_savable<void(*)()> *registered_functions_head;
 
 template<typename T>
-struct registered_save_data
-{
-	stringlit				name;
-	T &address;
-	registered_save_data *next;
-
-	registered_save_data(stringlit name, T &address);
-};
-
-// linked list pointing to all savable functions.
-extern registered_save_data<void *> *registered_data_head;
-
-template<typename T>
-registered_save_data<T>::registered_save_data(stringlit name, T &address) :
+constexpr registered_savable<T>::registered_savable(stringlit name, address_type address) :
 	name(name),
 	address(address),
-	next((registered_save_data<T> *)registered_data_head)
+	next(function_ptr ? (registered_savable *) registered_functions_head : (registered_savable *) registered_data_head)
 {
-	registered_data_head = (registered_save_data<void *> *)this;
+	if constexpr(function_ptr)
+		registered_functions_head = (decltype(registered_functions_head)) this;
+	else
+		registered_data_head = (decltype(registered_data_head)) this;
 }
 
 // Fetch the savable name for the given identifier
 #define SAVABLE(n) \
 	n##_savable
 
-// Register a function as savable; this must be done in a source file.
-#define REGISTER_SAVABLE_FUNCTION(func) \
-	registered_save_function<decltype(&func)> SAVABLE(func) = { #func, func }
+template<typename T>
+using savable_type = std::conditional_t<std::is_function_v<T>, T *, T>;
+
+// Register something as savable; this must be done in a source file.
+// If you're not exporting the savable, use REGISTER_STATIC_SAVABLE
+#define REGISTER_SAVABLE(T) \
+	registered_savable<savable_type<decltype(T)>> SAVABLE(T) = { #T, T }
+
+#define REGISTER_STATIC_SAVABLE(T) \
+	static REGISTER_SAVABLE(T)
 
 // Forward-declare a function as savable; this is done in headers, generally, to
-// expose a _savable to outside of its source file.
-#define DECLARE_SAVABLE_FUNCTION(func) \
-	extern registered_save_function<decltype(&func)> SAVABLE(func)
+// expose a savable to outside of its source file.
+#define DECLARE_SAVABLE(T) \
+	extern registered_savable<savable_type<decltype(T)>> SAVABLE(T)
 
-// Register a function as savable; this must be done in a source file.
-#define REGISTER_SAVABLE_DATA(data) \
-	registered_save_data<decltype(data)> SAVABLE(data) = { #data, data }
-
-// Forward-declare a function as savable; this is done in headers, generally, to
-// expose a _savable to outside of its source file.
-#define DECLARE_SAVABLE_DATA(func) \
-	extern registered_save_data<decltype(data)> SAVABLE(data)
-
-// This type represents a function that can be serialized to disk.
+// This type represents a function or data that can be serialized to disk.
 // It is written out as a string and can be pulled back in across
 // platforms and architectures.
-template<typename TFunc>
-struct savable_function
+template<typename T>
+struct savable
 {
-	const registered_save_function<TFunc> *func;
+	static constexpr bool is_function = is_function_pointer_v<T>;
+	using ptr_type = std::conditional_t<is_function, T, T *>;
 
-	savable_function(const registered_save_function<TFunc> &func) : func(&func)
+	const registered_savable<T> *registry;
+
+	constexpr savable(const registered_savable<T> &registry) : registry(&registry)
 	{
 	}
 
-	savable_function(nullptr_t) : func(nullptr)
+	constexpr savable(const registered_savable<T> *registry) : registry(registry)
 	{
 	}
 
-	savable_function() : func(nullptr)
+	constexpr savable(nullptr_t) : registry(nullptr)
 	{
 	}
+
+	constexpr savable() : registry(nullptr)
+	{
+	}
+
+	explicit operator bool() const { return registry; }
 
 	template<typename... Args>
-	std::invoke_result_t<TFunc, Args...> operator()(Args&&... args)
+	std::invoke_result_t<T, Args...> operator()(Args&&... args) requires is_function
 	{
-		if constexpr (std::is_void_v<std::invoke_result_t<TFunc, Args...>>)
-			func->address(std::forward<Args>(args)...);
+		if constexpr (std::is_void_v<std::invoke_result_t<T, Args...>>)
+			registry->address(std::forward<Args>(args)...);
 		else
-			return func->address(std::forward<Args>(args)...);
+			return registry->address(std::forward<Args>(args)...);
 	}
 
-	explicit operator bool() const { return func; }
-	explicit operator TFunc() const { return func ? func->address : nullptr; }
-
-	bool operator==(const savable_function &f) const { return f.func == func; }
-	bool operator!=(const savable_function &f) const { return f.func != func; }
-
-	bool operator==(TFunc f) const { return f == (TFunc) *this; }
-	bool operator!=(TFunc f) const { return f != (TFunc) *this; }
-};
-
-// This type represents a function that can be serialized to disk.
-// It is written out as a string and can be pulled back in across
-// platforms and architectures.
-template<typename TData>
-struct savable_data
-{
-	const registered_save_data<TData> *data;
-
-	savable_data(const registered_save_data<TData> &data) : data(&data)
+	constexpr operator ptr_type() const
 	{
+		if constexpr (is_function)
+			return registry ? registry->address : nullptr;
+		else
+			return registry ? &registry->address : nullptr;
 	}
 
-	savable_data(const registered_save_data<TData> *data) : data(data)
-	{
-	}
+	ptr_type operator->() const requires (!is_function) { return &registry->address; }
+	ptr_type operator*() const requires (!is_function) { return &registry->address; }
 
-	savable_data() : data(nullptr)
-	{
-	}
+	bool operator==(const savable &f) const { return f.registry == registry; }
+	bool operator!=(const savable &f) const { return f.registry != registry; }
 
-	TData *operator->() const { return &data->address; }
-	TData *operator*() const { return &data->address; }
+	bool operator==(const T *f) const { return f == (ptr_type) *this; }
+	bool operator!=(const T *f) const { return f != (ptr_type) *this; }
 
-	operator TData *() const { return data ? &data->address : nullptr; }
-
-	explicit operator bool() const { return data; }
-
-	bool operator==(const savable_data &f) const { return f.data == data; }
-	bool operator!=(const savable_data &f) const { return f.data != data; }
+	bool operator==(const T &f) const { return f == (ptr_type) *this; }
+	bool operator!=(const T &f) const { return f != (ptr_type) *this; }
 };
 
 void WriteGame(stringlit filename, qboolean autosave);
@@ -159,16 +140,12 @@ void ReadLevel(stringlit filename);
 
 #define SAVABLE(n) n
 
-#define REGISTER_SAVABLE_FUNCTION(func)
-#define DECLARE_SAVABLE_FUNCTION(func)
-#define REGISTER_SAVABLE_DATA(data)
-#define DECLARE_SAVABLE_DATA(data)
+#define REGISTER_SAVABLE(func)
+#define REGISTER_STATIC_SAVABLE(func)
+#define DECLARE_SAVABLE(func)
 
-template<typename TFunc>
-using savable_function = TFunc;
-
-template<typename TData>
-using savable_data = TData *;
+template<typename T>
+using savable = std::conditional_t<std::is_function_v<T>, T *, std::conditional_t<is_function_pointer_v<T>, T, T *>>;
 
 #include "lib/string.h"
 #include "lib/protocol.h"
@@ -182,3 +159,4 @@ constexpr void WriteLevel(stringlit) { }
 constexpr void ReadLevel(stringlit) { }
 
 #endif
+

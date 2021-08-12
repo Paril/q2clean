@@ -6,5 +6,5 @@
 #include "game/entity_types.h"
 #include "lib/math/vector.h"
 
-void fire_prox(entity &self, vector start, vector aimdir, int32_t damage_multiplier, int32_t speed);
+void fire_prox(entity &self, vector start, vector aimdir, int32_t dmg_multiplier, int32_t speed);
 #endif

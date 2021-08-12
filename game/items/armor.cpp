@@ -95,15 +95,15 @@ gitem_id PowerArmorType(entity &ent)
 void Use_PowerArmor(entity &ent, const gitem_t &)
 {
 	if (ent.flags & FL_POWER_ARMOR)
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/power2.wav"), 1, ATTN_NORM, 0);
+		gi.sound(ent, gi.soundindex("misc/power2.wav"));
 	else
 	{
 		if (!ent.client->pers.inventory[ITEM_CELLS])
 		{
-			gi.cprintf(ent, PRINT_HIGH, "No cells for power armor.\n");
+			gi.cprint(ent, PRINT_HIGH, "No cells for power armor.\n");
 			return;
 		}
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/power1.wav"), 1, ATTN_NORM, 0);
+		gi.sound(ent, gi.soundindex("misc/power1.wav"));
 	}
 
 	ent.flags ^= FL_POWER_ARMOR;

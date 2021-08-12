@@ -124,7 +124,7 @@ bool FindTarget(entity &self);
 
 bool M_CheckAttack(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(M_CheckAttack);
+DECLARE_SAVABLE(M_CheckAttack);
 
 /*
 =============

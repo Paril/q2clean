@@ -21,7 +21,7 @@ static void Weapon_HyperBlaster_Fire(entity &ent)
 		{
 			if (level.framenum >= ent.pain_debounce_framenum)
 			{
-				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
 				ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
 			}
 			NoAmmoWeaponChange(ent);
@@ -56,12 +56,12 @@ static void Weapon_HyperBlaster_Fire(entity &ent)
 			ent.client->anim_priority = ANIM_ATTACK;
 			if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 			{
-				ent.s.frame = FRAME_crattak1 - 1;
+				ent.frame = FRAME_crattak1 - 1;
 				ent.client->anim_end = FRAME_crattak9;
 			}
 			else
 			{
-				ent.s.frame = FRAME_attack1 - 1;
+				ent.frame = FRAME_attack1 - 1;
 				ent.client->anim_end = FRAME_attack8;
 			}
 		}
@@ -74,12 +74,12 @@ static void Weapon_HyperBlaster_Fire(entity &ent)
 
 	if (ent.client->ps.gunframe == 12)
 	{
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"), 1, ATTN_NORM, 0);
+		gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"));
 		ent.client->weapon_sound = SOUND_NONE;
 	}
 }
 
 void Weapon_HyperBlaster(entity &ent)
 {
-	Weapon_Generic(ent, 5, 20, 49, 53, G_IsAnyFrame, G_IsAnyFrame<6, 7, 8, 9, 10, 11>, Weapon_HyperBlaster_Fire);
+	Weapon_Generic(ent, 5, 20, 49, 53, G_FrameIsNone, G_FrameIsBetween<6, 11>, Weapon_HyperBlaster_Fire);
 }

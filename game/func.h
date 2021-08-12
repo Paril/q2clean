@@ -8,7 +8,7 @@
 
 constexpr spawn_flag PLAT_LOW_TRIGGER	= (spawn_flag)1;
 
-void Move_Calc(entity &ent, vector dest, savable_function<ethinkfunc> func);
+void Move_Calc(entity &ent, vector dest, savable<ethinkfunc> func);
 
 entity &plat_spawn_inside_trigger(entity &ent);
 
@@ -18,11 +18,11 @@ constexpr spawn_flag TRAIN_BLOCK_STOPS	= (spawn_flag)4;
 
 void func_train_find(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(func_train_find);
+DECLARE_SAVABLE(func_train_find);
 
 void train_use(entity &self, entity &other, entity &cactivator);
 
-DECLARE_SAVABLE_FUNCTION(train_use);
+DECLARE_SAVABLE(train_use);
 
 void Use_Plat(entity &ent, entity &other [[maybe_unused]], entity &);
 

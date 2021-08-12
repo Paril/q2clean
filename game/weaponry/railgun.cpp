@@ -43,14 +43,11 @@ static void weapon_railgun_fire(entity &ent)
 	ent.client->kick_angles[0] = -3.f;
 
 	vector offset = { 0, 7, ent.viewheight - 8.f };
-	vector start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	vector start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 	fire_rail(ent, start, forward, damage, kick);
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte(MZ_RAILGUN | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_RAILGUN | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 	ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -63,5 +60,5 @@ static void weapon_railgun_fire(entity &ent)
 
 void Weapon_Railgun(entity &ent)
 {
-	Weapon_Generic(ent, 3, 18, 56, 61, G_IsAnyFrame<56>, G_IsAnyFrame<4>, weapon_railgun_fire);
+	Weapon_Generic(ent, 3, 18, 56, 61, G_FrameIsOneOf<56>, G_FrameIsOneOf<4>, weapon_railgun_fire);
 }

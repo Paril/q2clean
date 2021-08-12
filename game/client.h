@@ -224,8 +224,6 @@ struct client : public server_client
 
 #ifdef THE_RECKONING
 	gtime	quadfire_framenum;
-	gtime	trap_framenum;
-	bool	trap_blew_up;
 #endif
 
 #ifdef GROUND_ZERO

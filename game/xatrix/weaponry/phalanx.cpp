@@ -27,7 +27,7 @@ static void weapon_phalanx_fire(entity &ent)
 	ent.client->kick_angles[0] = -2;
 
 	vector offset { 0, 8, ent.viewheight - 8.f };
-	vector start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	vector start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	if (ent.client->ps.gunframe == 8)
 	{
@@ -58,10 +58,7 @@ static void weapon_phalanx_fire(entity &ent)
 		fire_plasma(ent, start, forward, damage, 725, damage_radius, radius_damage);
 
 		// send muzzle flash
-		gi.WriteByte(svc_muzzleflash);
-		gi.WriteShort(ent.s.number);
-		gi.WriteByte(MZ_PHALANX | is_silenced);
-		gi.multicast(ent.s.origin, MULTICAST_PVS);
+		gi.ConstructMessage(svc_muzzleflash, ent, MZ_PHALANX | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 #ifdef SINGLE_PLAYER
 
 		PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -73,6 +70,6 @@ static void weapon_phalanx_fire(entity &ent)
 
 void Weapon_Phalanx(entity &ent)
 {
-	Weapon_Generic(ent, 5, 20, 58, 63, G_IsAnyFrame<29, 42, 55>, G_IsAnyFrame<7, 8>, weapon_phalanx_fire);
+	Weapon_Generic(ent, 5, 20, 58, 63, G_FrameIsOneOf<29, 42, 55>, G_FrameIsOneOf<7, 8>, weapon_phalanx_fire);
 }
 #endif

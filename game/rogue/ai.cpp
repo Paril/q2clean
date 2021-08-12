@@ -76,21 +76,21 @@ bool blocked_checkshot(entity &self, float shot_chance)
 	if (self.classname == "monster_parasite")
 	{
 		vector	f, r, start;
-		AngleVectors (self.s.angles, &f, &r, 0);
-		start = G_ProjectSource (self.s.origin, '24 0 6', f, r);
+		AngleVectors (self.angles, &f, &r, 0);
+		start = G_ProjectSource (self.origin, '24 0 6', f, r);
 
-		vector end = self.enemy.s.origin;
+		vector end = self.enemy.origin;
 		if (!parasite_drain_attack_ok(start, end))
 		{
-			end[2] = self.enemy.s.origin[2] + self.enemy.maxs[2] - 8;
+			end[2] = self.enemy.origin[2] + self.enemy.maxs[2] - 8;
 			if (!parasite_drain_attack_ok(start, end))
 			{
-				end[2] = self.enemy.s.origin[2] + self.enemy.mins[2] + 8;
+				end[2] = self.enemy.origin[2] + self.enemy.mins[2] + 8;
 				if (!parasite_drain_attack_ok(start, end))
 					return false;
 			}
 		}
-		end = self.enemy.s.origin;
+		end = self.enemy.origin;
 
 		trace_t	tr;
 		gi.traceline (&tr, start, end, self, MASK_SHOT);
@@ -139,8 +139,8 @@ bool blocked_checkplat(entity &self, float dist)
 	if (!plat.has_value())
 	{
 		vector forward;
-		AngleVectors (self.s.angles, &forward, nullptr, nullptr);
-		vector pt1 = self.s.origin + (forward * dist);
+		AngleVectors (self.angles, &forward, nullptr, nullptr);
+		vector pt1 = self.origin + (forward * dist);
 		vector pt2 = pt1;
 		pt2[2] -= 384;
 
@@ -180,11 +180,11 @@ bool blocked_checkplat(entity &self, float dist)
 static bool face_wall(entity &self)
 {
 	vector forward;
-	AngleVectors (self.s.angles, &forward, nullptr, nullptr);
+	AngleVectors (self.angles, &forward, nullptr, nullptr);
 
-	vector pt = self.s.origin + (forward * 64);
+	vector pt = self.origin + (forward * 64);
 
-	trace tr = gi.traceline(self.s.origin, pt, self, MASK_MONSTERSOLID);
+	trace tr = gi.traceline(self.origin, pt, self, MASK_MONSTERSOLID);
 
 	if (tr.fraction < 1 && !tr.allsolid && !tr.startsolid)
 	{
@@ -210,7 +210,7 @@ bool blocked_checkjump(entity &self, float, float max_down, float max_up)
 		return false;
 
 	vector forward, up;
-	AngleVectors (self.s.angles, &forward, nullptr, &up);
+	AngleVectors (self.angles, &forward, nullptr, &up);
 
 	int playerPosition;
 
@@ -224,8 +224,8 @@ bool blocked_checkjump(entity &self, float, float max_down, float max_up)
 	if (playerPosition == -1 && max_down)
 	{
 		// check to make sure we can even get to the spot we're going to "fall" from
-		vector pt1 = self.s.origin + (forward * 48);
-		trace trace = gi.trace(self.s.origin, self.bounds, pt1, self, MASK_MONSTERSOLID);
+		vector pt1 = self.origin + (forward * 48);
+		trace trace = gi.trace(self.origin, self.bounds, pt1, self, MASK_MONSTERSOLID);
 
 		if(trace.fraction < 1)
 			return false;
@@ -251,7 +251,7 @@ bool blocked_checkjump(entity &self, float, float max_down, float max_up)
 	}
 	else if (playerPosition == 1 && max_up)
 	{
-		vector pt1 = self.s.origin + (forward * 48);
+		vector pt1 = self.origin + (forward * 48);
 		vector pt2 = pt1;
 		pt1[2] = self.absbounds.maxs[2] + max_up;
 
@@ -287,7 +287,7 @@ static uint32_t num_hint_paths;
 // =============
 static void hintpath_go(entity &self, entity &point)
 {
-	self.ideal_yaw = vectoyaw(point.s.origin - self.s.origin);
+	self.ideal_yaw = vectoyaw(point.origin - self.origin);
 	self.goalentity = self.movetarget = point;
 	self.monsterinfo.pause_framenum = 0;
 	self.monsterinfo.aiflags |= AI_HINT_PATH;
@@ -404,7 +404,7 @@ bool monsterlost_checkhint(entity &self)
 	checkpoint = 0;
 	while (e.has_value())
 	{
-		r = VectorDistance (self.s.origin, e->s.origin);
+		r = VectorDistance (self.origin, e->origin);
 
 		if (r > 512)
 		{
@@ -521,7 +521,7 @@ bool monsterlost_checkhint(entity &self)
 	checkpoint = 0;
 	while (e.has_value())
 	{
-		r = VectorDistance (self.enemy->s.origin, e->s.origin);
+		r = VectorDistance (self.enemy->origin, e->origin);
 
 		if (r > 512)
 		{
@@ -622,7 +622,7 @@ bool monsterlost_checkhint(entity &self)
 			e = checkpoint;
 			continue;
 		}
-		r = VectorDistance(self.s.origin, e->s.origin);
+		r = VectorDistance(self.origin, e->origin);
 		if (r < closest_range)
 			closest = e;
 		e = e->monster_hint_chain;
@@ -643,7 +643,7 @@ bool monsterlost_checkhint(entity &self)
 	{
 		if (start->hint_chain_id == e->hint_chain_id)
 		{
-			r = VectorDistance(self.s.origin, e->s.origin);
+			r = VectorDistance(self.origin, e->origin);
 			if (r < closest_range)
 				closest = e;
 		}
@@ -724,7 +724,7 @@ static void hint_path_touch(entity &self, entity &other, vector, const surface &
 		other.nextthink = level.framenum + (int)(self.wait * BASE_FRAMERATE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(hint_path_touch);
+REGISTER_STATIC_SAVABLE(hint_path_touch);
 
 /*QUAKED hint_path (.5 .3 0) (-8 -8 -8) (8 8 8) END
 Target: next hint path
@@ -743,7 +743,7 @@ static void SP_hint_path(entity &self)
 
 	if (!self.targetname && !self.target)
 	{
-		gi.dprintf ("unlinked hint_path at %s\n", vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: is unlinked\n", self);
 		G_FreeEdict (self);
 		return;
 	}
@@ -787,8 +787,8 @@ void InitHintPaths()
 			{
 				if (e->targetname) // this is a bad end, ignore it
 				{
-					gi.dprintf ("Hint path at %s marked as endpoint with both target (%s) and targetname (%s)\n",
-						vtos(e->s.origin).ptr(), e->target.ptr(), e->targetname.ptr());
+					gi.dprintfmt("{}: marked as endpoint with both target ({}) and targetname ({})\n",
+						e, e->target, e->targetname);
 					errors = true;
 				}
 				else
@@ -810,10 +810,11 @@ void InitHintPaths()
 		current->hint_chain_id = i;
 
 		e = G_FindEquals<&entity::targetname>(world, current->target);
+
 		if (G_FindEquals<&entity::targetname>(e, current->target).has_value())
 		{
-			gi.dprintf ("\nForked hint path at %s detected for chain %d, target %s\n", 
-				vtos (current->s.origin).ptr(), num_hint_paths, current->target.ptr());
+			gi.dprintfmt("{}: fork detected for chain {}, target {}\n", 
+				current, num_hint_paths, current->target);
 			hint_path_start[i]->hint_chain = 0;
 			count2 = 0;
 			errors = true;
@@ -824,8 +825,8 @@ void InitHintPaths()
 		{
 			if (e->hint_chain.has_value())
 			{
-				gi.dprintf ("\nCircular hint path at %s detected for chain %d, targetname %s\n", 
-					vtos (e->s.origin).ptr(), num_hint_paths, e->targetname.ptr());
+				gi.dprintfmt("{}: circular detected for chain {}, targetname {}\n", 
+					e, num_hint_paths, e->targetname);
 				hint_path_start[i]->hint_chain = 0;
 				count2 = 0;
 				errors = true;
@@ -842,8 +843,8 @@ void InitHintPaths()
 			e = G_FindEquals<&entity::targetname>(world, current->target);
 			if (G_FindEquals<&entity::targetname>(e, current->target).has_value())
 			{
-				gi.dprintf ("\nForked hint path at %s detected for chain %d, target %s\n", 
-					vtos (current->s.origin).ptr(), num_hint_paths, current->target.ptr());
+				gi.dprintfmt("{}: fork detected for chain {}, target {}\n", 
+					current, num_hint_paths, current->target);
 				hint_path_start[i]->hint_chain = 0;
 				count2 = 0;
 				break;
@@ -862,8 +863,8 @@ void InitHintPaths()
 bool inback(entity &self, entity &other)
 {
 	vector forward;
-	AngleVectors (self.s.angles, &forward, nullptr, nullptr);
-	vector vec = other.s.origin - self.s.origin;
+	AngleVectors (self.angles, &forward, nullptr, nullptr);
+	vector vec = other.origin - self.origin;
 	VectorNormalize (vec);
 	return (vec * forward) < -0.3;
 }
@@ -875,7 +876,7 @@ static void badarea_touch(entity &, entity &, vector, const surface &)
 {
 }
 
-static REGISTER_SAVABLE_FUNCTION(badarea_touch);
+REGISTER_STATIC_SAVABLE(badarea_touch);
 
 entity_type ET_BAD_AREA("bad_area");
 
@@ -887,7 +888,7 @@ entity &SpawnBadArea(vector cmins, vector cmaxs, gtime lifespan_frames, entityre
 	cmins -= corigin;
 
 	entity &badarea = G_Spawn();
-	badarea.s.origin = corigin;
+	badarea.origin = corigin;
 	badarea.bounds = { .mins = cmins, .maxs = cmaxs };
 	badarea.movetype = MOVETYPE_NONE;
 	badarea.solid = SOLID_TRIGGER;
@@ -911,7 +912,7 @@ entity &SpawnBadArea(vector cmins, vector cmaxs, gtime lifespan_frames, entityre
 //		for bad area triggers and return them if they're touched.
 entityref CheckForBadArea(entity &ent)
 {
-	dynarray<entityref> entities = gi.BoxEdicts(ent.bounds.offsetted(ent.s.origin), AREA_TRIGGERS);
+	dynarray<entityref> entities = gi.BoxEdicts(ent.bounds.offsetted(ent.origin), AREA_TRIGGERS);
 
 	// be careful, it is possible to have an entity in this
 	// list removed before we get to it (killtriggered)
@@ -943,14 +944,14 @@ void PredictAim(entityref target, vector start, float bolt_speed, bool eye_heigh
 		return;
 	}
 
-	vector dir = target->s.origin - start;
+	vector dir = target->origin - start;
 
 	if (eye_height)
 		dir[2] += target->viewheight;
 
 	float time = VectorLength(dir) / bolt_speed;
 
-	vector vec = target->s.origin + (target->velocity * (time - offset));
+	vector vec = target->origin + (target->velocity * (time - offset));
 
 	if (eye_height)
 		vec[2] += target->viewheight;
@@ -967,7 +968,7 @@ void PredictAim(entityref target, vector start, float bolt_speed, bool eye_heigh
 
 bool below(entity &self, entity &other)
 {
-	vector vec = other.s.origin - self.s.origin;
+	vector vec = other.origin - self.origin;
 	VectorNormalize (vec);
 	return (vec * MOVEDIR_DOWN) > 0.95;  // 18 degree arc below
 }
@@ -1033,9 +1034,9 @@ void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr)
 		if (tr.endpos[2] <= height || (self.monsterinfo.aiflags & AI_DUCKED))
 		{
 			vector right;
-			AngleVectors (self.s.angles, nullptr, &right, nullptr);
+			AngleVectors (self.angles, nullptr, &right, nullptr);
 
-			vector diff = tr.endpos - self.s.origin;
+			vector diff = tr.endpos - self.origin;
 
 			self.monsterinfo.lefty = (right * diff) >= 0;
 	
@@ -1066,7 +1067,7 @@ void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(M_MonsterDodge);
+REGISTER_SAVABLE(M_MonsterDodge);
 
 void monster_duck_down(entity &self)
 {
@@ -1097,7 +1098,7 @@ void monster_duck_up(entity &self)
 	gi.linkentity (self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(monster_duck_up);
+REGISTER_SAVABLE(monster_duck_up);
 
 //*******************
 // JUMPING AIDS
@@ -1116,14 +1117,14 @@ bool monster_jump_finished(entity &self)
 // MOVE STUFF
 bool IsBadAhead(entity &self, entity &bad, vector move)
 {
-	vector dir = bad.s.origin - self.s.origin;
+	vector dir = bad.origin - self.origin;
 	VectorNormalize (dir);
 	vector forward;
-	AngleVectors (self.s.angles, &forward, nullptr, nullptr);
+	AngleVectors (self.angles, &forward, nullptr, nullptr);
 	float dp_bad = forward * dir;
 
 	VectorNormalize (move);
-	AngleVectors (self.s.angles, &forward, nullptr, nullptr);
+	AngleVectors (self.angles, &forward, nullptr, nullptr);
 	float dp_move = forward * move;
 
 	return (dp_bad < 0 && dp_move < 0) || (dp_bad > 0 && dp_move > 0);

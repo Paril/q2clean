@@ -72,7 +72,7 @@ sound_index snd_fry;
 
 void InitGame()
 {
-	gi.dprintf("===== %s =====\n", __func__);
+	gi.dprintfmt("===== {} =====\n", __func__);
 	
 	//FIXME: sv_ prefix is wrong for these
 	sv_rollspeed = gi.cvar("sv_rollspeed", "200", CVAR_NONE);
@@ -100,7 +100,7 @@ void InitGame()
 	gi.cvar_forceset("deathmatch", "1");
 	gi.cvar_forceset("coop", "0");
 #endif
-	gi.cvar("maxentities", va("%i", MAX_EDICTS), CVAR_NOSET);
+	gi.cvarfmt("maxentities", CVAR_NOSET, "{}", MAX_EDICTS);
 	
 	// change anytime vars
 	dmflags = gi.cvar("dmflags", "0", CVAR_SERVERINFO);
@@ -135,7 +135,7 @@ void InitGame()
 	sv_features = gi.cvar("sv_features", "", CVAR_NONE);
 	
 	// export our own features
-	gi.cvar_forceset("g_features", va("%i", G_FEATURES));
+	gi.cvar_forcesetfmt("g_features", "{}", (int32_t) G_FEATURES);
 
 	game.maxclients = (uint32_t) maxclients;
 
@@ -157,7 +157,7 @@ void InitGame()
 
 void ShutdownGame()
 {
-	gi.dprintf("===== %s =====\n", __func__);
+	gi.dprintfmt("===== {} =====\n", __func__);
 }
 
 /*
@@ -268,7 +268,7 @@ static void CheckNeedPass()
 		if (spectator_password && spectator_password != "none")
 			need |= 2;
 
-		gi.cvar_set("needpass", va("%d", need));
+		gi.cvar_setfmt("needpass", "{}", need);
 	}
 }
 
@@ -299,7 +299,7 @@ static void CheckDMRules()
 	{
 		if (level.time >= timelimit * 60)
 		{
-			gi.bprintf(PRINT_HIGH, "Timelimit hit.\n");
+			gi.bprint(PRINT_HIGH, "Timelimit hit.\n");
 			EndDMLevel();
 			return;
 		}
@@ -314,7 +314,7 @@ static void CheckDMRules()
 
 			if (cl.client->resp.score >= fraglimit)
 			{
-				gi.bprintf(PRINT_HIGH, "Fraglimit hit.\n");
+				gi.bprint(PRINT_HIGH, "Fraglimit hit.\n");
 				EndDMLevel();
 				return;
 			}
@@ -332,7 +332,7 @@ static void ExitLevel()
 	level.exitintermission = 0;
 	level.intermission_framenum = 0;
 	
-	gi.AddCommandString(va("gamemap \"%s\"\n", level.changemap.ptr()));
+	gi.AddCommandStringFmt("gamemap \"{}\"\n", level.changemap);
 	level.changemap = nullptr;
 	
 	ClientEndServerFrames();
@@ -376,7 +376,7 @@ void RunFrame()
 		
 		level.current_entity = ent;
 		
-		ent.s.old_origin = ent.s.origin;
+		ent.old_origin = ent.origin;
 		
 		// if the ground entity moved, make sure we are still on it
 		if (ent.groundentity.has_value() && (ent.groundentity->linkcount != ent.groundentity_linkcount))

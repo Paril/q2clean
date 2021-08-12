@@ -30,14 +30,11 @@ static void Weapon_RocketLauncher_Fire(entity &ent)
 	ent.client->kick_angles[0] = -1.f;
 
 	offset = { 8, 8, ent.viewheight - 8.f };
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 	fire_rocket(ent, start, forward, damage, 650, damage_radius, radius_damage);
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte(MZ_ROCKET | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_ROCKET | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 	ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -51,5 +48,5 @@ static void Weapon_RocketLauncher_Fire(entity &ent)
 
 void Weapon_RocketLauncher(entity &ent)
 {
-	Weapon_Generic(ent, 4, 12, 50, 54, G_IsAnyFrame<25, 33, 42, 50>, G_IsAnyFrame<5>, Weapon_RocketLauncher_Fire);
+	Weapon_Generic(ent, 4, 12, 50, 54, G_FrameIsOneOf<25, 33, 42, 50>, G_FrameIsOneOf<5>, Weapon_RocketLauncher_Fire);
 }

@@ -45,14 +45,17 @@ public:
 		{
 			ptr = (int32_t *) calloc(1, (num * sizeof(value_type)) + sizeof(int32_t));
 			internal::non_game_count += num;
-			*ptr = 0;
 		}
 		else
 		{
 			ptr = (int32_t *) internal::alloc((num * sizeof(value_type)) + sizeof(int32_t), TAG_GAME);
 			internal::game_count += num;
-			*ptr = 1;
 		}
+
+		if (!ptr)
+			throw std::bad_alloc();
+
+		*ptr = internal::is_ready();
 
 		return (value_type *) (ptr + 1);
 	}

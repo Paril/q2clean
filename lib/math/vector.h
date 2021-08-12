@@ -15,11 +15,16 @@ public:
 	}
 };
 
+template<typename T>
+concept is_numeric = std::is_integral_v<T> || std::is_floating_point_v<T>;
+
+struct vector;
+
 // the vector type represents a 3d float array. this is designed for maximum
 // compatibility with QC, with the exception of member functions designed to
 // make using the class simpler/more functional. this supports most modern QC-style
 // accessors (.x/.y/.z/[0]/[1]/[2]); _x/_y/_z simply need to be re-named to .x/.y/.z.
-extern "C" struct vector
+struct vector
 {
 	// number of elements in a vector, just for reference sake.
 	static constexpr size_t size = 3;
@@ -40,16 +45,14 @@ extern "C" struct vector
 	constexpr const float &operator[](const size_t &index) const { return index < size ? *((&x) + index) : (throw vector_out_of_range()); }
 
 	// QuakeC operators
-
 	// dot product - *not* channel-wise scale!
 	constexpr float operator*(const vector &rhs) const { return (x * rhs.x) + (y * rhs.y) + (z * rhs.z); }
 
 	// channel-wise value operators
-
-	constexpr vector operator*(const float &rhs) const { return { x * rhs, y * rhs, z * rhs }; }
-	constexpr vector operator*(const int32_t &rhs) const { return { x * rhs, y * rhs, z * rhs }; }
-	constexpr vector operator/(const float &rhs) const { return { x / rhs, y / rhs, z / rhs }; }
-	constexpr vector operator/(const int32_t &rhs) const { return { x / rhs, y / rhs, z / rhs }; }
+	template<is_numeric T>
+	constexpr vector operator*(const T &rhs) const { return { x * rhs, y * rhs, z * rhs }; }
+	template<is_numeric T>
+	constexpr vector operator/(const T &rhs) const { return { x / rhs, y / rhs, z / rhs }; }
 
 	constexpr vector operator+(const vector &rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
 	constexpr vector operator-(const vector &rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
@@ -69,10 +72,10 @@ extern "C" struct vector
 
 	// channel-wise self operators
 
-	vector &operator*=(const float &rhs) { return *this = *this * rhs; }
-	vector &operator*=(const int32_t &rhs) { return *this = *this * rhs; }
-	vector &operator/=(const float &rhs) { return *this = *this / rhs; }
-	vector &operator/=(const int32_t &rhs) { return *this = *this / rhs; }
+	template<is_numeric T>
+	vector &operator*=(const T &rhs) { return *this = *this * rhs; }
+	template<is_numeric T>
+	vector &operator/=(const T &rhs) { return *this = *this / rhs; }
 	vector &operator+=(const vector &rhs) { return *this = *this + rhs; }
 	vector &operator-=(const vector &rhs) { return *this = *this - rhs; }
 
@@ -84,35 +87,22 @@ extern "C" struct vector
 	constexpr explicit operator bool() const { return x || y || z; }
 
 	// member functions; global versions are provided too
-
 	// fetch the squared length of this vector
-	[[nodiscard]] constexpr float LengthSquared() const
+	[[nodiscard]] constexpr float length_squared() const
 	{
 		return *this * *this;
 	}
 
 	// fetch the length of this vector
-	[[nodiscard]] inline float Length() const
+	[[nodiscard]] inline float length() const
 	{
-		return sqrt(LengthSquared());
-	}
-
-	// fetch the squared distance between this and rhs
-	[[nodiscard]] constexpr float DistanceSquared(const vector &rhs) const
-	{
-		return (*this - rhs).LengthSquared();
-	}
-
-	// fetch the distance between this and rhs
-	[[nodiscard]] inline float Distance(const vector &rhs) const
-	{
-		return (*this - rhs).Length();
+		return sqrt(length_squared());
 	}
 
 	// normalize this vector and return its old length
-	inline float Normalize()
+	inline float normalize()
 	{
-		float length = LengthSquared();
+		float length = length_squared();
 
 		if (length)
 		{
@@ -122,7 +112,24 @@ extern "C" struct vector
 
 		return length;
 	}
+
+	// fetch the squared distance between this and rhs
+	[[nodiscard]] constexpr float distance_squared(const vector &rhs) const
+	{
+		return (*this - rhs).length_squared();
+	}
+
+	// fetch the distance between this and rhs
+	[[nodiscard]] inline float distance(const vector &rhs) const
+	{
+		return (*this - rhs).length();
+	}
 };
+
+template<is_numeric T>
+constexpr vector operator*(const T &lhs, const vector &rhs) { return { lhs * rhs.x, lhs * rhs.y, lhs * rhs.z }; }
+template<is_numeric T>
+constexpr vector operator/(const T &lhs, const vector &rhs) { return { lhs / rhs.x, lhs / rhs.y, lhs / rhs.z }; }
 
 // the origin point (all zeroes)
 constexpr vector vec3_origin { 0, 0, 0 };
@@ -138,31 +145,31 @@ enum : size_t
 // fetch the squared length of lhs
 [[nodiscard]] constexpr float VectorLengthSquared(const vector &lhs)
 {
-	return lhs.LengthSquared();
+	return lhs.length_squared();
 }
 
 // fetch the squared length of lhs
 [[nodiscard]] inline float VectorLength(const vector &lhs)
 {
-	return lhs.Length();
+	return lhs.length();
 }
 
 // fetch the squared distance between lhs and rhs
 [[nodiscard]] constexpr float VectorDistanceSquared(const vector &lhs, const vector &rhs)
 {
-	return lhs.DistanceSquared(rhs);
+	return lhs.distance_squared(rhs);
 }
 
 // fetch the distance between lhs and rhs
 [[nodiscard]] inline float VectorDistance(const vector &lhs, const vector &rhs)
 {
-	return lhs.Distance(rhs);
+	return lhs.distance(rhs);
 }
 
 // normalize lhs and return its old length
 inline float VectorNormalize(vector &lhs)
 {
-	return lhs.Normalize();
+	return lhs.normalize();
 }
 
 // This constant is used for how steep a ground plane is for
@@ -183,10 +190,10 @@ constexpr float STOP_EPSILON = 0.1f;
 }
 
 template<typename T>
-concept is_vector_pointer_or_null_pointer = std::is_same_v<T, vector *> || std::is_null_pointer_v<T>;
+concept is_vecdir_pointer_or_null_pointer = std::is_same_v<T, vector *> || std::is_null_pointer_v<T>;
 
 // convert Euler angles to vectors
-template<is_vector_pointer_or_null_pointer TF, is_vector_pointer_or_null_pointer TR, is_vector_pointer_or_null_pointer TU>
+template<is_vecdir_pointer_or_null_pointer TF, is_vecdir_pointer_or_null_pointer TR, is_vecdir_pointer_or_null_pointer TU>
 inline void AngleVectors(const vector &angles, TF forward, TR right, TU up)
 {
 	float angle = deg2rad(angles[YAW]);
@@ -281,18 +288,3 @@ inline void AngleVectors(const vector &angles, TF forward, TR right, TU up)
 			v1.z * v2.x - v1.x * v2.z,
 			v1.x * v2.y - v1.y * v2.x };
 }
-
-constexpr void AddPointToBounds(const vector &v, vector &mins, vector &maxs)
-{
-	mins[0] = min(mins[0], v[0]);
-	maxs[0] = max(maxs[0], v[0]);
-	mins[1] = min(mins[1], v[1]);
-	maxs[1] = max(maxs[1], v[1]);
-	mins[2] = min(mins[2], v[2]);
-	maxs[2] = max(maxs[2], v[2]);
-}
-
-constexpr vector operator*(const float &lhs, const vector &rhs) { return { lhs * rhs.x, lhs * rhs.y, lhs * rhs.z }; }
-constexpr vector operator*(const int32_t &lhs, const vector &rhs) { return { lhs * rhs.x, lhs * rhs.y, lhs * rhs.z }; }
-constexpr vector operator/(const float &lhs, const vector &rhs) { return { lhs / rhs.x, lhs / rhs.y, lhs / rhs.z }; }
-constexpr vector operator/(const int32_t &lhs, const vector &rhs) { return { lhs / rhs.x, lhs / rhs.y, lhs / rhs.z }; }

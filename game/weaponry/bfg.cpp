@@ -27,15 +27,12 @@ static void weapon_bfg_fire(entity &ent)
 	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 
 	offset = { 8, 8, ent.viewheight - 8.f };
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	if (ent.client->ps.gunframe == 9)
 	{
 		// send muzzle flash
-		gi.WriteByte(svc_muzzleflash);
-		gi.WriteShort((int16_t) ent.s.number);
-		gi.WriteByte(MZ_BFG | is_silenced);
-		gi.multicast(ent.s.origin, MULTICAST_PVS);
+		gi.ConstructMessage(svc_muzzleflash, ent, MZ_BFG | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 		ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -76,5 +73,5 @@ static void weapon_bfg_fire(entity &ent)
 
 void Weapon_BFG(entity &ent)
 {
-	Weapon_Generic(ent, 8, 32, 55, 58, G_IsAnyFrame<39, 45, 50, 55>, G_IsAnyFrame<9, 17>, weapon_bfg_fire);
+	Weapon_Generic(ent, 8, 32, 55, 58, G_FrameIsOneOf<39, 45, 50, 55>, G_FrameIsOneOf<9, 17>, weapon_bfg_fire);
 }

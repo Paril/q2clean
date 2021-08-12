@@ -11,6 +11,8 @@
 #include "game/ballistics/grenade.h"
 #include "nuke.h"
 
+constexpr means_of_death MOD_NUKE { .self_kill_fmt = "{0}'s destruction was mutually assured.\n", .other_kill_fmt = "{0} was nuked by {3}'s antimatter bomb.\n" };
+
 constexpr float NUKE_DELAY			= 4.f;
 constexpr float NUKE_TIME_TO_LIVE	= 6.f;
 constexpr float NUKE_RADIUS			= 512.f;
@@ -24,7 +26,7 @@ static void Nuke_Quake(entity &self)
 {
 	if (self.last_move_framenum < level.framenum)
 	{
-		gi.positioned_sound (self.s.origin, self, CHAN_AUTO, self.noise_index, 0.75f, ATTN_NONE, 0);
+		gi.positioned_sound(self.origin, self, self.noise_index, 0.75f, ATTN_NONE);
 		self.last_move_framenum = level.framenum + (int)(0.5 * BASE_FRAMERATE);
 	}
 
@@ -51,7 +53,7 @@ static void Nuke_Quake(entity &self)
 		G_FreeEdict (self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Nuke_Quake);
+REGISTER_STATIC_SAVABLE(Nuke_Quake);
 
 /*
 ============
@@ -62,16 +64,15 @@ Like T_RadiusDamage, but ignores walls (skips CanDamage check, among others)
 // after that, do damage linearly out to KILLZONE2 radius
 ============
 */
-static inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float damage, entityref ignore, float radius, means_of_death mod)
+inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float damage, entityref ignore, float radius, means_of_death_ref mod)
 {
 	float killzone = radius;
 	float killzone2 = radius * 2.f;
 
 	entityref ent;
 
-	while ((ent = findradius(ent, inflictor.s.origin, killzone2)).has_value())
+	while ((ent = findradius(ent, inflictor.origin, killzone2)).has_value())
 	{
-// ignore nobody
 		if (ent == ignore)
 			continue;
 		if (!ent->inuse)
@@ -81,18 +82,14 @@ static inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float
 		if (!(ent->is_client() || (ent->svflags & SVF_MONSTER) || (ent->flags & FL_DAMAGEABLE)))
 			continue;
 
-		vector v = ent->s.origin + ent->bounds.center();
-		v = inflictor.s.origin - v;
+		vector v = ent->origin + ent->bounds.center();
+		v = inflictor.origin - v;
 
 		float len = VectorLength(v);
 		float points;
 		
 		if (len <= killzone)
-		{
-			if (ent->is_client())
-				ent->flags |= FL_NOGIB;
 			points = 10000.f;
-		}
 		else if (len <= killzone2)
 			points = (damage / killzone) * (killzone2 - len);
 		else
@@ -102,8 +99,13 @@ static inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float
 		{
 			if (ent->is_client())
 				ent->client->nuke_framenum = level.framenum + 20;
-			vector dir = ent->s.origin - inflictor.s.origin;
-			T_Damage (ent, inflictor, attacker, dir, inflictor.s.origin, vec3_origin, (int)points, (int)points, DAMAGE_RADIUS, mod);
+
+			vector dir = ent->origin - inflictor.origin;
+			if (ent->is_client())
+				ent->flags |= FL_NOGIB;
+			T_Damage (ent, inflictor, attacker, dir, inflictor.origin, vec3_origin, (int)points, (int)points, { DAMAGE_RADIUS }, mod);
+			if (ent->is_client())
+				ent->flags &= ~FL_NOGIB;
 		}
 	}
 
@@ -114,18 +116,14 @@ static inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float
 	{
 		if (ent->is_client() && (ent->client->nuke_framenum != level.framenum + 20) && ent->inuse)
 		{
-			trace tr = gi.traceline(inflictor.s.origin, ent->s.origin, inflictor, MASK_SOLID);
+			trace tr = gi.traceline(inflictor.origin, ent->origin, inflictor, MASK_SOLID);
 
 			if (tr.fraction == 1.0)
 				ent->client->nuke_framenum = level.framenum + 20;
 			else
 			{
-				float dist = VectorDistance(ent->s.origin, inflictor.s.origin);
-				
-				if (dist < 2048)
-					ent->client->nuke_framenum = max(ent->client->nuke_framenum, level.framenum + 15);
-				else
-					ent->client->nuke_framenum = max(ent->client->nuke_framenum, level.framenum + 10);
+				float dist = VectorDistance(ent->origin, inflictor.origin);
+				ent->client->nuke_framenum = max(ent->client->nuke_framenum, level.framenum + (dist < 2048 ? 15 : 10));
 			}
 
 			ent = next_ent(ent);
@@ -139,25 +137,19 @@ static void Nuke_Explode(entity &ent)
 {
 #if defined(SINGLE_PLAYER)
 	if (ent.teammaster->is_client())
-		PlayerNoise(ent.teammaster, ent.s.origin, PNOISE_IMPACT);
+		PlayerNoise(ent.teammaster, ent.origin, PNOISE_IMPACT);
 
 #endif
 	T_RadiusNukeDamage(ent, ent.teammaster, ent.dmg, ent, ent.dmg_radius, MOD_NUKE);
 
 	if (ent.dmg > NUKE_DAMAGE)
-		gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage3.wav"), 1, ATTN_NORM, 0);
+		gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage3.wav"));
 
-	gi.sound (ent, CHAN_NO_PHS_ADD | CHAN_VOICE, gi.soundindex ("weapons/grenlx1a.wav"), 1, ATTN_NONE, 0);
+	gi.sound(ent, CHAN_VOICE, gi.soundindex ("weapons/grenlx1a.wav"), ATTN_NONE);
 
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (TE_EXPLOSION1_BIG);
-	gi.WritePosition (ent.s.origin);
-	gi.multicast (ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_EXPLOSION1_BIG, ent.origin).multicast(ent.origin, MULTICAST_PVS);
 
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (TE_NUKEBLAST);
-	gi.WritePosition (ent.s.origin);
-	gi.multicast (ent.s.origin, MULTICAST_ALL);
+	gi.ConstructMessage(svc_temp_entity, TE_NUKEBLAST, ent.origin).multicast(ent.origin, MULTICAST_PVS);
 
 	// become a quake
 	ent.svflags |= SVF_NOCLIENT;
@@ -182,19 +174,19 @@ static void nuke_die(entity &self, entity &, entity &attacker, int32_t, vector)
 	Nuke_Explode(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(nuke_die);
+REGISTER_STATIC_SAVABLE(nuke_die);
 
 static void Nuke_Think(entity &ent);
 
-DECLARE_SAVABLE_FUNCTION(Nuke_Think);
+REGISTER_STATIC_SAVABLE(Nuke_Think);
 
 static void Nuke_Think(entity &ent)
 {
 	sound_attn attenuation = ATTN_STATIC;
 	muzzleflash	muzzleflash = MZ_NUKE1;
 
-	int32_t damage_multiplier = ent.dmg / NUKE_DAMAGE;
-	switch (damage_multiplier)
+	int32_t dmg_multiplier = ent.dmg / NUKE_DAMAGE;
+	switch (dmg_multiplier)
 	{
 	case 1:
 		break;
@@ -216,12 +208,12 @@ static void Nuke_Think(entity &ent)
 		Nuke_Explode(ent);
 	else if (level.framenum >= (ent.wait - (gtime)(NUKE_TIME_TO_LIVE * BASE_FRAMERATE)))
 	{
-		ent.s.frame++;
+		ent.frame++;
 
-		if (ent.s.frame > 11)
-			ent.s.frame = 6;
+		if (ent.frame > 11)
+			ent.frame = 6;
 
-		if (gi.pointcontents(ent.s.origin) & (CONTENTS_SLIME|CONTENTS_LAVA))
+		if (gi.pointcontents(ent.origin) & (CONTENTS_SLIME|CONTENTS_LAVA))
 		{
 			Nuke_Explode (ent);
 			return;
@@ -232,30 +224,27 @@ static void Nuke_Think(entity &ent)
 		ent.health = 1;
 		ent.owner = 0;
 
-		gi.WriteByte (svc_muzzleflash);
-		gi.WriteShort (ent.s.number);
-		gi.WriteByte (muzzleflash);
-		gi.multicast (ent.s.origin, MULTICAST_PVS);
+		gi.ConstructMessage(svc_muzzleflash, ent, muzzleflash).multicast(ent.origin, MULTICAST_PVS);
 
 		if (ent.timestamp <= level.framenum)
 		{
+			float next_tick;
+
 			if ((ent.wait - level.framenum) <= (NUKE_TIME_TO_LIVE / 2.0))
-			{
-				gi.sound (ent, CHAN_NO_PHS_ADD | CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), 1, attenuation, 0);
-				ent.timestamp = level.framenum + (gtime)(0.3f * BASE_FRAMERATE);
-			}
+				next_tick = 0.3f;
 			else
-			{
-				gi.sound (ent, CHAN_NO_PHS_ADD | CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), 1, attenuation, 0);
-				ent.timestamp = level.framenum + (gtime)(0.5f * BASE_FRAMERATE);
-			}
+				next_tick = 0.5f;
+
+			ent.timestamp = level.framenum + (gtime)(next_tick * BASE_FRAMERATE);
+
+			gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), attenuation);
 		}
 	}
 	else
 	{
 		if (ent.timestamp <= level.framenum)
 		{
-			gi.sound (ent, CHAN_NO_PHS_ADD | CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), 1, attenuation, 0);
+			gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), attenuation);
 			ent.timestamp = level.framenum + BASE_FRAMERATE;
 		}
 
@@ -263,17 +252,15 @@ static void Nuke_Think(entity &ent)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(Nuke_Think);
-
 static void nuke_bounce(entity &ent, entity &, vector, const surface &)
 {
 	if (random() > 0.5)
-		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb1a.wav"));
 	else
-		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb2a.wav"), 1, ATTN_NORM, 0);
+		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb2a.wav"));
 }
 
-static REGISTER_SAVABLE_FUNCTION(nuke_bounce);
+REGISTER_STATIC_SAVABLE(nuke_bounce);
 
 void fire_nuke(entity &self, vector start, vector aimdir, int32_t speed)
 {
@@ -284,20 +271,20 @@ void fire_nuke(entity &self, vector start, vector aimdir, int32_t speed)
 	AngleVectors (dir, nullptr, &right, &up);
 
 	entity &nuke = G_Spawn();
-	nuke.s.origin = start;
+	nuke.origin = start;
 	nuke.velocity = aimdir * speed;
 	nuke.velocity += random(190.f, 210.f) * up;
 	nuke.velocity += random(-10.f, 10.f) * right;
 	nuke.movetype = MOVETYPE_BOUNCE;
 	nuke.clipmask = MASK_SHOT;
 	nuke.solid = SOLID_BBOX;
-	nuke.s.effects |= EF_GRENADE;
-	nuke.s.renderfx |= RF_IR_VISIBLE;
+	nuke.effects |= EF_GRENADE;
+	nuke.renderfx |= RF_IR_VISIBLE;
 	nuke.bounds = {
 		.mins = { -8, -8, 0 },
 		.maxs = { 8, 8, 16 }
 	};
-	nuke.s.modelindex = gi.modelindex ("models/weapons/g_nuke/tris.md2");
+	nuke.modelindex = gi.modelindex ("models/weapons/g_nuke/tris.md2");
 	nuke.owner = self;
 	nuke.teammaster = self;
 	nuke.nextthink = level.framenum + 1;

@@ -24,43 +24,37 @@ static void rotating_light_alarm(entity &self)
 {
 	if (self.spawnflags & START_OFF)
 	{
-		self.think = 0;
+		self.think = nullptr;
 		self.nextthink = 0;	
 	}
 	else
 	{
-		gi.sound (self, CHAN_NO_PHS_ADD | CHAN_VOICE, self.moveinfo.sound_start, 1, ATTN_STATIC, 0);
+		gi.sound (self, CHAN_NO_PHS_ADD | CHAN_VOICE, self.moveinfo.sound_start, ATTN_STATIC);
 		self.nextthink = level.framenum + (1 * BASE_FRAMERATE);
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(rotating_light_alarm);
+REGISTER_STATIC_SAVABLE(rotating_light_alarm);
 
 static void rotating_light_killed(entity &self, entity &, entity &, int32_t, vector)
 {
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (TE_WELDING_SPARKS);
-	gi.WriteByte (30);
-	gi.WritePosition (self.s.origin);
-	gi.WriteDir (vec3_origin);
-	gi.WriteByte (0xe0 + (Q_rand()&7));
-	gi.multicast (self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_WELDING_SPARKS, uint8_t { 30 }, self.origin, vecdir { vec3_origin }, uint8_t { 0xe0 + (Q_rand()&7) }).multicast (self.origin, MULTICAST_PVS);
 
-	self.s.effects &= ~EF_SPINNINGLIGHTS;
-	self.use = 0;
+	self.effects &= ~EF_SPINNINGLIGHTS;
+	self.use = nullptr;
 
 	self.think = SAVABLE(G_FreeEdict);	
 	self.nextthink = level.framenum + 1;
 }
 
-static REGISTER_SAVABLE_FUNCTION(rotating_light_killed);
+REGISTER_STATIC_SAVABLE(rotating_light_killed);
 
 static void rotating_light_use(entity &self, entity &, entity &)
 {
 	if (self.spawnflags & START_OFF)
 	{
 		self.spawnflags &= ~START_OFF;
-		self.s.effects |= EF_SPINNINGLIGHTS;
+		self.effects |= EF_SPINNINGLIGHTS;
 
 		if (self.spawnflags & 2)
 		{
@@ -71,33 +65,33 @@ static void rotating_light_use(entity &self, entity &, entity &)
 	else
 	{
 		self.spawnflags |= START_OFF;
-		self.s.effects &= ~EF_SPINNINGLIGHTS;
+		self.effects &= ~EF_SPINNINGLIGHTS;
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(rotating_light_use);
+REGISTER_STATIC_SAVABLE(rotating_light_use);
 
 static void SP_rotating_light(entity &self)
 {
 	self.movetype = MOVETYPE_STOP;
 	self.solid = SOLID_BBOX;
 	
-	self.s.modelindex = gi.modelindex ("models/objects/light/tris.md2");
+	self.modelindex = gi.modelindex ("models/objects/light/tris.md2");
 	
-	self.s.frame = 0;
+	self.frame = 0;
 		
 	self.use = SAVABLE(rotating_light_use);
 	
 	if (self.spawnflags & START_OFF)
-		self.s.effects &= ~EF_SPINNINGLIGHTS;
+		self.effects &= ~EF_SPINNINGLIGHTS;
 	else
-		self.s.effects |= EF_SPINNINGLIGHTS;
+		self.effects |= EF_SPINNINGLIGHTS;
 
 	if (!self.speed)
 		self.speed = 32.f;
 	// this is a real cheap way
 	// to set the radius of the light
-	// self.s.frame = self.speed;
+	// self.frame = self.speed;
 
 	if (!self.health)
 	{
@@ -136,18 +130,10 @@ static void object_repair_fx(entity &ent)
 	if (ent.health <= 100)
 		ent.health++;
  	else
-	{
-		gi.WriteByte (svc_temp_entity);
-		gi.WriteByte (TE_WELDING_SPARKS);
-		gi.WriteByte (10);
-		gi.WritePosition (ent.s.origin);
-		gi.WriteDir (vec3_origin);
-		gi.WriteByte (0xe0 + (Q_rand()&7));
-		gi.multicast (ent.s.origin, MULTICAST_PVS);
-	}
+		gi.ConstructMessage(svc_temp_entity, TE_WELDING_SPARKS, uint8_t { 10 }, ent.origin, vecdir { vec3_origin }, uint8_t { 0xe0 + (Q_rand()&7) }).multicast (ent.origin, MULTICAST_PVS);
 }
 
-static REGISTER_SAVABLE_FUNCTION(object_repair_fx);
+REGISTER_STATIC_SAVABLE(object_repair_fx);
 
 static void object_repair_dead(entity &ent)
 {
@@ -156,7 +142,7 @@ static void object_repair_dead(entity &ent)
 	ent.think = SAVABLE(object_repair_fx);
 }
 
-static REGISTER_SAVABLE_FUNCTION(object_repair_dead);
+REGISTER_STATIC_SAVABLE(object_repair_dead);
 
 static void object_repair_sparks(entity &ent)
 {
@@ -169,16 +155,10 @@ static void object_repair_sparks(entity &ent)
 
 	ent.nextthink = level.framenum + (gtime)(ent.delay * BASE_FRAMERATE);
 	
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (TE_WELDING_SPARKS);
-	gi.WriteByte (10);
-	gi.WritePosition (ent.s.origin);
-	gi.WriteDir (vec3_origin);
-	gi.WriteByte (0xe0 + (Q_rand()&7));
-	gi.multicast (ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_WELDING_SPARKS, uint8_t { 10 }, ent.origin, vecdir { vec3_origin }, uint8_t { 0xe0 + (Q_rand()&7) }).multicast (ent.origin, MULTICAST_PVS);
 }
 
-static REGISTER_SAVABLE_FUNCTION(object_repair_sparks);
+REGISTER_STATIC_SAVABLE(object_repair_sparks);
 
 static void SP_func_object_repair(entity &ent)
 {

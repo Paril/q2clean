@@ -32,7 +32,7 @@ void AI_SetSightClient()
 	if (!level.sight_client.has_value())
 		start = 1;
 	else
-		start = level.sight_client->s.number;
+		start = level.sight_client->number;
 
 	check = start;
 	while (1)
@@ -58,21 +58,21 @@ void AI_SetSightClient()
 
 void ai_move(entity &self, float dist)
 {
-	M_walkmove(self, self.s.angles[YAW], dist);
+	M_walkmove(self, self.angles[YAW], dist);
 }
 
 void ai_stand(entity &self, float dist)
 {
 	if (dist)
-		M_walkmove(self, self.s.angles[YAW], dist);
+		M_walkmove(self, self.angles[YAW], dist);
 
 	if (self.monsterinfo.aiflags & AI_STAND_GROUND)
 	{
 		if (self.enemy.has_value())
 		{
-			vector v = self.enemy->s.origin - self.s.origin;
-			self.ideal_yaw = vectoyaw(v);
-			if (self.s.angles[YAW] != self.ideal_yaw && self.monsterinfo.aiflags & AI_TEMP_STAND_GROUND)
+			self.ideal_yaw = vectoyaw(self.enemy->origin - self.origin);
+
+			if (self.angles[YAW] != self.ideal_yaw && self.monsterinfo.aiflags & AI_TEMP_STAND_GROUND)
 			{
 				self.monsterinfo.aiflags &= ~(AI_STAND_GROUND | AI_TEMP_STAND_GROUND);
 				self.monsterinfo.run(self);
@@ -90,10 +90,10 @@ void ai_stand(entity &self, float dist)
 			if (self.enemy.has_value() && self.enemy->inuse && visible(self, self.enemy))
 			{
 				self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-				self.monsterinfo.last_sighting = self.enemy->s.origin;
+				self.monsterinfo.last_sighting = self.enemy->origin;
 				self.monsterinfo.trail_framenum = level.framenum;
 #ifdef ROGUE_AI
-				self.monsterinfo.blind_fire_target = self.enemy->s.origin;
+				self.monsterinfo.blind_fire_target = self.enemy->origin;
 				self.monsterinfo.blind_fire_framedelay = 0;
 #endif
 			}
@@ -151,28 +151,21 @@ void ai_walk(entity &self, float dist)
 
 void ai_charge(entity &self, float dist)
 {
-	vector	v;
-
 	if (!self.enemy.has_value() || !self.enemy->inuse)
 		return;
 	
 #ifdef ROGUE_AI
 	// save blindfire target
 	if (visible(self, self.enemy))
-		self.monsterinfo.blind_fire_target = self.enemy->s.origin;
+		self.monsterinfo.blind_fire_target = self.enemy->origin;
 #endif
 
 #if defined(ROGUE_AI) || defined(GROUND_ZERO)
 	// PMM - made AI_MANUAL_STEERING affect things differently here .. they turn, but
 	// don't set the ideal_yaw
 	if (!(self.monsterinfo.aiflags & AI_MANUAL_STEERING))
-	{
 #endif
-		v = self.enemy->s.origin - self.s.origin;
-		self.ideal_yaw = vectoyaw(v);
-#if defined(ROGUE_AI) || defined(GROUND_ZERO)
-	}
-#endif
+		self.ideal_yaw = vectoyaw(self.enemy->origin - self.origin);
 
 	M_ChangeYaw(self);
 
@@ -208,7 +201,7 @@ void ai_charge(entity &self, float dist)
 		}
 		else
 #endif
-			M_walkmove(self, self.s.angles[YAW], dist);
+			M_walkmove(self, self.angles[YAW], dist);
 	}
 }
 
@@ -216,7 +209,7 @@ void ai_charge(entity &self, float dist)
 void ai_turn(entity &self, float dist)
 {
 	if (dist)
-		M_walkmove(self, self.s.angles[YAW], dist);
+		M_walkmove(self, self.angles[YAW], dist);
 
 	if (FindTarget(self))
 		return;
@@ -229,17 +222,15 @@ void ai_turn(entity &self, float dist)
 
 range_t range(entity &self, entity &other)
 {
-	vector	v;
-	float	len;
+	float len = VectorLength(self.origin - other.origin);
 
-	v = self.s.origin - other.s.origin;
-	len = VectorLength(v);
 	if (len < MELEE_DISTANCE)
 		return RANGE_MELEE;
 	if (len < 500)
 		return RANGE_NEAR;
 	if (len < 1000)
 		return RANGE_MID;
+
 	return RANGE_FAR;
 }
 
@@ -250,16 +241,16 @@ void AttackFinished(entity &self, float time)
 }
 
 void HuntTarget(entity &self)
-{
-	vector	vec;
-	
+{	
 	self.goalentity = self.enemy;
+
 	if (self.monsterinfo.aiflags & AI_STAND_GROUND)
 		self.monsterinfo.stand(self);
 	else
 		self.monsterinfo.run(self);
-	vec = self.enemy->s.origin - self.s.origin;
-	self.ideal_yaw = vectoyaw(vec);
+
+	self.ideal_yaw = vectoyaw(self.enemy->origin - self.origin);
+
 	// wait a while before first attack
 	if (!(self.monsterinfo.aiflags & AI_STAND_GROUND))
 		AttackFinished(self, 1);
@@ -280,11 +271,11 @@ void FoundTarget(entity &self)
 
 	self.show_hostile = level.framenum + 1 * BASE_FRAMERATE;   // wake up other monsters
 
-	self.monsterinfo.last_sighting = self.enemy->s.origin;
+	self.monsterinfo.last_sighting = self.enemy->origin;
 	self.monsterinfo.trail_framenum = level.framenum;
 	
 #ifdef ROGUE_AI
-	self.monsterinfo.blind_fire_target = self.enemy->s.origin;
+	self.monsterinfo.blind_fire_target = self.enemy->origin;
 	self.monsterinfo.blind_fire_framedelay = 0;
 #endif
 
@@ -299,7 +290,7 @@ void FoundTarget(entity &self)
 	{
 		self.goalentity = self.movetarget = self.enemy;
 		HuntTarget(self);
-		gi.dprintf("%i at %s, combattarget %s not found\n", self.type, vtos(self.s.origin).ptr(), self.combattarget.ptr());
+		gi.dprintfmt("{}: combattarget {} not found\n", self, self.combattarget);
 		return;
 	}
 
@@ -430,26 +421,23 @@ bool FindTarget(entity &self)
 			}
 		}
 	} else { // heardit
-		vector	temp;
-
 		if (self.spawnflags & 1) {
 			if (!visible(self, cl))
 				return false;
 		} else {
-			if (!gi.inPHS(self.s.origin, cl->s.origin))
+			if (!gi.inPHS(self.origin, cl->origin))
 				return false;
 		}
 
-		temp = cl->s.origin - self.s.origin;
+		vector temp = cl->origin - self.origin;
 
 		if (VectorLength(temp) > 1000) { // too far to hear
 			return false;
 		}
 
 		// check area portals - if they are different and not connected then we can't hear it
-		if (cl->areanum != self.areanum)
-			if (!gi.AreasConnected(self.areanum, cl->areanum))
-				return false;
+		if (cl->areas[0] != self.areas[0] && !gi.AreasConnected(self.areas[0], cl->areas[0]))
+			return false;
 
 		self.ideal_yaw = vectoyaw(temp);
 		
@@ -494,7 +482,7 @@ static bool FacingIdeal(entity &self)
 {
 	float   delta;
 
-	delta = anglemod(self.s.angles[YAW] - self.ideal_yaw);
+	delta = anglemod(self.angles[YAW] - self.ideal_yaw);
 	if (delta > 45 && delta < 315)
 		return false;
 	return true;
@@ -515,9 +503,9 @@ bool M_CheckAttack(entity &self)
 
 	if (self.enemy->health > 0) {
 		// see if any entities are in the way of the shot
-		spot1 = self.s.origin;
+		spot1 = self.origin;
 		spot1.z += self.viewheight;
-		spot2 = self.enemy->s.origin;
+		spot2 = self.enemy->origin;
 		spot2.z += self.enemy->viewheight;
 
 		tr = gi.traceline(spot1, spot2, self, CONTENTS_SOLID | CONTENTS_MONSTER | CONTENTS_SLIME | CONTENTS_LAVA | CONTENTS_WINDOW);
@@ -657,7 +645,7 @@ bool M_CheckAttack(entity &self)
 	return false;
 }
 
-REGISTER_SAVABLE_FUNCTION(M_CheckAttack);
+REGISTER_SAVABLE(M_CheckAttack);
 
 /*
 =============
@@ -776,9 +764,6 @@ static void ai_run_slide(entity &self, float distance)
 
 bool ai_checkattack(entity &self, float)
 {
-	vector	temp;
-	bool	hesDeadJim;
-
 // this causes monsters to run blindly to the combat point w/o firing
 	if (self.goalentity.has_value())
 	{
@@ -811,7 +796,8 @@ bool ai_checkattack(entity &self, float)
 	enemy_vis = false;
 
 // see if the enemy is dead
-	hesDeadJim = false;
+	bool hesDeadJim = false;
+
 	if ((!self.enemy.has_value()) || (!self.enemy->inuse))
 		hesDeadJim = true;
 	else if (self.monsterinfo.aiflags & AI_MEDIC)
@@ -877,18 +863,18 @@ bool ai_checkattack(entity &self, float)
 	if (enemy_vis)
 	{
 		self.monsterinfo.search_framenum = level.framenum + 5 * BASE_FRAMERATE;
-		self.monsterinfo.last_sighting = self.enemy->s.origin;
+		self.monsterinfo.last_sighting = self.enemy->origin;
 		self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
 		self.monsterinfo.trail_framenum = level.framenum;
 
 #ifdef ROGUE_AI
-		self.monsterinfo.blind_fire_target = self.enemy->s.origin;
+		self.monsterinfo.blind_fire_target = self.enemy->origin;
 		self.monsterinfo.blind_fire_framedelay = 0;
 #endif
 	}
 
 	enemy_range = range(self, self.enemy);
-	temp = self.enemy->s.origin - self.s.origin;
+	vector temp = self.enemy->origin - self.origin;
 	enemy_yaw = vectoyaw(temp);
 	
 #if defined(ROGUE_AI) || defined(GROUND_ZERO)
@@ -929,7 +915,6 @@ bool ai_checkattack(entity &self, float)
 
 void ai_run(entity &self, float dist)
 {
-	vector	v;
 	bool	isNew;
 	float	d1, d2;
 	trace	tr;
@@ -1012,7 +997,7 @@ void ai_run(entity &self, float dist)
 
 	if (self.monsterinfo.aiflags & AI_SOUND_TARGET)
 	{
-		if (!self.enemy.has_value() || VectorLength(self.s.origin - self.enemy->s.origin) < 64)
+		if (!self.enemy.has_value() || VectorLength(self.origin - self.enemy->origin) < 64)
 		{
 			self.monsterinfo.aiflags |= (AI_STAND_GROUND | AI_TEMP_STAND_GROUND);
 			self.monsterinfo.stand(self);
@@ -1077,10 +1062,10 @@ void ai_run(entity &self, float dist)
 		if (self.enemy.has_value() && self.enemy->inuse && enemy_vis)
 		{
 			self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-			self.monsterinfo.last_sighting = self.enemy->s.origin;
+			self.monsterinfo.last_sighting = self.enemy->origin;
 			self.monsterinfo.trail_framenum = level.framenum;
 
-			self.monsterinfo.blind_fire_target = self.enemy->s.origin;
+			self.monsterinfo.blind_fire_target = self.enemy->origin;
 			self.monsterinfo.blind_fire_framedelay = 0;
 		}
 		return;
@@ -1096,11 +1081,11 @@ void ai_run(entity &self, float dist)
 			return;
 
 		self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-		self.monsterinfo.last_sighting = self.enemy->s.origin;
+		self.monsterinfo.last_sighting = self.enemy->origin;
 		self.monsterinfo.trail_framenum = level.framenum;
 		
 #ifdef ROGUE_AI
-		self.monsterinfo.blind_fire_target = self.enemy->s.origin;
+		self.monsterinfo.blind_fire_target = self.enemy->origin;
 		self.monsterinfo.blind_fire_framedelay = 0;
 #endif
 		return;
@@ -1172,41 +1157,41 @@ void ai_run(entity &self, float dist)
 		}
 
 		if (marker.has_value()) {
-			self.monsterinfo.last_sighting = marker->s.origin;
+			self.monsterinfo.last_sighting = marker->origin;
 			self.monsterinfo.trail_framenum = marker->timestamp;
-			self.s.angles[YAW] = self.ideal_yaw = marker->s.angles[YAW];
+			self.angles[YAW] = self.ideal_yaw = marker->angles[YAW];
 
 			isNew = true;
 		}
 	}
 
-	v = self.s.origin - self.monsterinfo.last_sighting;
+	vector v = self.origin - self.monsterinfo.last_sighting;
 	d1 = VectorLength(v);
 	if (d1 <= dist) {
 		self.monsterinfo.aiflags |= AI_PURSUE_NEXT;
 		dist = d1;
 	}
 
-	self.goalentity->s.origin = self.monsterinfo.last_sighting;
+	self.goalentity->origin = self.monsterinfo.last_sighting;
 
 	if (isNew) {
-		tr = gi.trace(self.s.origin, self.bounds, self.monsterinfo.last_sighting, self, MASK_PLAYERSOLID);
+		tr = gi.trace(self.origin, self.bounds, self.monsterinfo.last_sighting, self, MASK_PLAYERSOLID);
 		if (tr.fraction < 1) {
-			v = self.goalentity->s.origin - self.s.origin;
+			v = self.goalentity->origin - self.origin;
 			d1 = VectorLength(v);
 			center = tr.fraction;
 			d2 = d1 * ((center + 1) / 2);
-			self.s.angles[YAW] = self.ideal_yaw = vectoyaw(v);
-			AngleVectors(self.s.angles, &v_forward, &v_right, nullptr);
+			self.angles[YAW] = self.ideal_yaw = vectoyaw(v);
+			AngleVectors(self.angles, &v_forward, &v_right, nullptr);
 
 			v = { d2, -16, 0 };
-			left_target = G_ProjectSource(self.s.origin, v, v_forward, v_right);
-			tr = gi.trace(self.s.origin, self.bounds, left_target, self, MASK_PLAYERSOLID);
+			left_target = G_ProjectSource(self.origin, v, v_forward, v_right);
+			tr = gi.trace(self.origin, self.bounds, left_target, self, MASK_PLAYERSOLID);
 			left = tr.fraction;
 
 			v = { d2, 16, 0 };
-			right_target = G_ProjectSource(self.s.origin, v, v_forward, v_right);
-			tr = gi.trace(self.s.origin, self.bounds, right_target, self, MASK_PLAYERSOLID);
+			right_target = G_ProjectSource(self.origin, v, v_forward, v_right);
+			tr = gi.trace(self.origin, self.bounds, right_target, self, MASK_PLAYERSOLID);
 			right = tr.fraction;
 
 			center = (d1 * center) / d2;
@@ -1215,28 +1200,28 @@ void ai_run(entity &self, float dist)
 				if (left < 1)
 				{
 					v = { d2 * left * 0.5f, -16, 0 };
-					left_target = G_ProjectSource(self.s.origin, v, v_forward, v_right);
+					left_target = G_ProjectSource(self.origin, v, v_forward, v_right);
 				}
 				self.monsterinfo.saved_goal = self.monsterinfo.last_sighting;
 				self.monsterinfo.aiflags |= AI_PURSUE_TEMP;
-				self.goalentity->s.origin = left_target;
+				self.goalentity->origin = left_target;
 				self.monsterinfo.last_sighting = left_target;
-				v = self.goalentity->s.origin - self.s.origin;
-				self.s.angles[YAW] = self.ideal_yaw = vectoyaw(v);
+				v = self.goalentity->origin - self.origin;
+				self.angles[YAW] = self.ideal_yaw = vectoyaw(v);
 			}
 			else if (right >= center && right > left)
 			{
 				if (right < 1)
 				{
 					v = { d2 * right * 0.5f, 16, 0 };
-					right_target = G_ProjectSource(self.s.origin, v, v_forward, v_right);
+					right_target = G_ProjectSource(self.origin, v, v_forward, v_right);
 				}
 				self.monsterinfo.saved_goal = self.monsterinfo.last_sighting;
 				self.monsterinfo.aiflags |= AI_PURSUE_TEMP;
-				self.goalentity->s.origin = right_target;
+				self.goalentity->origin = right_target;
 				self.monsterinfo.last_sighting = right_target;
-				v = self.goalentity->s.origin - self.s.origin;
-				self.s.angles[YAW] = self.ideal_yaw = vectoyaw(v);
+				v = self.goalentity->origin - self.origin;
+				self.angles[YAW] = self.ideal_yaw = vectoyaw(v);
 			}
 		}
 	}

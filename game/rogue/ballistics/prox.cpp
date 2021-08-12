@@ -13,6 +13,8 @@
 #include "game/player.h"
 #include "prox.h"
 
+constexpr means_of_death MOD_PROX { .self_kill_fmt = "{0} forgot about {1} own mine.\n", .other_kill_fmt = "{0} got too close to {3}'s proximity mine.\n" };
+
 constexpr float PROX_TIME_TO_LIVE	= 45.f;		// 45, 30, 15, 10
 constexpr float PROX_TIME_DELAY		= 0.5f;
 constexpr bbox PROX_BOUND_SIZE		= bbox::sized(96.f);
@@ -36,30 +38,25 @@ static void Prox_Explode(entity &ent)
 #endif
 		cowner = ent.teammaster;
 #if defined(SINGLE_PLAYER)
-		PlayerNoise(cowner, ent.s.origin, PNOISE_IMPACT);
+		PlayerNoise(cowner, ent.origin, PNOISE_IMPACT);
 	}
 #endif
 
 	// play quad sound if appopriate
 	if (ent.dmg > PROX_DAMAGE)
-		gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage3.wav"), 1, ATTN_NORM, 0);
+		gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage3.wav"));
 
 	ent.takedamage = false;
 	T_RadiusDamage(ent, cowner, ent.dmg, ent, PROX_DAMAGE_RADIUS, MOD_PROX);
 
-	vector origin = ent.s.origin + (ent.velocity * -0.02f);
-	gi.WriteByte (svc_temp_entity);
-	if (ent.groundentity != null_entity)
-		gi.WriteByte (TE_GRENADE_EXPLOSION);
-	else
-		gi.WriteByte (TE_ROCKET_EXPLOSION);
-	gi.WritePosition (origin);
-	gi.multicast (ent.s.origin, MULTICAST_PVS);
+	vector origin = ent.origin + (ent.velocity * -0.02f);
+
+	gi.ConstructMessage(svc_temp_entity, ent.groundentity.has_value() ? TE_GRENADE_EXPLOSION : TE_ROCKET_EXPLOSION, origin).multicast(ent.origin, MULTICAST_PVS);
 
 	G_FreeEdict (ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Prox_Explode);
+REGISTER_STATIC_SAVABLE(Prox_Explode);
 
 static void prox_die(entity &self, entity &inflictor, entity &, int32_t, vector)
 {
@@ -75,7 +72,7 @@ static void prox_die(entity &self, entity &inflictor, entity &, int32_t, vector)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(prox_die);
+REGISTER_STATIC_SAVABLE(prox_die);
 
 static void Prox_Field_Touch(entity &ent, entity &other, vector, const surface &)
 {
@@ -93,7 +90,7 @@ static void Prox_Field_Touch(entity &ent, entity &other, vector, const surface &
 
 	if (prox->teamchain == ent)
 	{
-		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxwarn.wav"), 1, ATTN_NORM, 0);
+		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxwarn.wav"));
 		prox->think = SAVABLE(Prox_Explode);
 		prox->nextthink = level.framenum + (gtime)(PROX_TIME_DELAY * BASE_FRAMERATE);
 		return;
@@ -103,11 +100,11 @@ static void Prox_Field_Touch(entity &ent, entity &other, vector, const surface &
 	G_FreeEdict(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Prox_Field_Touch);
+REGISTER_STATIC_SAVABLE(Prox_Field_Touch);
 
 static void prox_seek(entity &ent);
 
-DECLARE_SAVABLE_FUNCTION(prox_seek);
+REGISTER_STATIC_SAVABLE(prox_seek);
 
 static void prox_seek(entity &ent)
 {
@@ -115,33 +112,31 @@ static void prox_seek(entity &ent)
 		Prox_Explode(ent);
 	else
 	{
-		ent.s.frame++;
-		if (ent.s.frame > 13)
-			ent.s.frame = 9;
+		ent.frame++;
+		if (ent.frame > 13)
+			ent.frame = 9;
 		ent.think = SAVABLE(prox_seek);
 		ent.nextthink = level.framenum + 1;
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(prox_seek);
-
 static void prox_open(entity &ent);
 
-DECLARE_SAVABLE_FUNCTION(prox_open);
+REGISTER_STATIC_SAVABLE(prox_open);
 
 static void prox_open(entity &ent)
 {
-	if (ent.s.frame == 9)	// end of opening animation
+	if (ent.frame == 9)	// end of opening animation
 	{
 		// set the owner to NULL so the owner can shoot it, etc.  needs to be done here so the owner
 		// doesn't get stuck on it while it's opening if fired at point blank wall
-		ent.s.sound = SOUND_NONE;
+		ent.sound = SOUND_NONE;
 		ent.owner = 0;
 
 		if (ent.teamchain.has_value())
 			ent.teamchain->touch = SAVABLE(Prox_Field_Touch);
 
-		for (entity &search : G_IterateRadius(ent.s.origin, PROX_DAMAGE_RADIUS + 10))
+		for (entity &search : G_IterateRadius(ent.origin, PROX_DAMAGE_RADIUS + 10))
 		{
 			if (!search.type)
 				continue;
@@ -165,7 +160,7 @@ static void prox_open(entity &ent)
 #endif
 				&& visible(search, ent))
 			{
-				gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxwarn.wav"), 1, ATTN_NORM, 0);
+				gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxwarn.wav"));
 				Prox_Explode (ent);
 				return;
 			}
@@ -179,16 +174,14 @@ static void prox_open(entity &ent)
 	}
 	else
 	{
-		if (ent.s.frame == 0)
-			gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxopen.wav"), 1, ATTN_NORM, 0);
+		if (ent.frame == 0)
+			gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxopen.wav"));
 
-		ent.s.frame++;
+		ent.frame++;
 		ent.think = SAVABLE(prox_open);
 		ent.nextthink = level.framenum + 1;	
 	}
 }
-
-static REGISTER_SAVABLE_FUNCTION(prox_open);
 
 static void prox_land(entity &ent, entity &other, vector normal, const surface &surf) 
 {
@@ -200,7 +193,7 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 
 	if (normal)
 	{
-		vector land_point = ent.s.origin + (normal * -10.f);
+		vector land_point = ent.origin + (normal * -10.f);
 
 		if (gi.pointcontents(land_point) & (CONTENTS_SLIME|CONTENTS_LAVA))
 		{
@@ -245,19 +238,19 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 
 		return;
 	}
-	else if (other.s.modelindex != MODEL_WORLD)
+	else if (other.modelindex != MODEL_WORLD)
 		return;
 
 	vector dir = vectoangles (normal);
 
-	if (gi.pointcontents (ent.s.origin) & (CONTENTS_LAVA|CONTENTS_SLIME))
+	if (gi.pointcontents (ent.origin) & (CONTENTS_LAVA|CONTENTS_SLIME))
 	{
 		Prox_Explode (ent);
 		return;
 	}
 
 	entity &field = G_Spawn();
-	field.s.origin = ent.s.origin;
+	field.origin = ent.origin;
 	field.bounds = PROX_BOUND_SIZE;
 	field.movetype = MOVETYPE_NONE;
 	field.solid = SOLID_TRIGGER;
@@ -268,7 +261,7 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 	ent.velocity = ent.avelocity = vec3_origin;
 	// rotate to vertical
 	dir[PITCH] += 90;
-	ent.s.angles = dir;
+	ent.angles = dir;
 	ent.takedamage = true;
 	ent.movetype = cmovetype;		// either bounce or none, depending on whether we stuck to something
 	ent.die = SAVABLE(prox_die);
@@ -276,42 +269,43 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 	ent.health = PROX_HEALTH;
 	ent.nextthink = level.framenum + 1;
 	ent.think = SAVABLE(prox_open);
-	ent.touch = 0;
+	ent.touch = nullptr;
 	ent.solid = SOLID_BBOX;
 
 	gi.linkentity(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(prox_land);
+REGISTER_STATIC_SAVABLE(prox_land);
 
-void fire_prox(entity &self, vector start, vector aimdir, int32_t damage_multiplier, int32_t speed)
+void fire_prox(entity &self, vector start, vector aimdir, int32_t dmg_multiplier, int32_t speed)
 {
 	vector dir = vectoangles(aimdir);
 	vector right, up;
 	AngleVectors (dir, nullptr, &right, &up);
 
 	entity &prox = G_Spawn();
-	prox.s.origin = start;
+	prox.origin = start;
 	prox.velocity = aimdir * speed;
 	prox.velocity += random(190.f, 210.f) * up;
 	prox.velocity += random(-10.f, 10.f) * right;
-	prox.s.angles = dir;
-	prox.s.angles[PITCH] -= 90;
+	prox.angles = dir;
+	prox.angles[PITCH] -= 90;
 	prox.movetype = MOVETYPE_BOUNCE;
 	prox.solid = SOLID_BBOX; 
-	prox.s.effects |= EF_GRENADE;
+	prox.effects |= EF_GRENADE;
 	prox.clipmask = MASK_SHOT|CONTENTS_LAVA|CONTENTS_SLIME;
-	prox.s.renderfx |= RF_IR_VISIBLE;
+	prox.renderfx |= RF_IR_VISIBLE;
 	prox.bounds = bbox::sized(6.f);
-	prox.s.modelindex = gi.modelindex ("models/weapons/g_prox/tris.md2");
+	prox.modelindex = gi.modelindex ("models/weapons/g_prox/tris.md2");
 	prox.owner = self;
 	prox.teammaster = self;
 	prox.touch = SAVABLE(prox_land);
 	prox.think = SAVABLE(Prox_Explode);
-	prox.dmg = PROX_DAMAGE * damage_multiplier;
+	prox.dmg = PROX_DAMAGE * dmg_multiplier;
 	prox.type = ET_PROX;
-	prox.flags |= FL_MECHANICAL | FL_DAMAGEABLE;
-	prox.nextthink = level.framenum + (int)((PROX_TIME_TO_LIVE / damage_multiplier) * BASE_FRAMERATE);
+	prox.bleed_style = BLEED_MECHANICAL;
+	prox.flags |= FL_DAMAGEABLE;
+	prox.nextthink = level.framenum + (gtime)((PROX_TIME_TO_LIVE / dmg_multiplier) * BASE_FRAMERATE);
 
 	gi.linkentity (prox);
 }

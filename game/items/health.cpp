@@ -46,7 +46,7 @@ bool Pickup_AncientHead(entity &ent, entity &other)
 bool(entity) CTFHasRegeneration;
 #endif
 
-static void MegaHealth_think(entity &self)
+void MegaHealth_think(entity &self)
 {
 	if (self.owner->health > self.owner->max_health
 #ifdef CTF
@@ -69,7 +69,7 @@ static void MegaHealth_think(entity &self)
 		G_FreeEdict(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(MegaHealth_think);
+REGISTER_STATIC_SAVABLE(MegaHealth_think);
 
 bool Pickup_Health(entity &ent, entity &other)
 {

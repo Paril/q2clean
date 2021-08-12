@@ -38,6 +38,7 @@ enum gitem_flags : uint16_t
 
 MAKE_ENUM_BITWISE(gitem_flags);
 
+// relative ammo IDs. Does not have to match item list.
 enum ammo_id : uint8_t
 {
 	AMMO_BULLETS,
@@ -62,7 +63,8 @@ enum ammo_id : uint8_t
 	AMMO_TOTAL
 };
 
-// you have a max of MAX_ITEMS items to list here
+// you have a max of MAX_ITEMS items to list here.
+// this must match the main item list in the .cpp file as well.
 enum gitem_id : uint8_t
 {
 	ITEM_NONE,
@@ -191,10 +193,10 @@ enum gitem_id : uint8_t
 
 struct gitem_t;
 
-using pickup_func = bool(entity &, entity &);
-using use_func = void(entity &, const gitem_t &);
+using pickup_func = bool(*)(entity &, entity &);
+using use_func = void(*)(entity &, const gitem_t &);
 using drop_func = use_func;
-using weaponthink_func = void(entity &);
+using weaponthink_func = void(*)(entity &);
 
 struct gitem_armor
 {
@@ -207,29 +209,31 @@ struct gitem_armor
 
 struct gitem_t
 {
-	stringlit			classname; // spawning name
-	pickup_func			*pickup;
-	use_func			*use;
-	drop_func			*drop;
-	weaponthink_func	*weaponthink;
-	stringlit			pickup_sound;
-	stringlit			world_model;
-	entity_effects		world_model_flags;
-	stringlit			view_model;
-	stringlit			vwep_model;
+	stringlit			classname;			// spawning name
+	pickup_func			pickup;				// called on pickup
+	use_func			use;				// called on use
+	drop_func			drop;				// called on drop
+	weaponthink_func	weaponthink;		// think function to call for weapons
+	stringlit			pickup_sound;		// sound to play on pickup
+	stringlit			world_model;		// world model
+	entity_effects		world_model_flags;	// EF_ flags for the world model
+	stringlit			view_model;			// v_ model to display while holding
+	stringlit			vwep_model;			// vwep model
+
+	stringlit	icon;			// icon displayed on HUD
+	stringlit	pickup_name;	// friendly name of item
 	
-	// client side info
-	stringlit	icon;
-	stringlit	pickup_name;	// for printing on pickup
-	
-	uint16_t	quantity;	// for ammo how much, for weapons how much is used per shot
-	gitem_id	ammo;		// for weapons
+	uint16_t	quantity;	// for ammo how much, for weapons how much is used per shot, for powerups respawn time
+	gitem_id	ammo;		// ammo used for this weapon
 	gitem_flags	flags;		// IT_* flags
 
-	gitem_armor	armor;
-	ammo_id		ammotag;
+	gitem_armor	armor;		// armor parameters
+	ammo_id		ammotag;	// for ammo only; client ammo ID
 	
 	stringlit	precaches;	// string of all models, sounds, and images this item will use
+
+	gitem_id	chain;		// for weapons, which weapon chain to assign this weapon to. The initial weapon
+							// does not have to be explicitly added to the chain.
 
 	// do NOT set these via the itemlist; they are overwritten later!
 
@@ -237,6 +241,8 @@ struct gitem_t
 	gitem_id	id;
 	// weapon model index (for weapons)
 	uint8_t		vwep_id;
+	// entity type
+	entity_type_ref	type;
 };
 
 // thrown on an invalid item dereference
@@ -359,3 +365,5 @@ inline itemref FindItem(const stringref &pickup_name)
 }
 
 void InitItems();
+
+void InitVWeps();

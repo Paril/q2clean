@@ -12,26 +12,21 @@
 #include "game/ballistics/rocket.h"
 #include "game/xatrix/ballistics/plasma.h"
 #include "game/xatrix/ballistics/ionripper.h"
+#include "game/target.h"
 #include "monster.h"
 
 void monster_fire_blueblaster(entity &self, vector start, vector dir, int32_t damage, int32_t speed, monster_muzzleflash, entity_effects effect)
 {
-	fire_blaster(self, start, dir, damage, speed, effect, MOD_UNKNOWN, false);
+	fire_blaster(self, start, dir, damage, speed, effect, false);
 
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort(self.s.number);
-	gi.WriteByte(MZ_HYPERBLASTER);
-	gi.multicast(start, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, self, MZ_HYPERBLASTER).multicast(start, MULTICAST_PVS);
 }
 
 void monster_fire_ionripper(entity &self, vector start, vector dir, int32_t damage, int32_t speed, monster_muzzleflash flashtype, entity_effects effect)
 {
 	fire_ionripper(self, start, dir, damage, speed, effect);
 
-	gi.WriteByte(svc_muzzleflash2);
-	gi.WriteShort(self.s.number);
-	gi.WriteByte(flashtype);
-	gi.multicast(start, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash2, self, flashtype).multicast(start, MULTICAST_PVS);
 }
 
 static void heat_think(entity &self)
@@ -40,7 +35,7 @@ static void heat_think(entity &self)
 	entityref	target, acquire;
 
 	// acquire new target
-	while ((target = findradius (target, self.s.origin, 1024)).has_value())
+	while ((target = findradius (target, self.origin, 1024)).has_value())
 	{
 		if (self.owner == target)
 			continue;
@@ -53,7 +48,7 @@ static void heat_think(entity &self)
 		if (!infront (self, target))
 			continue;
 
-		vector vec = self.s.origin - target->s.origin;
+		vector vec = self.origin - target->origin;
 		float len = VectorLength (vec);
 
 		if (!acquire.has_value() || len < oldlen)
@@ -65,10 +60,10 @@ static void heat_think(entity &self)
 
 	if (acquire.has_value())
 	{
-		vector vec = acquire->s.origin - self.s.origin;
-		
-		self.s.angles = vectoangles(vec);
+		vector vec = acquire->origin - self.origin;
 		VectorNormalize(vec);
+		
+		self.angles = vectoangles(vec);
 		self.movedir = vec;
 		self.velocity = vec * 500;
 	}
@@ -76,7 +71,7 @@ static void heat_think(entity &self)
 	self.nextthink = level.framenum + 1;
 }
 
-static REGISTER_SAVABLE_FUNCTION(heat_think);
+REGISTER_STATIC_SAVABLE(heat_think);
 
 inline void fire_heat(entity &self, vector start, vector dir, int32_t damage, int32_t speed, float damage_radius, int32_t radius_damage)
 {
@@ -89,16 +84,13 @@ void monster_fire_heat(entity &self, vector start, vector dir, int32_t damage, i
 {
 	fire_heat(self, start, dir, damage, speed, damage, damage);
 
-	gi.WriteByte(svc_muzzleflash2);
-	gi.WriteShort(self.s.number);
-	gi.WriteByte(flashtype);
-	gi.multicast(start, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash2, self, flashtype).multicast(start, MULTICAST_PVS);
 }
 
 static void dabeam_hit(entity &self)
 {
 	entityref ignore = self;
-	vector start = self.s.origin;
+	vector start = self.origin;
 	vector end = start + (self.movedir * 2048);
 	trace tr;
 
@@ -111,7 +103,7 @@ static void dabeam_hit(entity &self)
 
 		// hurt it if we can
 		if ((tr.ent.takedamage) && !(tr.ent.flags & FL_IMMUNE_LASER) && (tr.ent != self.owner))
-			T_Damage(tr.ent, self, self.owner, self.movedir, tr.endpos, vec3_origin, self.dmg, (int32_t) skill, DAMAGE_ENERGY, MOD_TARGET_LASER);
+			T_Damage(tr.ent, self, self.owner, self.movedir, tr.endpos, vec3_origin, self.dmg, (int32_t) skill, { DAMAGE_ENERGY }, MOD_TARGET_LASER);
 
 		if (self.dmg < 0) // healer ray
 			// when player is at 100 health
@@ -126,13 +118,7 @@ static void dabeam_hit(entity &self)
 			if (self.spawnflags & (spawn_flag) 0x80000000)
 			{
 				self.spawnflags &= (spawn_flag) ~0x80000000;
-				gi.WriteByte(svc_temp_entity);
-				gi.WriteByte(TE_LASER_SPARKS);
-				gi.WriteByte(10);
-				gi.WritePosition(tr.endpos);
-				gi.WriteDir(tr.normal);
-				gi.WriteByte(self.s.skinnum);
-				gi.multicast(tr.endpos, MULTICAST_PVS);
+				gi.ConstructMessage(svc_temp_entity, TE_LASER_SPARKS, (uint8_t) 10, tr.endpos, vecdir { tr.normal }, (uint8_t) self.skinnum).multicast(tr.endpos, MULTICAST_PVS);
 			}
 
 			break;
@@ -142,26 +128,26 @@ static void dabeam_hit(entity &self)
 		start = tr.endpos;
 	} while (1);
 
-	self.s.old_origin = tr.endpos;
+	self.old_origin = tr.endpos;
 	self.nextthink = level.framenum + 1;
 	self.think = SAVABLE(G_FreeEdict);
 }
 
-static REGISTER_SAVABLE_FUNCTION(dabeam_hit);
+REGISTER_STATIC_SAVABLE(dabeam_hit);
 
 void monster_dabeam(entity &self)
 {
 	self.movetype = MOVETYPE_NONE;
 	self.solid = SOLID_NOT;
-	self.s.renderfx |= RF_BEAM | RF_TRANSLUCENT;
-	self.s.modelindex = MODEL_WORLD;
+	self.renderfx |= RF_BEAM | RF_TRANSLUCENT;
+	self.modelindex = MODEL_WORLD;
 
-	self.s.frame = 2;
+	self.frame = 2;
 
 	if (self.owner->monsterinfo.aiflags & AI_MEDIC)
-		self.s.skinnum = 0xf3f3f1f1;
+		self.skinnum = 0xf3f3f1f1;
 	else
-		self.s.skinnum = 0xf2f2f0f0;
+		self.skinnum = 0xf2f2f0f0;
 
 	if (self.enemy.has_value())
 	{
@@ -171,14 +157,14 @@ void monster_dabeam(entity &self)
 		if (self.owner->monsterinfo.aiflags & AI_MEDIC)
 			point[0] += sin(level.time) * 8;
 
-		self.movedir = point - self.s.origin;
+		self.movedir = point - self.origin;
 		VectorNormalize(self.movedir);
 
 		if (self.movedir != last_movedir)
 			self.spawnflags |= (spawn_flag) 0x80000000;
 	}
 	else
-		G_SetMovedir(self.s.angles, self.movedir);
+		G_SetMovedir(self.angles, self.movedir);
 
 	self.think = SAVABLE(dabeam_hit);
 	self.nextthink = level.framenum + 1;

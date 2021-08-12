@@ -2,4 +2,4 @@
 
 #include "lib/string.h"
 
-stringref G_GetStatusBar();
+string G_GetStatusBar();

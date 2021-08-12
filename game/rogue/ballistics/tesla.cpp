@@ -13,6 +13,8 @@
 #include "game/ballistics/grenade.h"
 #include "tesla.h"
 
+constexpr means_of_death MOD_TESLA { .self_kill_fmt = "{0} zapped {2}.\n", .other_kill_fmt = "{0} was enlightened by {3}'s tesla mine.\n" };
+
 constexpr float TESLA_TIME_TO_LIVE				= 30.f;
 constexpr int32_t TESLA_DAMAGE					= 3;		// 3
 constexpr int32_t TESLA_KNOCKBACK				= 8;
@@ -36,7 +38,7 @@ static void tesla_remove(entity &self)
 		}
 	}
 	else if (self.air_finished_framenum)
-		gi.dprintf ("tesla without a field!\n");
+		gi.dprint("tesla without a field!\n");
 
 	self.owner = self.teammaster;	// Going away, set the owner correctly.
 	// PGM - grenade explode does damage to self.enemy
@@ -44,7 +46,7 @@ static void tesla_remove(entity &self)
 
 	// play quad sound if quadded and an underwater explosion
 	if ((self.dmg_radius) && (self.dmg > (TESLA_DAMAGE*TESLA_EXPLOSION_DAMAGE_MULT)))
-		gi.sound(self, CHAN_ITEM, gi.soundindex("items/damage3.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_ITEM, gi.soundindex("items/damage3.wav"));
 
 	Grenade_Explode(self);
 }
@@ -54,7 +56,7 @@ static void tesla_die(entity &self, entity &, entity &, int32_t, vector)
 	tesla_remove(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(tesla_die);
+REGISTER_STATIC_SAVABLE(tesla_die);
 
 static void tesla_blow(entity &self)
 {
@@ -65,7 +67,7 @@ static void tesla_blow(entity &self)
 
 static void tesla_think_active(entity &self);
 
-DECLARE_SAVABLE_FUNCTION(tesla_think_active);
+REGISTER_STATIC_SAVABLE(tesla_think_active);
 
 static void tesla_think_active(entity &self)
 {
@@ -75,7 +77,7 @@ static void tesla_think_active(entity &self)
 		return;
 	}
 
-	vector start = self.s.origin;
+	vector start = self.origin;
 	start[2] += 16;
 
 	dynarray<entityref> entities = gi.BoxEdicts(self.teamchain->absbounds, AREA_SOLID);
@@ -102,33 +104,27 @@ static void tesla_think_active(entity &self)
 		if (!(hit->svflags & SVF_MONSTER) && !(hit->flags & FL_DAMAGEABLE) && !hit->is_client())
 			continue;
 	
-		trace tr = gi.traceline(start, hit->s.origin, self, MASK_SHOT);
+		trace tr = gi.traceline(start, hit->origin, self, MASK_SHOT);
 
 		if (tr.fraction == 1 || tr.ent == hit)
 		{
-			vector dir = hit->s.origin - start;
+			vector dir = hit->origin - start;
 			
 			// PMM - play quad sound if it's above the "normal" damage
 			if (self.dmg > TESLA_DAMAGE)
-				gi.sound(self, CHAN_ITEM, gi.soundindex("items/damage3.wav"), 1, ATTN_NORM, 0);
+				gi.sound(self, CHAN_ITEM, gi.soundindex("items/damage3.wav"));
 
 #ifdef SINGLE_PLAYER
 			// PGM - don't do knockback to walking monsters
 			if ((hit->svflags & SVF_MONSTER) && !(hit->flags & (FL_FLY | FL_SWIM)))
 				T_Damage (hit, self, self.teammaster, dir, tr.endpos, tr.normal,
-					self.dmg, 0, DAMAGE_NONE, MOD_TESLA);
+					self.dmg, 0, { DAMAGE_NONE }, MOD_TESLA);
 			else
 #endif
 				T_Damage (hit, self, self.teammaster, dir, tr.endpos, tr.normal,
-					self.dmg, TESLA_KNOCKBACK, DAMAGE_NONE, MOD_TESLA);
+					self.dmg, TESLA_KNOCKBACK, { DAMAGE_NONE }, MOD_TESLA);
 
-			gi.WriteByte (svc_temp_entity);
-			gi.WriteByte (TE_LIGHTNING);
-			gi.WriteShort (hit->s.number);		// destination entity
-			gi.WriteShort (self.s.number);		// source entity
-			gi.WritePosition (tr.endpos);
-			gi.WritePosition (start);
-			gi.multicast (start, MULTICAST_PVS);
+			gi.ConstructMessage(svc_temp_entity, TE_LIGHTNING, hit, self, tr.endpos, start).multicast(start, MULTICAST_PVS);
 		}
 	}
 
@@ -139,11 +135,9 @@ static void tesla_think_active(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(tesla_think_active);
-
 static void tesla_activate(entity &self)
 {
-	if (gi.pointcontents (self.s.origin) & (CONTENTS_SLIME|CONTENTS_LAVA|CONTENTS_WATER))
+	if (gi.pointcontents (self.origin) & (CONTENTS_SLIME|CONTENTS_LAVA|CONTENTS_WATER))
 	{
 		tesla_blow (self);
 		return;
@@ -155,7 +149,7 @@ static void tesla_activate(entity &self)
 	{
 #endif
 		entityref search;
-		while ((search = findradius(search, self.s.origin, 1.5f * TESLA_DAMAGE_RADIUS)).has_value())
+		while ((search = findradius(search, self.origin, 1.5f * TESLA_DAMAGE_RADIUS)).has_value())
 		{
 			// if it's a monster or player with health > 0
 			// or it's a deathmatch start point
@@ -178,7 +172,7 @@ static void tesla_activate(entity &self)
 #endif
 
 	entity &trigger = G_Spawn();
-	trigger.s.origin = self.s.origin;
+	trigger.origin = self.origin;
 	trigger.bounds = {
 		.mins = { -TESLA_DAMAGE_RADIUS, -TESLA_DAMAGE_RADIUS, self.bounds.mins[2] },
 		.maxs = { TESLA_DAMAGE_RADIUS, TESLA_DAMAGE_RADIUS, TESLA_DAMAGE_RADIUS }
@@ -186,11 +180,11 @@ static void tesla_activate(entity &self)
 	trigger.movetype = MOVETYPE_NONE;
 	trigger.solid = SOLID_TRIGGER;
 	trigger.owner = self;
-	trigger.touch = 0;
+	trigger.touch = nullptr;
 	// doesn't need to be marked as a teamslave since the move code for bounce looks for teamchains
 	gi.linkentity (trigger);
 
-	self.s.angles = vec3_origin;
+	self.angles = vec3_origin;
 #ifdef SINGLE_PLAYER
 	// clear the owner if in deathmatch
 	if (deathmatch)
@@ -202,63 +196,61 @@ static void tesla_activate(entity &self)
 	self.air_finished_framenum = level.framenum + (gtime)(TESLA_TIME_TO_LIVE * BASE_FRAMERATE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(tesla_activate);
+REGISTER_STATIC_SAVABLE(tesla_activate);
 
 static void tesla_think(entity &ent);
 
-DECLARE_SAVABLE_FUNCTION(tesla_think);
+REGISTER_STATIC_SAVABLE(tesla_think);
 
 static void tesla_think(entity &ent)
 {
-	if (gi.pointcontents(ent.s.origin) & (CONTENTS_SLIME|CONTENTS_LAVA))
+	if (gi.pointcontents(ent.origin) & (CONTENTS_SLIME|CONTENTS_LAVA))
 	{
 		tesla_remove(ent);
 		return;
 	}
 	
-	ent.s.angles = vec3_origin;
+	ent.angles = vec3_origin;
 
-	if (!ent.s.frame)
-		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/teslaopen.wav"), 1, ATTN_NORM, 0); 
+	if (!ent.frame)
+		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/teslaopen.wav")); 
 
-	ent.s.frame++;
+	ent.frame++;
 
-	if(ent.s.frame > 14)
+	if(ent.frame > 14)
 	{
-		ent.s.frame = 14;
+		ent.frame = 14;
 		ent.think = SAVABLE(tesla_activate);
 		ent.nextthink = level.framenum + 1;
 		return;
 	}
 
-	if (ent.s.frame > 9)
+	if (ent.frame > 9)
 	{
-		if (ent.s.frame == 10)
+		if (ent.frame == 10)
 #if defined(SINGLE_PLAYER)
 		{
 			if (ent.owner.has_value() && ent.owner->is_client())
-				PlayerNoise(ent.owner, ent.s.origin, PNOISE_WEAPON);		// PGM
+				PlayerNoise(ent.owner, ent.origin, PNOISE_WEAPON);		// PGM
 #endif
-			ent.s.skinnum = 1;
+			ent.skinnum = 1;
 #if defined(SINGLE_PLAYER)
 		}
 #endif
-		else if(ent.s.frame == 12)
-			ent.s.skinnum = 2;
-		else if(ent.s.frame == 14)
-			ent.s.skinnum = 3;
+		else if(ent.frame == 12)
+			ent.skinnum = 2;
+		else if(ent.frame == 14)
+			ent.skinnum = 3;
 	}
 	ent.think = SAVABLE(tesla_think);
 	ent.nextthink = level.framenum + 1;
 }
 
-static REGISTER_SAVABLE_FUNCTION(tesla_think);
-
 static void tesla_lava(entity &ent, entity &, vector normal, const surface &)
 {
 	if (normal)
 	{
-		vector land_point = ent.s.origin + (normal * -20.0f);
+		vector land_point = ent.origin + (normal * -20.0f);
 
 		if (gi.pointcontents(land_point) & (CONTENTS_SLIME | CONTENTS_LAVA))
 		{
@@ -268,14 +260,14 @@ static void tesla_lava(entity &ent, entity &, vector normal, const surface &)
 	}
 
 	if (random() > 0.5)
-		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb1a.wav"), 1, ATTN_NORM, 0);
+		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb1a.wav"));
 	else
-		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb2a.wav"), 1, ATTN_NORM, 0);
+		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/hgrenb2a.wav"));
 }
 
-static REGISTER_SAVABLE_FUNCTION(tesla_lava);
+REGISTER_STATIC_SAVABLE(tesla_lava);
 
-void fire_tesla(entity &self, vector start, vector aimdir, int32_t damage_multiplier, int32_t speed)
+void fire_tesla(entity &self, vector start, vector aimdir, int32_t dmg_multiplier, int32_t speed)
 {
 	vector dir = vectoangles (aimdir);
 
@@ -283,19 +275,19 @@ void fire_tesla(entity &self, vector start, vector aimdir, int32_t damage_multip
 	AngleVectors (dir, nullptr, &right, &up);
 
 	entity &tesla = G_Spawn();
-	tesla.s.origin = start;
+	tesla.origin = start;
 	tesla.velocity = aimdir * speed;
 	tesla.velocity += random(190.f, 210.f) * up;
 	tesla.velocity += random(-10.f, 10.f) * right;
 	tesla.movetype = MOVETYPE_BOUNCE;
 	tesla.solid = SOLID_BBOX;
-	tesla.s.effects |= EF_GRENADE;
-	tesla.s.renderfx |= RF_IR_VISIBLE;
+	tesla.effects |= EF_GRENADE;
+	tesla.renderfx |= RF_IR_VISIBLE;
 	tesla.bounds = {
 		.mins = { -12, -12, 0 },
 		.maxs = { 12, 12, 20 }
 	};
-	tesla.s.modelindex = gi.modelindex ("models/weapons/g_tesla/tris.md2");
+	tesla.modelindex = gi.modelindex ("models/weapons/g_tesla/tris.md2");
 	
 	tesla.owner = self;		// PGM - we don't want it owned by self YET.
 	tesla.teammaster = self;
@@ -316,11 +308,11 @@ void fire_tesla(entity &self, vector start, vector aimdir, int32_t damage_multip
 
 	tesla.takedamage = true;
 	tesla.die = SAVABLE(tesla_die);
-	tesla.dmg = TESLA_DAMAGE * damage_multiplier;
+	tesla.dmg = TESLA_DAMAGE * dmg_multiplier;
 	tesla.type = ET_TESLA;
 	tesla.flags |= FL_DAMAGEABLE;
 	tesla.clipmask = MASK_SHOT|CONTENTS_SLIME|CONTENTS_LAVA;
-	tesla.flags |= FL_MECHANICAL;
+	tesla.bleed_style = BLEED_MECHANICAL;
 
 	gi.linkentity (tesla);
 }

@@ -4,28 +4,76 @@
 #include <cctype>
 #include <variant>
 #include <type_traits>
+#include <string>
 
 #include "lib/types.h"
 #include "lib/types/allocator.h"
 #include "lib/types/array.h"
+#include "lib/types/dynarray.h"
 #include "lib/math.h"
 
 // type name for a string literal
 using stringlit = const char *;
 
 class stringref;
+class string;
 
-// strings in Q2++ are immutable. this is to remain simple
+// a mutable string, which can be expanded and formatted to.
+// this is the preferred class to use for a string that is
+// changing around, but not shared across multiple instances.
+class mutable_string : public std::basic_string<char, std::char_traits<char>, game_allocator<char>>
+{
+};
+
+// most strings in Q2++ are immutable. this is to remain simple
 // and allow them to be collected automatically via a smart pointer.
 class string
 {
-	std::shared_ptr<char[]> shared;
+	using ptr_type = std::shared_ptr<char[]>;
+
+	std::variant<ptr_type, mutable_string> shared;
 	size_t slength;
+
+	// copy string literal passed by argument into a new string.
+	// internal; length is not null terminated
+	inline string(stringlit lit, size_t length) :
+		shared(),
+		slength(length)
+	{
+		if (slength)
+		{
+			auto ptr = std::allocate_shared<char[]>(game_allocator<char[]>(), slength + 1);
+
+			if (lit)
+			{
+				memcpy(ptr.get(), lit, slength);
+				ptr[slength] = 0;
+			}
+			else
+				ptr[0] = 0;
+
+			shared = std::move(ptr);
+		}
+		else
+			shared = ptr_type(nullptr);
+	}
 
 public:
 	inline string() :
-		shared(nullptr),
-		slength(0)
+		string(nullptr, 0)
+	{
+	}
+
+	// copy a string from a mutable string
+	inline string(const mutable_string &string) :
+		string(string.data(), string.length())
+	{
+	}
+
+	// move a mutable string into a saved string
+	inline string(mutable_string &&string) noexcept :
+		shared(string),
+		slength(std::get<mutable_string>(shared).size())
 	{
 	}
 
@@ -38,17 +86,8 @@ public:
 
 	// copy string literal passed by argument into a new string
 	inline string(stringlit lit) :
-		shared(),
-		slength(lit ? strlen(lit) : 0)
+		string(lit, lit ? strlen(lit) : 0)
 	{
-		if (slength)
-		{
-			shared = std::allocate_shared<char[]>(game_allocator<char[]>(), slength + 1);
-			memcpy(shared.get(), lit, slength);
-			shared[slength] = 0;
-		}
-		else
-			shared = std::shared_ptr<char[]>(nullptr);
 	}
 
 	// copy string ref passed by argument into a new string
@@ -57,17 +96,8 @@ public:
 	// copy substring literal passed by argument into a new string.
 	// mainly internal; start/length must be validated before calling this
 	inline string(stringlit sub, const size_t &start, const size_t &length) :
-		shared(),
-		slength(length)
+		string(length ? (sub + start) : 0, length)
 	{
-		if (slength)
-		{
-			shared = std::allocate_shared<char[]>(game_allocator<char[]>(), length + 1);
-			memcpy(shared.get(), sub + start, length);
-			shared[length] = 0;
-		}
-		else
-			shared = std::shared_ptr<char[]>(nullptr);
 	}
 
 	// copy substring ref passed by argument into a new string.
@@ -76,16 +106,8 @@ public:
 
 	// allocate new string with specified length. used internally.
 	explicit inline string(const size_t &length) :
-		shared(),
-		slength(length)
+		string(nullptr, length)
 	{
-		if (length)
-		{
-			shared = std::allocate_shared<char[]>(game_allocator<char[]>(), length + 1);
-			shared[0] = 0;
-		}
-		else
-			shared = std::shared_ptr<char[]>(nullptr);
 	}
 
 	// get underlying string literal.
@@ -94,7 +116,9 @@ public:
 	// C library stuff.
 	inline explicit operator stringlit() const
 	{
-		return shared.get();
+		if (std::holds_alternative<ptr_type>(shared))
+			return std::get<ptr_type>(shared).get();
+		return std::get<mutable_string>(shared).data();
 	}
 	
 	// get underlying string literal.
@@ -103,7 +127,7 @@ public:
 	// C library stuff.
 	inline stringlit ptr() const
 	{
-		return shared.get();
+		return this->operator stringlit();
 	}
 	
 	inline size_t length() const { return slength; }
@@ -112,9 +136,12 @@ public:
 	inline const char &operator[](const size_t &index) const
 	{
 		static char zerochar = 0;
-		if ((size_t)index >= slength)
+		auto p = ptr();
+
+		if (!p || (size_t) index >= slength)
 			return zerochar;
-		return shared[index];
+
+		return p[index];
 	}
 
 	inline bool operator==(stringlit lit) const
@@ -126,7 +153,7 @@ public:
 		else if (!*this || (!lit || !*lit))
 			return false;
 
-		return !strcmp(shared.get(), lit);
+		return !strcmp(ptr(), lit);
 	}
 	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
 
@@ -137,7 +164,7 @@ public:
 	inline bool operator!=(const stringref &lit) const;
 
 	// string is "valid" if its non-null and doesn't start with a zero
-	inline explicit operator bool() const { return shared.get() && slength; }
+	inline explicit operator bool() const { return ptr() && slength; }
 };
 
 // faster strlen for strings
@@ -146,8 +173,15 @@ inline size_t strlen(const string &str)
 	return str.length();
 }
 
-// stringref is a special wrapper to a string literal that can also
-// wrap string and keep it from expiring too early.
+// faster strlen for mutable strings
+inline size_t strlen(const mutable_string &str)
+{
+	return str.length();
+}
+
+// stringref is a special wrapper to string types
+// that can keep them from expiring too early.
+// note that this can't keep mutable_string's alive.
 class stringref
 {
 	using variantref = std::variant<stringlit, string>;
@@ -173,12 +207,18 @@ public:
 	{
 	}
 
+	inline stringref(const mutable_string &str) :
+		data(str.data()),
+		slength(str.length())
+	{
+	}
+
 	// convert to ptr; don't store this outside of string's
 	// lifetime!
 	inline explicit operator stringlit() const
 	{
 		if (std::holds_alternative<string>(data))
-			return (stringlit)std::get<string>(data);
+			return (stringlit) std::get<string>(data);
 		return std::get<stringlit>(data);
 	}
 	
@@ -192,16 +232,19 @@ public:
 	inline const char &operator[](const size_t &index) const
 	{
 		static char zerochar = 0;
-		if (index >= slength)
+		auto ptr = operator stringlit();
+
+		if (!ptr || index >= slength)
 			return zerochar;
-		return operator stringlit()[index];
+
+		return ptr[index];
 	}
 
 	inline bool operator==(const stringref &lit) const { return !strcmp(operator stringlit(), lit.ptr()); }
 	inline bool operator!=(const stringref &lit) const { return !(*this == lit); }
 
 	// string is "valid" if its length is non-zero and doesn't start with a 0
-	inline explicit operator bool() const { return slength && operator stringlit()[0]; }
+	inline explicit operator bool() const { return slength && operator stringlit() && operator stringlit()[0]; }
 };
 
 template<typename T>
@@ -210,42 +253,30 @@ constexpr bool is_string_v = std::is_same_v<T, stringref> || std::is_same_v<T, s
 template<typename T>
 constexpr bool is_string_not_literal_v = std::is_same_v<T, stringref> || std::is_same_v<T, string>;
 
+template<typename T>
+concept is_string = is_string_v<T>;
+
+template<typename T>
+concept is_string_not_literal = is_string_not_literal_v<T>;
+
 // copy string ref passed by argument into a new string
 inline string::string(const stringref &ref) :
-	shared(),
-	slength(ref.length())
+	string(ref.ptr(), ref.length())
 {
-	if (slength)
-	{
-		shared = std::allocate_shared<char[]>(game_allocator<char[]>(), slength + 1);
-		memcpy(shared.get(), ref.ptr(), slength);
-		shared[slength] = 0;
-	}
-	else
-		shared = std::shared_ptr<char[]>(nullptr);
 }
 
 // copy substring ref passed by argument into a new string.
 // mainly internal; start/length must be validated before calling this
 inline string::string(const stringref &sub, const size_t &start, const size_t &length) :
-	shared(),
-	slength(length)
+	string(length ? (sub.ptr() + start) : nullptr, length)
 {
-	if (slength)
-	{
-		shared = std::allocate_shared<char[]>(game_allocator<char[]>(), length + 1);
-		memcpy(shared.get(), sub.ptr() + start, length);
-		shared[length] = 0;
-	}
-	else
-		shared = std::shared_ptr<char[]>(nullptr);
 }
 
 inline bool string::operator==(const stringref &lit) const { return *this == lit.ptr(); }
 inline bool string::operator!=(const stringref &lit) const { return !(*this == lit); }
 
 // return index of substring in str, or -1
-template<typename TA, typename TB, typename = std::enable_if_t<is_string_not_literal_v<TA> && is_string_v<TB>, TA>>
+template<is_string_not_literal TA, is_string TB>
 inline size_t strstr(const TA &str, const TB &substring)
 {
 	if (!str)
@@ -256,7 +287,7 @@ inline size_t strstr(const TA &str, const TB &substring)
 }
 
 // return index of substring in str, or -1
-template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<is_string_not_literal T>
 inline size_t strchr(const T &str, const char &subchar)
 {
 	if (!str)
@@ -267,7 +298,7 @@ inline size_t strchr(const T &str, const char &subchar)
 }
 
 // return substring of str
-template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<is_string_not_literal T>
 inline string substr(const T &str, const size_t &start, size_t length = -1)
 {
 	// string too big; return empty string
@@ -315,7 +346,7 @@ inline string strconcat(const std::initializer_list<stringref> &args)
 	return outstr;
 }
 
-template<typename ...T>
+template<is_string ...T>
 inline string strconcat(T... args)
 {
 	std::initializer_list<stringref> refs = { args... };
@@ -323,13 +354,13 @@ inline string strconcat(T... args)
 }
 
 // faster strlen for stringrefs
-template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<is_string_not_literal T>
 inline size_t strlen(const T &str)
 {
 	return str.length();
 }
 
-template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<is_string_not_literal T>
 inline double atof(const T &str)
 {
 	if (!str.ptr())
@@ -338,7 +369,7 @@ inline double atof(const T &str)
 	return atof(str.ptr());
 }
 
-template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<is_string_not_literal T>
 inline double atoi(const T &str)
 {
 	if (!str.ptr())
@@ -348,7 +379,7 @@ inline double atoi(const T &str)
 }
 
 // convert string to lowercase
-template<typename T, typename = std::enable_if_t<is_string_v<T>, T>>
+template<is_string T>
 inline string strlwr(const T &str)
 {
 	string s(str);
@@ -363,7 +394,7 @@ inline string strlwr(const T &str)
 }
 
 // convert string to uppercase
-template<typename T, typename = std::enable_if_t<is_string_v<T>, T>>
+template<is_string T>
 inline string strupr(const T &str)
 {
 	string s(str);
@@ -377,20 +408,20 @@ inline string strupr(const T &str)
 	return s;
 }
 
-template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> &&is_string_v<TB>, TA>>
+template<is_string TA, is_string TB>
 inline int32_t strcmp(const TA &a, const TB &b)
 {
 	return ::strcmp((stringlit) a, (stringlit) b);
 }
 
-template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> &&is_string_v<TB>, TA>>
+template<is_string TA, is_string TB>
 inline int32_t strncmp(const TA &a, const TB &b, const size_t &max_count)
 {
 	return ::strncmp((stringlit) a, (stringlit) b, max_count);
 }
 
 // case insensitive comparison (because stricmp/strnicmp is non-standard)
-template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
+template<is_string TA, is_string TB>
 inline int32_t stricmp(const TA &a, const TB &b)
 {
 	stringlit al = (stringlit) a;
@@ -408,14 +439,14 @@ inline int32_t stricmp(const TA &a, const TB &b)
 }
 
 // case insensitive comparison (because stricmp/strnicmp is non-standard)
-template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
+template<is_string TA, is_string TB>
 inline int32_t strnicmp(const TA &a, const TB &b, size_t n)
 {
 	if (!n)
 		return 0;
 
-	stringlit al = (stringlit)a;
-	stringlit bl = (stringlit)b;
+	stringlit al = (stringlit) a;
+	stringlit bl = (stringlit) b;
 	
 	do
 	{
@@ -429,14 +460,14 @@ inline int32_t strnicmp(const TA &a, const TB &b, size_t n)
 }
 
 // compatibility
-template<typename T, typename = std::enable_if_t<is_string_not_literal_v<T>, T>>
+template<is_string_not_literal T>
 inline bool strempty(const T &a)
 {
 	return !a;
 }
 
 // case insensitive ==
-template<typename TA, typename TB, typename = std::enable_if_t<is_string_v<TA> && is_string_v<TB>, TA>>
+template<is_string TA, is_string TB>
 inline bool striequals(const TA &a, const TB &b)
 {
 	if (!a && !b)

@@ -20,8 +20,8 @@ constexpr spawn_flag TRIGGER_TOGGLE = (spawn_flag)8;
 
 void InitTrigger(entity &self)
 {
-	if (self.s.angles)
-		G_SetMovedir(self.s.angles, self.movedir);
+	if (self.angles)
+		G_SetMovedir(self.angles, self.movedir);
 
 	self.solid = SOLID_TRIGGER;
 	self.movetype = MOVETYPE_NONE;
@@ -35,7 +35,7 @@ static void multi_wait(entity &ent)
 	ent.nextthink = 0;
 }
 
-static REGISTER_SAVABLE_FUNCTION(multi_wait);
+REGISTER_STATIC_SAVABLE(multi_wait);
 
 // the trigger was just activated
 // ent.activator should be set to the activator so it can be held through a delay
@@ -83,7 +83,7 @@ static void Use_Multi(entity &ent, entity &, entity &cactivator)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(Use_Multi);
+REGISTER_STATIC_SAVABLE(Use_Multi);
 
 static void Touch_Multi(entity &self, entity &other, vector, const surface &)
 {
@@ -103,7 +103,7 @@ static void Touch_Multi(entity &self, entity &other, vector, const surface &)
 	if (self.movedir)
 	{
 		vector	forward;
-		AngleVectors(other.s.angles, &forward, nullptr, nullptr);
+		AngleVectors(other.angles, &forward, nullptr, nullptr);
 
 		if (forward * self.movedir < 0)
 			return;
@@ -113,7 +113,7 @@ static void Touch_Multi(entity &self, entity &other, vector, const surface &)
 	multi_trigger(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Touch_Multi);
+REGISTER_STATIC_SAVABLE(Touch_Multi);
 
 /*QUAKED trigger_multiple (.5 .5 .5) ? MONSTER NOT_PLAYER TRIGGERED
 Variable sized repeatable trigger.  Must be targeted at one or more entities.
@@ -133,7 +133,7 @@ static void trigger_enable(entity &self, entity &, entity &)
 	gi.linkentity(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_enable);
+REGISTER_STATIC_SAVABLE(trigger_enable);
 
 static void SP_trigger_multiple(entity &ent)
 {
@@ -166,8 +166,8 @@ static void SP_trigger_multiple(entity &ent)
 		ent.use = SAVABLE(Use_Multi);
 	}
 
-	if (ent.s.angles)
-		G_SetMovedir(ent.s.angles, ent.movedir);
+	if (ent.angles)
+		G_SetMovedir(ent.angles, ent.movedir);
 
 	gi.setmodel(ent, ent.model);
 	gi.linkentity(ent);
@@ -195,12 +195,10 @@ static void SP_trigger_once(entity &ent)
 	// triggered was on bit 1 when it should have been on bit 4
 	if (ent.spawnflags & TRIGGER_MONSTER)
 	{
-		vector	v;
-
-		v = ent.mins + (0.5f * ent.size);
+		vector v = ent.bounds.center();
 		ent.spawnflags &= ~TRIGGER_MONSTER;
 		ent.spawnflags |= TRIGGER_TRIGGERED;
-		gi.dprintf("fixed TRIGGERED flag on %s at %s\n", st.classname.ptr(), vtos(v).ptr());
+		gi.dprintfmt("{}: fixed TRIGGERED flag\n", ent);
 	}
 
 	ent.wait = -1.f;
@@ -217,7 +215,7 @@ static void trigger_relay_use(entity &self, entity &, entity &cactivator)
 	G_UseTargets(self, cactivator);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_relay_use);
+REGISTER_STATIC_SAVABLE(trigger_relay_use);
 
 static void SP_trigger_relay(entity &self)
 {
@@ -252,12 +250,12 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 		if (level.framenum < self.touch_debounce_framenum)
 			return;
 		self.touch_debounce_framenum = level.framenum + (int)(5.0f * BASE_FRAMERATE);
-		gi.centerprintf(cactivator, "You need the %s", self.item->pickup_name);
-		gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/keytry.wav"), 1, ATTN_NORM, 0);
+		gi.centerprintfmt(cactivator, "You need the {}", self.item->pickup_name);
+		gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/keytry.wav"));
 		return;
 	}
 
-	gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/keyuse.wav"), 1, ATTN_NORM, 0);
+	gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/keyuse.wav"));
 
 	if (coop)
 	{
@@ -295,13 +293,13 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 	self.use = nullptr;
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_key_use);
+REGISTER_STATIC_SAVABLE(trigger_key_use);
 
 static void SP_trigger_key(entity &self)
 {
 	if (!st.item)
 	{
-		gi.dprintf("no key item for trigger_key at %s\n", vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: no key item\n", self);
 		return;
 	}
 	
@@ -309,13 +307,13 @@ static void SP_trigger_key(entity &self)
 
 	if (!self.item)
 	{
-		gi.dprintf("item %s not found for trigger_key at %s\n", st.item.ptr(), vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: item \"{}\" not found\n", self, st.item);
 		return;
 	}
 
 	if (!self.target)
 	{
-		gi.dprintf("%s at %s has no target\n", st.classname.ptr(), vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: no target\n", self);
 		return;
 	}
 
@@ -356,8 +354,8 @@ static void trigger_counter_use(entity &self, entity &, entity &cactivator)
 	{
 		if (!(self.spawnflags & COUNTER_NOMESSAGE))
 		{
-			gi.centerprintf(cactivator, "%i more to go...", self.count);
-			gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/talk1.wav"), 1, ATTN_NORM, 0);
+			gi.centerprintfmt(cactivator, "{} more to go...", self.count);
+			gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/talk1.wav"));
 		}
 
 		return;
@@ -365,15 +363,15 @@ static void trigger_counter_use(entity &self, entity &, entity &cactivator)
 
 	if (!(self.spawnflags & COUNTER_NOMESSAGE))
 	{
-		gi.centerprintf(cactivator, "Sequence completed!");
-		gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/talk1.wav"), 1, ATTN_NORM, 0);
+		gi.centerprint(cactivator, "Sequence completed!");
+		gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/talk1.wav"));
 	}
 
 	self.activator = cactivator;
 	multi_trigger(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_counter_use);
+REGISTER_STATIC_SAVABLE(trigger_counter_use);
 
 static void SP_trigger_counter(entity &self)
 {
@@ -442,7 +440,7 @@ static void trigger_push_touch(entity &self, entity &other, vector, const surfac
 				other.fly_sound_debounce_framenum < level.framenum)
 			{
 				other.fly_sound_debounce_framenum = level.framenum + (gtime)(1.5f * BASE_FRAMERATE);
-				gi.sound(other, CHAN_AUTO, windsound, 1, ATTN_NORM, 0);
+				gi.sound(other, CHAN_AUTO, windsound);
 			}
 		}
 	}
@@ -451,7 +449,7 @@ static void trigger_push_touch(entity &self, entity &other, vector, const surfac
 		G_FreeEdict(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_push_touch);
+REGISTER_STATIC_SAVABLE(trigger_push_touch);
 
 #ifdef GROUND_ZERO
 static void trigger_push_use(entity &self, entity &, entity &)
@@ -463,7 +461,7 @@ static void trigger_push_use(entity &self, entity &, entity &)
 	gi.linkentity (self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_push_use);
+REGISTER_STATIC_SAVABLE(trigger_push_use);
 #endif
 
 #ifdef THE_RECKONING
@@ -471,24 +469,18 @@ static REGISTER_SAVABLE_FUNCTION(trigger_push_use);
 
 static void trigger_effect(entity &self)
 {
-	vector origin = self.absmin + (self.size * 0.5f);
-	
+	vector origin = self.absbounds.center();
+
 	for (int32_t i = 0; i < 10; i++)
 	{
 		origin[2] += (self.speed * 0.01f) * (i + random());
-		gi.WriteByte (svc_temp_entity);
-		gi.WriteByte (TE_TUNNEL_SPARKS);
-		gi.WriteByte (1);
-		gi.WritePosition (origin);
-		gi.WriteDir (vec3_origin);
-		gi.WriteByte (0x74 + (Q_rand() & 7));
-		gi.multicast (self.s.origin, MULTICAST_PVS);
+		gi.ConstructMessage(svc_temp_entity, TE_TUNNEL_SPARKS, uint8_t { 1 }, origin, vecdir { vec3_origin }, uint8_t { 0x74 + (Q_rand() & 7) }).multicast(self.origin, MULTICAST_PVS);
 	}
 }
 
 static void trigger_push_active(entity &self);
 
-static REGISTER_SAVABLE_FUNCTION(trigger_push_active);
+REGISTER_STATIC_SAVABLE(trigger_push_active);
 
 static void trigger_push_inactive(entity &self)
 {
@@ -503,7 +495,7 @@ static void trigger_push_inactive(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_push_inactive);
+REGISTER_STATIC_SAVABLE(trigger_push_inactive);
 
 static void trigger_push_active(entity &self)
 {
@@ -602,7 +594,9 @@ static void hurt_use(entity &self, entity &, entity &)
 		self.use = nullptr;
 }
 
-static REGISTER_SAVABLE_FUNCTION(hurt_use);
+REGISTER_STATIC_SAVABLE(hurt_use);
+
+constexpr means_of_death MOD_TRIGGER_HURT { .self_kill_fmt = "{0} was in the wrong place.\n" };
 
 static void hurt_touch(entity &self, entity &other, vector, const surface &)
 {
@@ -619,7 +613,7 @@ static void hurt_touch(entity &self, entity &other, vector, const surface &)
 
 	if (!(self.spawnflags & HURT_SILENT))
 		if ((level.framenum % 10) == 0)
-			gi.sound(other, CHAN_AUTO, self.noise_index, 1, ATTN_NORM, 0);
+			gi.sound(other, CHAN_AUTO, self.noise_index);
 
 	damage_flags dflags;
 
@@ -628,10 +622,10 @@ static void hurt_touch(entity &self, entity &other, vector, const surface &)
 	else
 		dflags = DAMAGE_NONE;
 
-	T_Damage(other, self, self, vec3_origin, other.s.origin, vec3_origin, self.dmg, self.dmg, dflags, MOD_TRIGGER_HURT);
+	T_Damage(other, self, self, vec3_origin, other.origin, vec3_origin, self.dmg, self.dmg, { dflags }, MOD_TRIGGER_HURT);
 }
 
-static REGISTER_SAVABLE_FUNCTION(hurt_touch);
+REGISTER_STATIC_SAVABLE(hurt_touch);
 
 static void SP_trigger_hurt(entity &self)
 {
@@ -680,7 +674,7 @@ static void trigger_gravity_use(entity &self, entity &, entity &)
 	gi.linkentity (self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_gravity_use);
+REGISTER_STATIC_SAVABLE(trigger_gravity_use);
 
 static constexpr spawn_flag GRAVITY_TOGGLE = (spawn_flag) 1;
 static constexpr spawn_flag GRAVITY_START_OFF = (spawn_flag) 2;
@@ -691,13 +685,13 @@ static void trigger_gravity_touch(entity &self, entity &other, vector, const sur
 	other.gravity = self.gravity;
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_gravity_touch);
+REGISTER_STATIC_SAVABLE(trigger_gravity_touch);
 
 static void SP_trigger_gravity(entity &self)
 {
 	if (!st.gravity)
 	{
-		gi.dprintf("trigger_gravity without gravity set at %s\n", vtos(self.s.origin).ptr());
+		gi.dprintfmt("{}: no gravity set\n", self);
 		G_FreeEdict(self);
 		return;
 	}
@@ -756,7 +750,7 @@ static void trigger_monsterjump_touch(entity &self, entity &other, vector, const
 	other.velocity.z = self.movedir.z;
 }
 
-static REGISTER_SAVABLE_FUNCTION(trigger_monsterjump_touch);
+REGISTER_STATIC_SAVABLE(trigger_monsterjump_touch);
 
 static void SP_trigger_monsterjump(entity &self)
 {
@@ -764,8 +758,8 @@ static void SP_trigger_monsterjump(entity &self)
 		self.speed = 200.f;
 	if (!st.height)
 		st.height = 200;
-	if (self.s.angles[YAW] == 0)
-		self.s.angles[YAW] = 360.f;
+	if (self.angles[YAW] == 0)
+		self.angles[YAW] = 360.f;
 	InitTrigger(self);
 	self.touch = SAVABLE(trigger_monsterjump_touch);
 	self.movedir.z = (float)st.height;

@@ -64,6 +64,23 @@ struct bbox
 	{
 		return bbox { .mins = -v, .maxs = v };
 	}
+
+	constexpr bool touching(const bbox &bounds, const float epsilon = 0.f) const
+	{
+		if (bounds.mins.x > maxs.x + epsilon)
+			return false;
+		if (bounds.maxs.x < mins.x - epsilon)
+			return false;
+		if (bounds.mins.y > maxs.y + epsilon)
+			return false;
+		if (bounds.maxs.y < mins.y - epsilon)
+			return false;
+		if (bounds.mins.z > maxs.z + epsilon)
+			return false;
+		if (bounds.maxs.z < mins.z - epsilon)
+			return false;
+		return true;
+	}
 };
 
 // a bbox that has an infinitely empty size

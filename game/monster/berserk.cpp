@@ -28,17 +28,17 @@ static sound_index sound_search;
 
 static void berserk_sight(entity &self, entity &)
 {
-	gi.sound(self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_sight);
+REGISTER_STATIC_SAVABLE(berserk_sight);
 
 static void berserk_search(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_search, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_search);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_search);
+REGISTER_STATIC_SAVABLE(berserk_search);
 
 static void berserk_stand(entity &self);
 
@@ -66,7 +66,7 @@ constexpr mframe_t berserk_frames_stand_fidget[] = {
 };
 constexpr mmove_t berserk_move_stand_fidget = { FRAME_standb1, FRAME_standb20, berserk_frames_stand_fidget, berserk_stand };
 
-static REGISTER_SAVABLE_DATA(berserk_move_stand_fidget);
+REGISTER_STATIC_SAVABLE(berserk_move_stand_fidget);
 
 static void berserk_fidget(entity &self)
 {
@@ -76,7 +76,7 @@ static void berserk_fidget(entity &self)
 		return;
 
 	self.monsterinfo.currentmove = &SAVABLE(berserk_move_stand_fidget);
-	gi.sound(self, CHAN_WEAPON, sound_idle, 1, ATTN_IDLE, 0);
+	gi.sound(self, CHAN_WEAPON, sound_idle, ATTN_IDLE);
 }
 
 constexpr mframe_t berserk_frames_stand[] = {
@@ -88,14 +88,14 @@ constexpr mframe_t berserk_frames_stand[] = {
 };
 constexpr mmove_t berserk_move_stand = { FRAME_stand1, FRAME_stand5, berserk_frames_stand };
 
-static REGISTER_SAVABLE_DATA(berserk_move_stand);
+REGISTER_STATIC_SAVABLE(berserk_move_stand);
 
 static void berserk_stand(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(berserk_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_stand);
+REGISTER_STATIC_SAVABLE(berserk_stand);
 
 constexpr mframe_t berserk_frames_walk[] = {
 	{ ai_walk, 9.1f },
@@ -112,14 +112,14 @@ constexpr mframe_t berserk_frames_walk[] = {
 };
 constexpr mmove_t berserk_move_walk = { FRAME_walkc1, FRAME_walkc11, berserk_frames_walk };
 
-static REGISTER_SAVABLE_DATA(berserk_move_walk);
+REGISTER_STATIC_SAVABLE(berserk_move_walk);
 
 static void berserk_walk(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(berserk_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_walk);
+REGISTER_STATIC_SAVABLE(berserk_walk);
 
 constexpr mframe_t berserk_frames_run1[] = {
 	{ ai_run, 21 },
@@ -135,7 +135,7 @@ constexpr mframe_t berserk_frames_run1[] = {
 };
 constexpr mmove_t berserk_move_run1 = { FRAME_run1, FRAME_run6, berserk_frames_run1 };
 
-static REGISTER_SAVABLE_DATA(berserk_move_run1);
+REGISTER_STATIC_SAVABLE(berserk_move_run1);
 
 static void berserk_run(entity &self)
 {
@@ -149,7 +149,7 @@ static void berserk_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_run1);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_run);
+REGISTER_STATIC_SAVABLE(berserk_run);
 
 static void berserk_attack_spike(entity &self)
 {
@@ -159,7 +159,7 @@ static void berserk_attack_spike(entity &self)
 
 static void berserk_swing(entity &self)
 {
-	gi.sound(self, CHAN_WEAPON, sound_punch, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_punch);
 }
 
 constexpr mframe_t berserk_frames_attack_spike[] = {
@@ -174,7 +174,7 @@ constexpr mframe_t berserk_frames_attack_spike[] = {
 };
 constexpr mmove_t berserk_move_attack_spike = { FRAME_att_c1, FRAME_att_c8, berserk_frames_attack_spike, berserk_run };
 
-static REGISTER_SAVABLE_DATA(berserk_move_attack_spike);
+REGISTER_STATIC_SAVABLE(berserk_move_attack_spike);
 
 static void berserk_attack_club(entity &self)
 {
@@ -198,7 +198,7 @@ constexpr mframe_t berserk_frames_attack_club[] = {
 };
 constexpr mmove_t berserk_move_attack_club = { FRAME_att_c9, FRAME_att_c20, berserk_frames_attack_club, berserk_run };
 
-static REGISTER_SAVABLE_DATA(berserk_move_attack_club);
+REGISTER_STATIC_SAVABLE(berserk_move_attack_club);
 
 static void berserk_melee(entity &self)
 {
@@ -212,7 +212,7 @@ static void berserk_melee(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_attack_club);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_melee);
+REGISTER_STATIC_SAVABLE(berserk_melee);
 
 constexpr mframe_t berserk_frames_pain1[] = {
 	{ ai_move },
@@ -222,7 +222,7 @@ constexpr mframe_t berserk_frames_pain1[] = {
 };
 constexpr mmove_t berserk_move_pain1 = { FRAME_painc1, FRAME_painc4, berserk_frames_pain1, berserk_run };
 
-static REGISTER_SAVABLE_DATA(berserk_move_pain1);
+REGISTER_STATIC_SAVABLE(berserk_move_pain1);
 
 constexpr mframe_t berserk_frames_pain2[] = {
 	{ ai_move },
@@ -248,18 +248,15 @@ constexpr mframe_t berserk_frames_pain2[] = {
 };
 constexpr mmove_t berserk_move_pain2 = { FRAME_painb1, FRAME_painb20, berserk_frames_pain2, berserk_run };
 
-static REGISTER_SAVABLE_DATA(berserk_move_pain2);
+REGISTER_STATIC_SAVABLE(berserk_move_pain2);
 
-static void berserk_pain(entity &self, entity &, float, int32_t damage)
+static void berserk_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t damage)
 {
-	if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
-
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
 	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
-	gi.sound(self, CHAN_VOICE, sound_pain, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_pain);
 
 	if (skill == 3)
 		return;     // no pain anims in nightmare
@@ -274,7 +271,7 @@ static void berserk_pain(entity &self, entity &, float, int32_t damage)
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_pain2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_pain);
+REGISTER_STATIC_SAVABLE(berserk_reacttodamage);
 
 static void berserk_dead(entity &self)
 {
@@ -305,7 +302,7 @@ constexpr mframe_t berserk_frames_death1[] = {
 };
 constexpr mmove_t berserk_move_death1 = { FRAME_death1, FRAME_death13, berserk_frames_death1, berserk_dead };
 
-static REGISTER_SAVABLE_DATA(berserk_move_death1);
+REGISTER_STATIC_SAVABLE(berserk_move_death1);
 
 constexpr mframe_t berserk_frames_death2[] = {
 	{ ai_move },
@@ -319,14 +316,14 @@ constexpr mframe_t berserk_frames_death2[] = {
 };
 constexpr mmove_t berserk_move_death2 = { FRAME_deathc1, FRAME_deathc8, berserk_frames_death2, berserk_dead };
 
-static REGISTER_SAVABLE_DATA(berserk_move_death2);
+REGISTER_STATIC_SAVABLE(berserk_move_death2);
 
 static void berserk_die(entity &self, entity &, entity &, int damage, vector)
 {
 	int     n;
 
 	if (self.health <= self.gib_health) {
-		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"));
 		for (n = 0; n < 2; n++)
 			ThrowGib(self, "models/objects/gibs/bone/tris.md2", damage, GIB_ORGANIC);
 		for (n = 0; n < 4; n++)
@@ -339,7 +336,7 @@ static void berserk_die(entity &self, entity &, entity &, int damage, vector)
 	if (self.deadflag == DEAD_DEAD)
 		return;
 
-	gi.sound(self, CHAN_VOICE, sound_die, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_die);
 	self.deadflag = DEAD_DEAD;
 	self.takedamage = true;
 
@@ -349,7 +346,7 @@ static void berserk_die(entity &self, entity &, entity &, int damage, vector)
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_death2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_die);
+REGISTER_STATIC_SAVABLE(berserk_die);
 
 #ifdef ROGUE_AI
 static void berserk_jump_now(entity &self)
@@ -358,7 +355,7 @@ static void berserk_jump_now(entity &self)
 
 	monster_jump_start(self);
 
-	AngleVectors(self.s.angles, &forward, nullptr, &up);
+	AngleVectors(self.angles, &forward, nullptr, &up);
 	self.velocity += 100 * forward;
 	self.velocity += 300 * up;
 }
@@ -367,13 +364,13 @@ static void berserk_jump_wait_land(entity &self)
 {
 	if (self.groundentity == null_entity)
 	{
-		self.monsterinfo.nextframe = self.s.frame;
+		self.monsterinfo.nextframe = self.frame;
 
 		if (monster_jump_finished(self))
-			self.monsterinfo.nextframe = self.s.frame + 1;
+			self.monsterinfo.nextframe = self.frame + 1;
 	}
 	else
-		self.monsterinfo.nextframe = self.s.frame + 1;
+		self.monsterinfo.nextframe = self.frame + 1;
 }
 
 constexpr mframe_t berserk_frames_jump[] =
@@ -390,7 +387,7 @@ constexpr mframe_t berserk_frames_jump[] =
 };
 constexpr mmove_t berserk_move_jump = { FRAME_jump1, FRAME_jump9, berserk_frames_jump, berserk_run };
 
-static REGISTER_SAVABLE_DATA(berserk_move_jump);
+REGISTER_STATIC_SAVABLE(berserk_move_jump);
 
 constexpr mframe_t berserk_frames_jump2[] =
 {
@@ -406,7 +403,7 @@ constexpr mframe_t berserk_frames_jump2[] =
 };
 constexpr mmove_t berserk_move_jump2 = { FRAME_jump1, FRAME_jump9, berserk_frames_jump2, berserk_run };
 
-static REGISTER_SAVABLE_DATA(berserk_move_jump2);
+REGISTER_STATIC_SAVABLE(berserk_move_jump2);
 
 static void berserk_jump(entity &self)
 {
@@ -415,7 +412,7 @@ static void berserk_jump(entity &self)
 
 	monster_done_dodge(self);
 
-	if (self.enemy->s.origin[2] > self.s.origin[2])
+	if (self.enemy->origin[2] > self.origin[2])
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_jump2);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_jump);
@@ -435,7 +432,7 @@ static bool berserk_blocked(entity &self, float dist)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_blocked);
+REGISTER_STATIC_SAVABLE(berserk_blocked);
 
 static void berserk_sidestep(entity &self)
 {
@@ -449,7 +446,7 @@ static void berserk_sidestep(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(berserk_move_run1);
 }
 
-static REGISTER_SAVABLE_FUNCTION(berserk_sidestep);
+REGISTER_STATIC_SAVABLE(berserk_sidestep);
 #endif
 
 /*QUAKED monster_berserk (1 .5 0) (-16 -16 -24) (16 16 32) Ambush Trigger_Spawn Sight
@@ -470,7 +467,7 @@ static void SP_monster_berserk(entity &self)
 	sound_search = gi.soundindex("berserk/bersrch1.wav");
 	sound_sight = gi.soundindex("berserk/sight.wav");
 
-	self.s.modelindex = gi.modelindex("models/monsters/berserk/tris.md2");
+	self.modelindex = gi.modelindex("models/monsters/berserk/tris.md2");
 	self.bounds = {
 		.mins = { -16, -16, -24 },
 		.maxs = { 16, 16, 32 }
@@ -482,7 +479,7 @@ static void SP_monster_berserk(entity &self)
 	self.gib_health = -60;
 	self.mass = 250;
 
-	self.pain = SAVABLE(berserk_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(berserk_die);
 
 	self.monsterinfo.stand = SAVABLE(berserk_stand);
@@ -496,6 +493,7 @@ static void SP_monster_berserk(entity &self)
 	self.monsterinfo.melee = SAVABLE(berserk_melee);
 	self.monsterinfo.sight = SAVABLE(berserk_sight);
 	self.monsterinfo.search = SAVABLE(berserk_search);
+	self.monsterinfo.reacttodamage = SAVABLE(berserk_reacttodamage);
 
 	self.monsterinfo.currentmove = &SAVABLE(berserk_move_stand);
 	self.monsterinfo.scale = MODEL_SCALE;

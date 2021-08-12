@@ -12,7 +12,7 @@ fire_lead
 This is an internal support routine used for bullet/pellet based weapons.
 =================
 */
-static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread, means_of_death mod)
+static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread, means_of_death_ref mod)
 {
 	trace	tr;
 	vector	dir;
@@ -24,7 +24,7 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 	bool	water = false;
 	content_flags	content_mask = MASK_SHOT | MASK_WATER;
 
-	tr = gi.traceline(self.s.origin, start, self, MASK_SHOT);
+	tr = gi.traceline(self.origin, start, self, MASK_SHOT);
 	if (!(tr.fraction < 1.0f))
 	{
 		dir = vectoangles(aimdir);
@@ -71,19 +71,10 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 					color = SPLASH_UNKNOWN;
 
 				if (color != SPLASH_UNKNOWN)
-				{
-					gi.WriteByte(svc_temp_entity);
-					gi.WriteByte(TE_SPLASH);
-					gi.WriteByte(8);
-					gi.WritePosition(tr.endpos);
-					gi.WriteDir(tr.normal);
-					gi.WriteByte(color);
-					gi.multicast(tr.endpos, MULTICAST_PVS);
-				}
+					gi.ConstructMessage(svc_temp_entity, TE_SPLASH, uint8_t { 8 }, tr.endpos, vecdir { tr.normal }, color).multicast(tr.endpos, MULTICAST_PVS);
 
 				// change bullet's course when it enters water
-				dir = end - start;
-				dir = vectoangles(dir);
+				dir = vectoangles(end - start);
 				AngleVectors(dir, &forward, &right, &up);
 				r = crandom() * hspread * 2;
 				u = crandom() * vspread * 2;
@@ -103,14 +94,10 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 		if (tr.fraction < 1.0f)
 		{
 			if (tr.ent.takedamage)
-				T_Damage(tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, DAMAGE_BULLET, mod);
+				T_Damage(tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, { .sparks = TE_BULLET_SPARKS }, mod);
 			else if (strncmp(tr.surface.name.data(), "sky", 3) != 0)
 			{
-				gi.WriteByte(svc_temp_entity);
-				gi.WriteByte(te_impact);
-				gi.WritePosition(tr.endpos);
-				gi.WriteDir(tr.normal);
-				gi.multicast(tr.endpos, MULTICAST_PVS);
+				gi.ConstructMessage(svc_temp_entity, te_impact, tr.endpos, vecdir { tr.normal }).multicast(tr.endpos, MULTICAST_PVS);
 
 #ifdef SINGLE_PLAYER
 				if (self.is_client())
@@ -135,11 +122,7 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 
 		pos = (water_start + tr.endpos) * 0.5f;
 
-		gi.WriteByte(svc_temp_entity);
-		gi.WriteByte(TE_BUBBLETRAIL);
-		gi.WritePosition(water_start);
-		gi.WritePosition(tr.endpos);
-		gi.multicast(pos, MULTICAST_PVS);
+		gi.ConstructMessage(svc_temp_entity, TE_BUBBLETRAIL, water_start, tr.endpos).multicast(pos, MULTICAST_PVS);
 	}
 }
 
@@ -151,7 +134,7 @@ Fires a single round.  Used for machinegun and chaingun.  Would be fine for
 pistols, rifles, etc....
 =================
 */
-void fire_bullet(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, int32_t hspread, int32_t vspread, means_of_death mod)
+void fire_bullet(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, int32_t hspread, int32_t vspread, means_of_death_ref mod)
 {
 	fire_lead(self, start, aimdir, damage, kick, TE_GUNSHOT, hspread, vspread, mod);
 }
@@ -163,7 +146,7 @@ fire_shotgun
 Shoots shotgun pellets.  Used by shotgun and super shotgun.
 =================
 */
-void fire_shotgun(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, int32_t hspread, int32_t vspread, int32_t count, means_of_death mod)
+void fire_shotgun(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, int32_t hspread, int32_t vspread, int32_t count, means_of_death_ref mod)
 {
 	for (int32_t i = 0; i < count; i++)
 		fire_lead(self, start, aimdir, damage, kick, TE_SHOTGUN, hspread, vspread, mod);

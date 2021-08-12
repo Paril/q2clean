@@ -16,27 +16,29 @@
 #include "game/xatrix/monster/gekk.h"
 #include "trap.h"
 
+constexpr means_of_death MOD_TRAP { .self_kill_fmt = "{0} was sucked into {1} own trap.\n", .other_kill_fmt = "{0} was caught in {3}'s trap.\n" };
+
 static void Trap_Gib_Think(entity &ent)
 {
-	if (ent.owner->s.frame != 5)
+	if (ent.owner->frame != 5)
 	{
 		G_FreeEdict(ent);
 		return;
 	}
 
 	vector forward;
-	AngleVectors(ent.s.angles, &forward, nullptr, nullptr);
+	AngleVectors(ent.angles, &forward, nullptr, nullptr);
 
 	float angle = deg2rad(ent.dmg_radius + ent.owner->delay) * 4.f;
-	ent.s.origin = (vector { -cos(angle), sin(angle), 0 } * (ent.owner->wait * 0.5f)) + ent.owner->s.origin + forward;
-	ent.s.origin[2] = ent.owner->s.origin[2] + ent.owner->wait;
+	ent.origin = (vector { -cos(angle), sin(angle), 0 } * (ent.owner->wait * 0.5f)) + ent.owner->origin + forward;
+	ent.origin[2] = ent.owner->origin[2] + ent.owner->wait;
 
 	gi.linkentity(ent);
 
 	ent.nextthink = level.framenum + 1;
 }
 
-static REGISTER_SAVABLE_FUNCTION(Trap_Gib_Think);
+REGISTER_STATIC_SAVABLE(Trap_Gib_Think);
 
 static void Trap_Think(entity &ent)
 {
@@ -52,13 +54,13 @@ static void Trap_Think(entity &ent)
 		return;
 
 	// ok lets do the blood effect
-	if (ent.s.frame > 4)
+	if (ent.frame > 4)
 	{
-		if (ent.s.frame == 5)
+		if (ent.frame == 5)
 		{
 			if (ent.wait == 64)
 			{
-				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/trapdown.wav"), 1, ATTN_IDLE, 0);
+				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/trapdown.wav"), ATTN_IDLE);
 
 				for (int32_t i = 0; i < 3; i++)
 				{
@@ -67,35 +69,35 @@ static void Trap_Think(entity &ent)
 #ifdef SINGLE_PLAYER
 					if (ent.enemy->type == ET_MONSTER_GEKK)
 					{
-						best.s.modelindex = gi.modelindex("models/objects/gekkgib/torso/tris.md2");
-						best.s.effects |= EF_GREENGIB;
+						best.modelindex = gi.modelindex("models/objects/gekkgib/torso/tris.md2");
+						best.effects |= EF_GREENGIB;
 					}
 					else
 #endif
 					if (ent.enemy->mass > 200)
 					{
-						best.s.modelindex = gi.modelindex("models/objects/gibs/chest/tris.md2");
-						best.s.effects |= EF_GIB;
+						best.modelindex = gi.modelindex("models/objects/gibs/chest/tris.md2");
+						best.effects |= EF_GIB;
 					}
 					else
 					{
-						best.s.modelindex = gi.modelindex("models/objects/gibs/sm_meat/tris.md2");
-						best.s.effects |= EF_GIB;
+						best.modelindex = gi.modelindex("models/objects/gibs/sm_meat/tris.md2");
+						best.effects |= EF_GIB;
 					}
 
 					best.dmg_radius = (360.0f / 3) * i;
 					best.think = SAVABLE(Trap_Gib_Think);
 					best.nextthink = level.framenum + 1;
-					best.s.angles = ent.s.angles;
+					best.angles = ent.angles;
 					best.solid = SOLID_NOT;
 					best.takedamage = true;
 					best.movetype = MOVETYPE_NONE;
 					best.svflags |= SVF_MONSTER;
 					best.deadflag = DEAD_DEAD;
 					best.owner = ent;
-					best.watertype = gi.pointcontents(best.s.origin);
+					best.watertype = gi.pointcontents(best.origin);
 					if (best.watertype & MASK_WATER)
-						best.waterlevel = 1;
+						best.waterlevel = WATER_LEGS;
 
 					Trap_Gib_Think(best);
 				}
@@ -105,12 +107,12 @@ static void Trap_Think(entity &ent)
 			ent.delay += level.time;
 
 			if (ent.wait < 19)
-				ent.s.frame++;
+				ent.frame++;
 
 			return;
 		}
-		ent.s.frame++;
-		if (ent.s.frame == 8)
+		ent.frame++;
+		if (ent.frame == 8)
 		{
 			ent.nextthink = level.framenum + 1 * BASE_FRAMERATE;
 			ent.think = SAVABLE(G_FreeEdict);
@@ -118,8 +120,8 @@ static void Trap_Think(entity &ent)
 			entity &best = G_Spawn();
 			SpawnItem(best, GetItemByIndex(ITEM_FOODCUBE));
 			best.spawnflags |= DROPPED_ITEM;
-			best.s.origin = ent.s.origin;
-			best.s.origin[2] += 16;
+			best.origin = ent.origin;
+			best.origin[2] += 16;
 			best.velocity.z = 400.f;
 			best.count = ent.mass;
 			gi.linkentity(best);
@@ -128,20 +130,20 @@ static void Trap_Think(entity &ent)
 		return;
 	}
 
-	ent.s.effects &= ~EF_TRAP;
-	if (ent.s.frame >= 4)
+	ent.effects &= ~EF_TRAP;
+	if (ent.frame >= 4)
 	{
-		ent.s.effects |= EF_TRAP;
+		ent.effects |= EF_TRAP;
 		ent.bounds = bbox_point;
 	}
 
-	if (ent.s.frame < 4)
-		ent.s.frame++;
+	if (ent.frame < 4)
+		ent.frame++;
 
 	entityref	target, best;
 	float		oldlen = 8000;
 
-	while ((target = findradius(target, ent.s.origin, 256)).has_value())
+	while ((target = findradius(target, ent.origin, 256)).has_value())
 	{
 		if (target == ent)
 			continue;
@@ -156,7 +158,7 @@ static void Trap_Think(entity &ent)
 			best = target;
 			continue;
 		}
-		vector vec = ent.s.origin - target->s.origin;
+		vector vec = ent.origin - target->origin;
 		float len = VectorLength(vec);
 		if (len < oldlen)
 		{
@@ -171,11 +173,11 @@ static void Trap_Think(entity &ent)
 
 	if (best->groundentity.has_value())
 	{
-		best->s.origin[2] += 1;
+		best->origin[2] += 1;
 		best->groundentity = null_entity;
 	}
 
-	vector vec = ent.s.origin - best->s.origin;
+	vector vec = ent.origin - best->origin;
 	float len = VectorLength(vec);
 
 #ifdef SINGLE_PLAYER
@@ -191,49 +193,47 @@ static void Trap_Think(entity &ent)
 		vector forward;
 		best->ideal_yaw = vectoyaw(vec);
 		M_ChangeYaw(best);
-		AngleVectors(best->s.angles, &forward, nullptr, nullptr);
+		AngleVectors(best->angles, &forward, nullptr, nullptr);
 		best->velocity = forward * 256;
 	}
 #endif
 
-	gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/trapsuck.wav"), 1, ATTN_IDLE, 0);
+	gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/trapsuck.wav"), ATTN_IDLE);
 
 	if (len >= 32)
 		return;
 
 	if (best->mass < 400)
 	{
-		T_Damage(best, ent, ent.owner, vec3_origin, best->s.origin, vec3_origin, 100000, 1, DAMAGE_NO_PROTECTION, MOD_TRAP);
+		T_Damage(best, ent, ent.owner, vec3_origin, best->origin, vec3_origin, 100000, 1, { DAMAGE_NO_PROTECTION }, MOD_TRAP);
 		ent.enemy = best;
 		ent.wait = 64.f;
-		ent.s.old_origin = ent.s.origin;
+		ent.old_origin = ent.origin;
 		ent.timestamp = level.framenum + 30 * BASE_FRAMERATE;
+		ent.mass = (int) (best->mass * (
 #ifdef SINGLE_PLAYER
-
-		if (!deathmatch)
-			ent.mass = (int) (best->mass * 0.1f);
-		else
+			(!deathmatch) ? 0.1f :
 #endif
-			ent.mass = (int) (best->mass * 0.25f);
+			0.25f));
 
-		ent.s.frame = 5;
+		ent.frame = 5;
 		return;
 	}
 
 	BecomeExplosion1(ent);
 }
 
-static REGISTER_SAVABLE_FUNCTION(Trap_Think);
+REGISTER_STATIC_SAVABLE(Trap_Think);
 
 // RAFAEL
-void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float timer, float damage_radius, bool held)
+void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float damage_radius, bool held)
 {
 	vector dir = vectoangles(aimdir);
 	vector right, up;
 	AngleVectors(dir, nullptr, &right, &up);
 
 	entity &trap = G_Spawn();
-	trap.s.origin = start;
+	trap.origin = start;
 	trap.velocity = aimdir * speed;
 	trap.velocity += random(190.f, 210.f) * up;
 	trap.velocity += random(-10.f, 10.f) * right;
@@ -245,23 +245,20 @@ void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_
 		.mins = { 4, -4, 0 },
 		.maxs = { 4, 4, 8 }
 	};
-	trap.s.modelindex = gi.modelindex("models/weapons/z_trap/tris.md2");
+	trap.modelindex = gi.modelindex("models/weapons/z_trap/tris.md2");
 	trap.owner = self;
 	trap.nextthink = level.framenum + 1 * BASE_FRAMERATE;
 	trap.think = SAVABLE(Trap_Think);
 	trap.dmg = damage;
 	trap.dmg_radius = damage_radius;
 	trap.type = ET_GRENADE;
-	trap.s.sound = gi.soundindex("weapons/traploop.wav");
+	trap.sound = gi.soundindex("weapons/traploop.wav");
 	if (held)
 		trap.spawnflags = (spawn_flag) 3;
 	else
 		trap.spawnflags = (spawn_flag) 1;
 
-	if (timer <= 0.0)
-		Grenade_Explode(trap);
-	else
-		gi.linkentity(trap);
+	gi.linkentity(trap);
 
 	trap.timestamp = level.framenum + 30 * BASE_FRAMERATE;
 }

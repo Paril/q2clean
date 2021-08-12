@@ -29,22 +29,22 @@ static sound_index sound_sight;
 
 static void gunner_idlesound(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_idle, 1, ATTN_IDLE, 0);
+	gi.sound(self, CHAN_VOICE, sound_idle, ATTN_IDLE);
 }
 
 static void gunner_sight(entity &self, entity &)
 {
-	gi.sound(self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_sight);
+REGISTER_STATIC_SAVABLE(gunner_sight);
 
 static void gunner_search(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_search, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_search);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_search);
+REGISTER_STATIC_SAVABLE(gunner_search);
 
 static void gunner_stand(entity &self);
 
@@ -96,7 +96,7 @@ constexpr mframe_t gunner_frames_fidget [] = {
 };
 constexpr mmove_t gunner_move_fidget = { FRAME_stand31, FRAME_stand70, gunner_frames_fidget, gunner_stand };
 
-static REGISTER_SAVABLE_DATA(gunner_move_fidget);
+REGISTER_STATIC_SAVABLE(gunner_move_fidget);
 
 static void gunner_fidget(entity &self)
 {
@@ -142,14 +142,14 @@ constexpr mframe_t gunner_frames_stand [] = {
 };
 constexpr mmove_t gunner_move_stand = { FRAME_stand01, FRAME_stand30, gunner_frames_stand };
 
-static REGISTER_SAVABLE_DATA(gunner_move_stand);
+REGISTER_STATIC_SAVABLE(gunner_move_stand);
 
 static void gunner_stand(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(gunner_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_stand);
+REGISTER_STATIC_SAVABLE(gunner_stand);
 
 constexpr mframe_t gunner_frames_walk [] = {
 	{ ai_walk },
@@ -168,14 +168,14 @@ constexpr mframe_t gunner_frames_walk [] = {
 };
 constexpr mmove_t gunner_move_walk = { FRAME_walk07, FRAME_walk19, gunner_frames_walk };
 
-static REGISTER_SAVABLE_DATA(gunner_move_walk);
+REGISTER_STATIC_SAVABLE(gunner_move_walk);
 
 static void gunner_walk(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(gunner_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_walk);
+REGISTER_STATIC_SAVABLE(gunner_walk);
 
 constexpr mframe_t gunner_frames_run [] = {
 	{ ai_run, 26 },
@@ -193,7 +193,7 @@ constexpr mframe_t gunner_frames_run [] = {
 };
 constexpr mmove_t gunner_move_run = { FRAME_run01, FRAME_run08, gunner_frames_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_run);
+REGISTER_STATIC_SAVABLE(gunner_move_run);
 
 static void gunner_run(entity &self)
 {
@@ -207,7 +207,7 @@ static void gunner_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(gunner_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_run);
+REGISTER_STATIC_SAVABLE(gunner_run);
 
 constexpr mframe_t gunner_frames_pain3 [] = {
 	{ ai_move, -3 },
@@ -218,7 +218,7 @@ constexpr mframe_t gunner_frames_pain3 [] = {
 };
 constexpr mmove_t gunner_move_pain3 = { FRAME_pain301, FRAME_pain305, gunner_frames_pain3, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_pain3);
+REGISTER_STATIC_SAVABLE(gunner_move_pain3);
 
 constexpr mframe_t gunner_frames_pain2 [] = {
 	{ ai_move, -2 },
@@ -232,7 +232,7 @@ constexpr mframe_t gunner_frames_pain2 [] = {
 };
 constexpr mmove_t gunner_move_pain2 = { FRAME_pain201, FRAME_pain208, gunner_frames_pain2, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_pain2);
+REGISTER_STATIC_SAVABLE(gunner_move_pain2);
 
 constexpr mframe_t gunner_frames_pain1 [] = {
 	{ ai_move, 2 },
@@ -256,18 +256,12 @@ constexpr mframe_t gunner_frames_pain1 [] = {
 };
 constexpr mmove_t gunner_move_pain1 = { FRAME_pain101, FRAME_pain118, gunner_frames_pain1, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_pain1);
+REGISTER_STATIC_SAVABLE(gunner_move_pain1);
 
-static void gunner_pain(entity &self, entity &, float, int32_t damage)
+static void gunner_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t damage)
 {
-	if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
-
 #ifdef ROGUE_AI
 	monster_done_dodge (self);
-
-	if (self.groundentity == null_entity)
-		return;
 #endif
 
 	if (level.framenum < self.pain_debounce_framenum)
@@ -276,9 +270,9 @@ static void gunner_pain(entity &self, entity &, float, int32_t damage)
 	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
 
 	if (Q_rand() & 1)
-		gi.sound(self, CHAN_VOICE, sound_pain, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain);
 	else
-		gi.sound(self, CHAN_VOICE, sound_pain2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain2);
 
 	if (skill == 3)
 		return;     // no pain anims in nightmare
@@ -299,7 +293,7 @@ static void gunner_pain(entity &self, entity &, float, int32_t damage)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_pain);
+REGISTER_STATIC_SAVABLE(gunner_reacttodamage);
 
 static void gunner_dead(entity &self)
 {
@@ -328,7 +322,7 @@ constexpr mframe_t gunner_frames_death [] = {
 };
 constexpr mmove_t gunner_move_death = { FRAME_death01, FRAME_death11, gunner_frames_death, gunner_dead };
 
-static REGISTER_SAVABLE_DATA(gunner_move_death);
+REGISTER_STATIC_SAVABLE(gunner_move_death);
 
 static void gunner_die(entity &self, entity &, entity &, int32_t damage, vector)
 {
@@ -336,7 +330,7 @@ static void gunner_die(entity &self, entity &, entity &, int32_t damage, vector)
 
 // check for gib
 	if (self.health <= self.gib_health) {
-		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"));
 		for (n = 0; n < 2; n++)
 			ThrowGib(self, "models/objects/gibs/bone/tris.md2", damage, GIB_ORGANIC);
 		for (n = 0; n < 4; n++)
@@ -350,13 +344,13 @@ static void gunner_die(entity &self, entity &, entity &, int32_t damage, vector)
 		return;
 
 // regular death
-	gi.sound(self, CHAN_VOICE, sound_death, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_VOICE, sound_death);
 	self.deadflag = DEAD_DEAD;
 	self.takedamage = true;
 	self.monsterinfo.currentmove = &SAVABLE(gunner_move_death);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_die);
+REGISTER_STATIC_SAVABLE(gunner_die);
 
 static void GunnerGrenade(entity &self);
 
@@ -417,7 +411,7 @@ constexpr mframe_t gunner_frames_duck [] = {
 };
 constexpr mmove_t gunner_move_duck = { FRAME_duck01, FRAME_duck08, gunner_frames_duck, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_duck);
+REGISTER_STATIC_SAVABLE(gunner_move_duck);
 
 #ifndef ROGUE_AI
 static void gunner_dodge(entity &self, entity &attacker, float)
@@ -431,12 +425,12 @@ static void gunner_dodge(entity &self, entity &attacker, float)
 	self.monsterinfo.currentmove = &SAVABLE(gunner_move_duck);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_dodge);
+REGISTER_STATIC_SAVABLE(gunner_dodge);
 #endif
 
 static void gunner_opengun(entity &self)
 {
-	gi.sound(self, CHAN_VOICE, sound_open, 1, ATTN_IDLE, 0);
+	gi.sound(self, CHAN_VOICE, sound_open, ATTN_IDLE);
 }
 
 static void GunnerFire(entity &self)
@@ -450,13 +444,13 @@ static void GunnerFire(entity &self)
 	vector	aim;
 	monster_muzzleflash	flash_number;
 
-	flash_number = (monster_muzzleflash) (MZ2_GUNNER_MACHINEGUN_1 + (self.s.frame - FRAME_attak216));
+	flash_number = (monster_muzzleflash) (MZ2_GUNNER_MACHINEGUN_1 + (self.frame - FRAME_attak216));
 
-	AngleVectors(self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource(self.s.origin, monster_flash_offset[flash_number], forward, right);
+	AngleVectors(self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource(self.origin, monster_flash_offset[flash_number], forward, right);
 
 	// project enemy back a bit and target there
-	target = self.enemy->s.origin;
+	target = self.enemy->origin;
 	target += (-0.2f * self.enemy->velocity);
 	target.z += self.enemy->viewheight;
 
@@ -480,7 +474,7 @@ static bool gunner_grenade_check(entity &self)
 	// check for flag telling us that we're blindfiring
 	if (self.monsterinfo.aiflags & AI_MANUAL_STEERING)
 	{
-		if (self.s.origin[2]+self.viewheight < self.monsterinfo.blind_fire_target[2])
+		if (self.origin[2]+self.viewheight < self.monsterinfo.blind_fire_target[2])
 			return false;
 	}
 	else if (self.absbounds.maxs[2] <= self.enemy->absbounds.mins[2])
@@ -488,17 +482,17 @@ static bool gunner_grenade_check(entity &self)
 
 	// check to see that we can trace to the player before we start
 	// tossing grenades around.
-	AngleVectors (self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource (self.s.origin, monster_flash_offset[MZ2_GUNNER_GRENADE_1], forward, right);
+	AngleVectors (self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource (self.origin, monster_flash_offset[MZ2_GUNNER_GRENADE_1], forward, right);
 
 	// pmm - check for blindfire flag
 	if (self.monsterinfo.aiflags & AI_MANUAL_STEERING)
 		target = self.monsterinfo.blind_fire_target;
 	else
-		target = self.enemy->s.origin;
+		target = self.enemy->origin;
 
 	// see if we're too close
-	dir = self.s.origin - target;
+	dir = self.origin - target;
 
 	if (VectorLength(dir) < 100)
 		return false;
@@ -530,7 +524,7 @@ static void GunnerGrenade(entity &self)
 
 #endif
 
-	if (self.s.frame == FRAME_attak105)
+	if (self.frame == FRAME_attak105)
 #ifdef ROGUE_AI
 	{
 		spread = .02f;
@@ -539,7 +533,7 @@ static void GunnerGrenade(entity &self)
 #ifdef ROGUE_AI
 	}
 #endif
-	else if (self.s.frame == FRAME_attak108)
+	else if (self.frame == FRAME_attak108)
 #ifdef ROGUE_AI
 	{
 		spread = .05f;
@@ -548,7 +542,7 @@ static void GunnerGrenade(entity &self)
 #ifdef ROGUE_AI
 	}
 #endif
-	else if (self.s.frame == FRAME_attak111)
+	else if (self.frame == FRAME_attak111)
 #ifdef ROGUE_AI
 	{
 		spread = .08f;
@@ -578,17 +572,17 @@ static void GunnerGrenade(entity &self)
 		target = self.monsterinfo.blind_fire_target;
 	}
 	else
-		target = self.enemy->s.origin;
+		target = self.enemy->origin;
 
-	AngleVectors(self.s.angles, &forward, &right, &up);	//PGM
+	AngleVectors(self.angles, &forward, &right, &up);	//PGM
 #else
-	AngleVectors(self.s.angles, &forward, &right, nullptr);
+	AngleVectors(self.angles, &forward, &right, nullptr);
 #endif
-	start = G_ProjectSource(self.s.origin, monster_flash_offset[flash_number], forward, right);
+	start = G_ProjectSource(self.origin, monster_flash_offset[flash_number], forward, right);
 
 #ifdef ROGUE_AI
 
-	aim = target - self.s.origin;
+	aim = target - self.origin;
 	float dist = VectorLength(aim);
 
 	// aim up if they're on the same level as me and far away.
@@ -624,7 +618,7 @@ constexpr mframe_t gunner_frames_attack_chain [] = {
 };
 constexpr mmove_t gunner_move_attack_chain = { FRAME_attak209, FRAME_attak215, gunner_frames_attack_chain, gunner_fire_chain };
 
-static REGISTER_SAVABLE_DATA(gunner_move_attack_chain);
+REGISTER_STATIC_SAVABLE(gunner_move_attack_chain);
 
 static void gunner_refire_chain(entity &self);
 
@@ -640,7 +634,7 @@ constexpr mframe_t gunner_frames_fire_chain [] = {
 };
 constexpr mmove_t gunner_move_fire_chain = { FRAME_attak216, FRAME_attak223, gunner_frames_fire_chain, gunner_refire_chain };
 
-static REGISTER_SAVABLE_DATA(gunner_move_fire_chain);
+REGISTER_STATIC_SAVABLE(gunner_move_fire_chain);
 
 constexpr mframe_t gunner_frames_endfire_chain [] = {
 	{ ai_charge },
@@ -653,7 +647,7 @@ constexpr mframe_t gunner_frames_endfire_chain [] = {
 };
 constexpr mmove_t gunner_move_endfire_chain = { FRAME_attak224, FRAME_attak230, gunner_frames_endfire_chain, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_endfire_chain);
+REGISTER_STATIC_SAVABLE(gunner_move_endfire_chain);
 
 #ifdef ROGUE_AI
 static void gunner_blind_check (entity &self)
@@ -661,7 +655,7 @@ static void gunner_blind_check (entity &self)
 	if (!(self.monsterinfo.aiflags & AI_MANUAL_STEERING))
 		return;
 
-	vector aim = self.monsterinfo.blind_fire_target - self.s.origin;
+	vector aim = self.monsterinfo.blind_fire_target - self.origin;
 	self.ideal_yaw = vectoyaw(aim);
 }
 #endif
@@ -695,7 +689,7 @@ constexpr mframe_t gunner_frames_attack_grenade [] ={
 };
 constexpr mmove_t gunner_move_attack_grenade = { FRAME_attak101, FRAME_attak121, gunner_frames_attack_grenade, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_attack_grenade);
+REGISTER_STATIC_SAVABLE(gunner_move_attack_grenade);
 
 static void gunner_attack(entity &self)
 {
@@ -760,7 +754,7 @@ static void gunner_attack(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_attack);
+REGISTER_STATIC_SAVABLE(gunner_attack);
 
 static void gunner_fire_chain(entity &self)
 {
@@ -786,7 +780,7 @@ static void gunner_jump_now (entity &self)
 
 	monster_jump_start (self);
 
-	AngleVectors (self.s.angles, &forward, nullptr, &up);
+	AngleVectors (self.angles, &forward, nullptr, &up);
 	self.velocity += 100 * forward;
 	self.velocity += 300 * up;
 }
@@ -795,13 +789,13 @@ static void gunner_jump_wait_land (entity &self)
 {
 	if(self.groundentity == null_entity)
 	{
-		self.monsterinfo.nextframe = self.s.frame;
+		self.monsterinfo.nextframe = self.frame;
 
 		if(monster_jump_finished (self))
-			self.monsterinfo.nextframe = self.s.frame + 1;
+			self.monsterinfo.nextframe = self.frame + 1;
 	}
 	else 
-		self.monsterinfo.nextframe = self.s.frame + 1;
+		self.monsterinfo.nextframe = self.frame + 1;
 }
 
 constexpr mframe_t gunner_frames_jump [] =
@@ -819,7 +813,7 @@ constexpr mframe_t gunner_frames_jump [] =
 };
 constexpr mmove_t gunner_move_jump = { FRAME_jump01, FRAME_jump10, gunner_frames_jump, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_jump);
+REGISTER_STATIC_SAVABLE(gunner_move_jump);
 
 constexpr mframe_t gunner_frames_jump2 [] =
 {
@@ -836,7 +830,7 @@ constexpr mframe_t gunner_frames_jump2 [] =
 };
 constexpr mmove_t gunner_move_jump2 = { FRAME_jump01, FRAME_jump10, gunner_frames_jump2, gunner_run };
 
-static REGISTER_SAVABLE_DATA(gunner_move_jump2);
+REGISTER_STATIC_SAVABLE(gunner_move_jump2);
 
 static void gunner_jump (entity &self)
 {
@@ -845,7 +839,7 @@ static void gunner_jump (entity &self)
 
 	monster_done_dodge (self);
 
-	if(self.enemy->s.origin[2] > self.s.origin[2])
+	if(self.enemy->origin[2] > self.origin[2])
 		self.monsterinfo.currentmove = &SAVABLE(gunner_move_jump2);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(gunner_move_jump);
@@ -868,7 +862,7 @@ static bool gunner_blocked (entity &self, float dist)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_blocked);
+REGISTER_STATIC_SAVABLE(gunner_blocked);
 
 // PMM - new duck code
 static void gunner_duck (entity &self, float eta)
@@ -903,7 +897,7 @@ static void gunner_duck (entity &self, float eta)
 	self.monsterinfo.currentmove = &SAVABLE(gunner_move_duck);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_duck);
+REGISTER_STATIC_SAVABLE(gunner_duck);
 
 static void gunner_sidestep (entity &self)
 {
@@ -928,7 +922,7 @@ static void gunner_sidestep (entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(gunner_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gunner_sidestep);
+REGISTER_STATIC_SAVABLE(gunner_sidestep);
 #endif
 
 /*QUAKED monster_gunner (1 .5 0) (-16 -16 -24) (16 16 32) Ambush Trigger_Spawn Sight
@@ -953,7 +947,7 @@ static void SP_monster_gunner(entity &self)
 
 	self.movetype = MOVETYPE_STEP;
 	self.solid = SOLID_BBOX;
-	self.s.modelindex = gi.modelindex("models/monsters/gunner/tris.md2");
+	self.modelindex = gi.modelindex("models/monsters/gunner/tris.md2");
 	self.bounds = {
 		.mins = { -16, -16, -24 },
 		.maxs = { 16, 16, 32 }
@@ -963,7 +957,7 @@ static void SP_monster_gunner(entity &self)
 	self.gib_health = -70;
 	self.mass = 200;
 
-	self.pain = SAVABLE(gunner_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(gunner_die);
 
 	self.monsterinfo.stand = SAVABLE(gunner_stand);
@@ -982,6 +976,7 @@ static void SP_monster_gunner(entity &self)
 	self.monsterinfo.attack = SAVABLE(gunner_attack);
 	self.monsterinfo.sight = SAVABLE(gunner_sight);
 	self.monsterinfo.search = SAVABLE(gunner_search);
+	self.monsterinfo.reacttodamage = SAVABLE(gunner_reacttodamage);
 
 	gi.linkentity(self);
 

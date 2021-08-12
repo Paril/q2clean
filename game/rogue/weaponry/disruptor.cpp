@@ -18,7 +18,7 @@ static void weapon_tracker_fire(entity &self)
 	else
 		damage = 30;
 #else
-	constexpr int32_t damage = 30;
+	int32_t damage = 30;
 #endif
 
 	if (is_quad)
@@ -28,7 +28,7 @@ static void weapon_tracker_fire(entity &self)
 	AngleVectors (self.client->v_angle, &forward, &right, nullptr);
 
 	vector offset { 24, 8, self.viewheight - 8.f };
-	vector start = P_ProjectSource (self, self.s.origin, offset, forward, right);
+	vector start = P_ProjectSource (self, self.origin, offset, forward, right);
 	vector end = start + (forward * 8192);
 	entityref enemy;
 
@@ -48,10 +48,7 @@ static void weapon_tracker_fire(entity &self)
 	fire_tracker(self, start, forward, damage, 1000, enemy);
 
 	// send muzzle flash
-	gi.WriteByte (svc_muzzleflash);
-	gi.WriteShort (self.s.number);
-	gi.WriteByte (MZ_TRACKER);
-	gi.multicast (self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, self, MZ_TRACKER).multicast(self.origin, MULTICAST_PVS);
 #if defined(SINGLE_PLAYER)
 
 	PlayerNoise(self, start, PNOISE_WEAPON);
@@ -64,6 +61,6 @@ static void weapon_tracker_fire(entity &self)
 
 void Weapon_Disruptor(entity &ent)
 {
-	Weapon_Generic(ent, 4, 9, 29, 34, G_IsAnyFrame<5>, G_IsAnyFrame<14, 19, 23>, weapon_tracker_fire);
+	Weapon_Generic(ent, 4, 9, 29, 34, G_FrameIsOneOf<14, 19, 23>, G_FrameIsOneOf<5>, weapon_tracker_fire);
 }
 #endif

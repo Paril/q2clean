@@ -108,7 +108,7 @@ void Use_Quad(entity &ent, const gitem_t &it)
 	else
 		ent.client->quad_framenum = level.framenum + timeout;
 
-	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage.wav"), 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage.wav"));
 }
 
 void Use_Breather(entity &ent, const gitem_t &it)
@@ -143,7 +143,7 @@ void Use_Invulnerability(entity &ent, const gitem_t &it)
 	else
 		ent.client->invincible_framenum = level.framenum + 300;
 
-	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect.wav"), 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect.wav"));
 }
 
 void Use_Silencer(entity &ent, const gitem_t &it)

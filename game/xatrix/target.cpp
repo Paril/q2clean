@@ -37,7 +37,7 @@ static void target_mal_laser_use(entity &self, entity &, entity &cactivator)
 		target_mal_laser_on (self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(target_mal_laser_use);
+REGISTER_STATIC_SAVABLE(target_mal_laser_use);
 
 static void mal_laser_think(entity &self)
 {
@@ -46,40 +46,40 @@ static void mal_laser_think(entity &self)
 	self.spawnflags |= LASER_BZZT;
 }
 
-static REGISTER_SAVABLE_FUNCTION(mal_laser_think);
+REGISTER_STATIC_SAVABLE(mal_laser_think);
 
 static void SP_target_mal_laser(entity &self)
 {
 	self.movetype = MOVETYPE_NONE;
 	self.solid = SOLID_NOT;
-	self.s.renderfx |= RF_BEAM|RF_TRANSLUCENT;
-	self.s.modelindex = MODEL_WORLD;			// must be non-zero
+	self.renderfx |= RF_BEAM|RF_TRANSLUCENT;
+	self.modelindex = MODEL_WORLD;			// must be non-zero
 
 	// set the beam diameter
 	if (self.spawnflags & LASER_FAT)
-		self.s.frame = 16;
+		self.frame = 16;
 	else
-		self.s.frame = 4;
+		self.frame = 4;
 
 	// set the color
 	if (self.spawnflags & LASER_RED)
-		self.s.skinnum = 0xf2f2f0f0;
+		self.skinnum = 0xf2f2f0f0;
 	else if (self.spawnflags & LASER_GREEN)
-		self.s.skinnum = 0xd0d1d2d3;
+		self.skinnum = 0xd0d1d2d3;
 	else if (self.spawnflags & LASER_BLUE)
-		self.s.skinnum = 0xf3f3f1f1;
+		self.skinnum = 0xf3f3f1f1;
 	else if (self.spawnflags & LASER_YELLOW)
-		self.s.skinnum = 0xdcdddedf;
+		self.skinnum = 0xdcdddedf;
 	else if (self.spawnflags & LASER_ORANGE)
-		self.s.skinnum = 0xe0e1e2e3;
+		self.skinnum = 0xe0e1e2e3;
 
-	G_SetMovedir (self.s.angles, self.movedir);
+	G_SetMovedir (self.angles, self.movedir);
 	
 	if (!self.delay)
-		self.delay = 0.1;
+		self.delay = 0.1f;
 
 	if (!self.wait)
-		self.wait = 0.1;
+		self.wait = 0.1f;
 
 	if (!self.dmg)
 		self.dmg = 5;

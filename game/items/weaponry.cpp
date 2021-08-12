@@ -71,7 +71,7 @@ void Drop_Ammo(entity &ent, const gitem_t &it)
 		it.ammotag == AMMO_GRENADES &&
 		(ent.client->pers.inventory[it.id] - dropped.count) <= 0)
 	{
-		gi.cprintf(ent, PRINT_HIGH, "Can't drop current weapon\n");
+		gi.cprint(ent, PRINT_HIGH, "Can't drop current weapon\n");
 		G_FreeEdict(dropped);
 		return;
 	}
@@ -97,32 +97,32 @@ bool Pickup_Weapon(entity &ent, entity &other)
 
 	other.client->pers.inventory[index]++;
 
-		if (!(ent.spawnflags & DROPPED_ITEM))
+	if (!(ent.spawnflags & DROPPED_ITEM))
+	{
+		// give them some ammo with it
+		if (ent.item->ammo)
 		{
-			// give them some ammo with it
-			if (ent.item->ammo)
-			{
-				const gitem_t &ammo = GetItemByIndex(ent.item->ammo);
-				Add_Ammo(other, ammo, ammo.quantity);
-			}
-
-			if (!(ent.spawnflags & DROPPED_PLAYER_ITEM))
-			{
-#ifdef SINGLE_PLAYER
-				if (deathmatch)
-				{
-#endif
-					if (dmflags & DF_WEAPONS_STAY)
-						ent.flags |= FL_RESPAWN;
-					else
-						SetRespawn(ent, 30);
-#ifdef SINGLE_PLAYER
-				}
-				if (coop)
-					ent.flags |= FL_RESPAWN;
-#endif
-			}
+			const gitem_t &ammo = GetItemByIndex(ent.item->ammo);
+			Add_Ammo(other, ammo, ammo.quantity);
 		}
+
+		if (!(ent.spawnflags & DROPPED_PLAYER_ITEM))
+		{
+#ifdef SINGLE_PLAYER
+			if (deathmatch)
+			{
+#endif
+				if (dmflags & DF_WEAPONS_STAY)
+					ent.flags |= FL_RESPAWN;
+				else
+					SetRespawn(ent, 30);
+#ifdef SINGLE_PLAYER
+			}
+			if (coop)
+				ent.flags |= FL_RESPAWN;
+#endif
+		}
+	}
 
 	if (other.client->pers.weapon != ent.item && (other.client->pers.inventory[index] == 1) && (
 #ifdef SINGLE_PLAYER
@@ -151,7 +151,7 @@ enum use_weap_result : uint8_t
 	USEWEAP_OUT_OF_ITEM
 };
 
-static inline use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
+inline use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
 {
 	if (it == ent.client->pers.weapon)
 		return USEWEAP_IS_ACTIVE;
@@ -168,100 +168,42 @@ static inline use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
 	}
 
 	return USEWEAP_OK;
-};
+}
 
-#ifdef THE_RECKONING
-constexpr std::initializer_list<gitem_id> rail_chain = { ITEM_RAILGUN, ITEM_PHALANX };
-#endif
-
-#ifdef GROUND_ZERO
-constexpr std::initializer_list<gitem_id> grenadelauncher_chain = { ITEM_GRENADE_LAUNCHER, ITEM_PROX_LAUNCHER };
-constexpr std::initializer_list<gitem_id> machinegun_chain = { ITEM_MACHINEGUN, ITEM_ETF_RIFLE };
-constexpr std::initializer_list<gitem_id> bfg_chain = { ITEM_BFG, ITEM_DISRUPTOR };
-#endif
-
-#if defined(GROUND_ZERO) && defined(GRAPPLE)
-constexpr std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_CHAINFIST, ITEM_GRAPPLE };
-#elif defined(GRAPPLE)
-constexpr std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_GRAPPLE };
-#elif defined(GROUND_ZERO)
-constexpr std::initializer_list<gitem_id> blaster_chain = { ITEM_BLASTER, ITEM_CHAINFIST };
-#endif
-
-#if defined(GROUND_ZERO) && defined(THE_RECKONING)
-constexpr std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TRAP, ITEM_TESLA };
-constexpr std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_BOOMER, ITEM_PLASMA_BEAM };
-#elif defined(GROUND_ZERO)
-constexpr std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TESLA };
-constexpr std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_PLASMA_BEAM };
-#elif defined(THE_RECKONING)
-constexpr std::initializer_list<gitem_id> grenade_chain = { ITEM_GRENADES, ITEM_TRAP };
-constexpr std::initializer_list<gitem_id> hyperblaster_chain = { ITEM_HYPERBLASTER, ITEM_BOOMER };
-#endif
-
-constexpr bool GetChain(entity &ent [[maybe_unused]], const gitem_t &it [[maybe_unused]], std::initializer_list<gitem_id> &chain [[maybe_unused]] )
+// check if the specified item belongs in a chain for `it`.
+inline bool WeaponIsChained(const gitem_t &it, const gitem_t &chain)
 {
-#if defined(GROUND_ZERO) || defined(GRAPPLE)
-	if (it.id == ITEM_BLASTER)
-		chain = blaster_chain;
-#endif
-#if defined(GROUND_ZERO) || defined(THE_RECKONING)
-	else if (it.id == ITEM_HYPERBLASTER)
-		chain = hyperblaster_chain;
-	else if (it.id == ITEM_GRENADES)
-		chain = grenade_chain;
-#endif
-#if defined(GROUND_ZERO)
-	else if (it.id == ITEM_GRENADE_LAUNCHER)
-		chain = grenadelauncher_chain;
-	else if (it.id == ITEM_MACHINEGUN)
-		chain = machinegun_chain;
-	else if (it.id == ITEM_BFG)
-		chain = bfg_chain;
-#endif
-#if defined(THE_RECKONING)
-	else if (it.id == ITEM_RAILGUN)
-		chain = rail_chain;
-#endif
-#if defined(GROUND_ZERO) || defined(THE_RECKONING) || defined(GRAPPLE)
-	else
-#endif
-		return false;
-#if defined(GROUND_ZERO) || defined(THE_RECKONING) || defined(GRAPPLE)
+	return it.id == chain.id || it.chain == chain.id;
+}
 
-	return true;
-#endif
+constexpr gitem_id NextInChain(gitem_id id)
+{
+	return (gitem_id) (max(1u, (id + 1) % item_list().size()));
 }
 
 void Use_Weapon(entity &ent, const gitem_t &it)
 {
 	std::initializer_list<gitem_id> chain;
 
-	// we have a weapon chain; find our current position in this chain
-	if (GetChain(ent, it, chain))
+	gitem_id chain_begin = ITEM_NONE;
+
+	if (ent.client->newweapon.has_value() && WeaponIsChained(ent.client->newweapon, it))
+		chain_begin = ent.client->newweapon->id;
+	else if (ent.client->pers.weapon.has_value() && WeaponIsChained(ent.client->pers.weapon, it))
+		chain_begin = ent.client->pers.weapon->id;
+
+	if (chain_begin)
 	{
-		size_t chain_start = 0;
-
-		for (const gitem_id *c = chain.begin(); c != chain.end(); c++)
-		{
-			const gitem_t &cit = GetItemByIndex(*c);
-
-			if (ent.client->pers.weapon == cit || ent.client->newweapon == cit)
-			{
-				chain_start = (c - chain.begin()) + 1;
-				break;
-			}
-		}
-
+		// we're either holding a weapon that is in this chain or attempting
+		// to switch to a weapon that is also in this chain.
 		// find the next weapon we can equip that doesn't return false
-		for (size_t cid = 0; cid < chain.size(); cid++)
+		for (gitem_id id = NextInChain(chain_begin); id != chain_begin; id = NextInChain(id))
 		{
-			const gitem_t &cit = GetItemByIndex(*(chain.begin() + ((chain_start + cid) % chain.size())));
-
-			// got it!
-			if (CanUseWeapon(ent, cit) == USEWEAP_OK)
+			if (WeaponIsChained(GetItemByIndex(id), it) && // this weapon is in this chain...
+				CanUseWeapon(ent, GetItemByIndex(id)) == USEWEAP_OK && // we can use it...
+				ent.client->newweapon != id) // we're not already switching to it
 			{
-				ent.client->newweapon = cit;
+				ent.client->newweapon = id;
 				return;
 			}
 		}
@@ -277,13 +219,13 @@ void Use_Weapon(entity &ent, const gitem_t &it)
 	case USEWEAP_IS_ACTIVE:
 		return;
 	case USEWEAP_NO_AMMO:
-		gi.cprintf(ent, PRINT_HIGH, "No %s for %s.\n", ammo_item.pickup_name, it.pickup_name);
+		gi.cprintfmt(ent, PRINT_HIGH, "No {} for {}.\n", ammo_item.pickup_name, it.pickup_name);
 		return;
 	case USEWEAP_NOT_ENOUGH_AMMO:
-		gi.cprintf(ent, PRINT_HIGH, "Not enough %s for %s.\n", ammo_item.pickup_name, it.pickup_name);
+		gi.cprintfmt(ent, PRINT_HIGH, "Not enough {} for {}.\n", ammo_item.pickup_name, it.pickup_name);
 		return;
 	case USEWEAP_OUT_OF_ITEM:
-		gi.cprintf(ent, PRINT_HIGH, "Out of item: %s.\n", it.pickup_name);
+		gi.cprintfmt(ent, PRINT_HIGH, "Out of item: {}.\n", it.pickup_name);
 		return;
 	default:
 		// change to this weapon when down
@@ -300,7 +242,7 @@ void Drop_Weapon(entity &ent, const gitem_t &it)
 	// see if we're already using it
 	if (((it == ent.client->pers.weapon) || (it == ent.client->newweapon)) && (ent.client->pers.inventory[it.id] == 1))
 	{
-		gi.cprintf(ent, PRINT_HIGH, "Can't drop current weapon\n");
+		gi.cprint(ent, PRINT_HIGH, "Can't drop current weapon\n");
 		return;
 	}
 

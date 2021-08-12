@@ -29,8 +29,8 @@ bool M_CheckBottom(entity &ent)
 	int	x, y;
 	float	mid, bottom;
 
-	cmins = ent.s.origin + ent.mins;
-	cmaxs = ent.s.origin + ent.maxs;
+	cmins = ent.origin + ent.bounds.mins;
+	cmaxs = ent.origin + ent.bounds.maxs;
 
 // if all of the points under the corners are solid world, don't bother
 // with the tougher checks
@@ -121,14 +121,14 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 	// try one move with vertical motion, then one without
 	for (int32_t i = 0 ; i < 2 ; i++)
 	{
-		vector neworg = ent.s.origin + move;
+		vector neworg = ent.origin + move;
 
 		if (i == 0 && ent.enemy.has_value())
 		{
 			if (!ent.goalentity.has_value())
 				ent.goalentity = ent.enemy;
 
-			float dz = ent.s.origin[2] - ent.goalentity->s.origin[2];
+			float dz = ent.origin[2] - ent.goalentity->origin[2];
 
 			if (ent.goalentity->is_client())
 			{
@@ -143,7 +143,7 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 				if (dz > minheight)
 					neworg.z -= 8;
 
-				if (!((ent.flags & FL_SWIM) && ent.waterlevel < 2))
+				if (!((ent.flags & FL_SWIM) && ent.waterlevel < WATER_UNDER))
 					if (dz < (minheight - 10))
 						neworg.z += 8;
 			}
@@ -153,14 +153,14 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 				// RAFAEL
 				if (ent.type == ET_MONSTER_FIXBOT)
 				{
-					if (ent.s.frame >= 105 && ent.s.frame <= 120)
+					if (ent.frame >= 105 && ent.frame <= 120)
 					{
 						if (dz > 12)
 							neworg.z--;
 						else if (dz < -12)
 							neworg.z++;
 					}
-					else if (ent.s.frame >= 31 && ent.s.frame <= 88)
+					else if (ent.frame >= 31 && ent.frame <= 88)
 					{
 						if (dz > 12)
 							neworg.z -= 12;
@@ -193,7 +193,7 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 			}
 		}
 		
-		trace trace = gi.trace(ent.s.origin, ent.mins, ent.maxs, neworg, ent, MASK_MONSTERSOLID);
+		trace trace = gi.trace(ent.origin, ent.bounds, neworg, ent, MASK_MONSTERSOLID);
 
 		// fly monsters don't enter water voluntarily
 		if ((ent.flags & FL_FLY) && !ent.waterlevel)
@@ -201,19 +201,19 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 			vector test;
 			test.x = trace.endpos[0];
 			test.y = trace.endpos[1];
-			test.z = trace.endpos[2] + ent.mins.z + 1;
+			test.z = trace.endpos[2] + ent.bounds.mins.z + 1;
 			content_flags contents = gi.pointcontents(test);
 
 			if (contents & MASK_WATER)
 				return false;
 		}
 		// swim monsters don't exit water voluntarily
-		else if ((ent.flags & FL_SWIM) && ent.waterlevel < 2)
+		else if ((ent.flags & FL_SWIM) && ent.waterlevel < WATER_UNDER)
 		{
 			vector test;
 			test.x = trace.endpos[0];
 			test.y = trace.endpos[1];
-			test.z = trace.endpos[2] + ent.mins.z + 1;
+			test.z = trace.endpos[2] + ent.bounds.mins.z + 1;
 			content_flags contents = gi.pointcontents(test);
 
 			if (!(contents & MASK_WATER))
@@ -222,14 +222,14 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 
 		if (!trace.allsolid && !trace.startsolid)
 		{
-			ent.s.origin = trace.endpos;
+			ent.origin = trace.endpos;
 
 			if (trace.fraction < 1)
 				SV_Impact(ent, trace);
 
 #ifdef ROGUE_AI
 			if (!ent.bad_area.has_value() && CheckForBadArea(ent).has_value())
-				ent.s.origin = oldorg;
+				ent.origin = oldorg;
 			else
 			{
 #endif
@@ -253,10 +253,8 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 
 bool SV_movestep(entity &ent, vector move, bool relink)
 {
-	float	dz;
 	vector	oldorg, neworg, end;
 	trace	trace;
-	int	i;
 	float	stepsize;
 	vector	test;
 	int	contents;
@@ -297,8 +295,8 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 #endif
 
 // try the move
-	oldorg = ent.s.origin;
-	neworg = ent.s.origin + move;
+	oldorg = ent.origin;
+	neworg = ent.origin + move;
 
 // flying monsters don't step up
 	if (ent.flags & (FL_SWIM | FL_FLY))
@@ -320,7 +318,7 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 	end.z -= stepsize * 2;
 #endif
 
-	trace = gi.trace(neworg, ent.mins, ent.maxs, end, ent, MASK_MONSTERSOLID);
+	trace = gi.trace(neworg, ent.bounds, end, ent, MASK_MONSTERSOLID);
 
 	if (trace.allsolid)
 		return false;
@@ -328,22 +326,22 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 	if (trace.startsolid)
 	{
 		neworg.z -= stepsize;
-		trace = gi.trace(neworg, ent.mins, ent.maxs, end, ent, MASK_MONSTERSOLID);
+		trace = gi.trace(neworg, ent.bounds, end, ent, MASK_MONSTERSOLID);
 		if (trace.allsolid || trace.startsolid)
 			return false;
 	}
 
 	// don't go into deep water
-	if (ent.waterlevel <= 1)
+	if (ent.waterlevel <= WATER_LEGS)
 	{
 		test.x = trace.endpos[0];
 		test.y = trace.endpos[1];
 #ifdef ROGUE_AI
 		if(ent.gravityVector[2] > 0)
-			test[2] = trace.endpos[2] + ent.maxs[2] - 27;	
+			test[2] = trace.endpos[2] + ent.bounds.maxs[2] - 27;	
 		else
 #endif
-			test.z = trace.endpos[2] + ent.mins.z + 27;
+			test.z = trace.endpos[2] + ent.bounds.mins.z + 27;
 		contents = gi.pointcontents(test);
 
 		if (contents & MASK_WATER)
@@ -355,7 +353,7 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 		// if monster had the ground pulled out, go ahead and fall
 		if (ent.flags & FL_PARTIALGROUND)
 		{
-			ent.s.origin += move;
+			ent.origin += move;
 			if (relink)
 			{
 				gi.linkentity(ent);
@@ -372,7 +370,7 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 		SV_Impact(ent, trace);
 
 // check point traces down for dangling corners
-	ent.s.origin = trace.endpos;
+	ent.origin = trace.endpos;
 	
 #ifdef ROGUE_AI
 	// PMM - don't bother with bad areas if we're dead
@@ -410,7 +408,7 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 			}
 #endif
 
-			ent.s.origin = oldorg;
+			ent.origin = oldorg;
 			return false;
 		}
 	}
@@ -429,7 +427,7 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 			}
 			return true;
 		}
-		ent.s.origin = oldorg;
+		ent.origin = oldorg;
 		return false;
 	}
 
@@ -456,7 +454,7 @@ void M_ChangeYaw(entity &ent)
 	float	move;
 	float	speed;
 
-	current = anglemod(ent.s.angles[YAW]);
+	current = anglemod(ent.angles[YAW]);
 	ideal = ent.ideal_yaw;
 
 	if (current == ideal)
@@ -479,7 +477,7 @@ void M_ChangeYaw(entity &ent)
 			move = -speed;
 	}
 
-	ent.s.angles[YAW] = anglemod(current + move);
+	ent.angles[YAW] = anglemod(current + move);
 }
 
 
@@ -508,7 +506,7 @@ static bool SV_StepDirection(entity &ent, float yaw, float dist)
 	move.y = sin(yaw) * dist;
 	move.z = 0;
 
-	oldorigin = ent.s.origin;
+	oldorigin = ent.origin;
 	if (SV_movestep(ent, move, false))
 	{
 		if(!ent.inuse)
@@ -518,7 +516,7 @@ static bool SV_StepDirection(entity &ent, float yaw, float dist)
 		ent.monsterinfo.aiflags &= ~AI_BLOCKED;
 #endif
 		
-		delta = ent.s.angles[YAW] - ent.ideal_yaw;
+		delta = ent.angles[YAW] - ent.ideal_yaw;
 		
 #ifdef GROUND_ZERO
 		if (ent.type != ET_MONSTER_WIDOW && ent.type != ET_MONSTER_WIDOW2)
@@ -526,7 +524,7 @@ static bool SV_StepDirection(entity &ent, float yaw, float dist)
 			if (delta > 45 && delta < 315)
 			{
 				// not turned far enough, so don't take the step
-				ent.s.origin = oldorigin;
+				ent.origin = oldorigin;
 			}
 
 		gi.linkentity(ent);
@@ -566,8 +564,8 @@ void SV_NewChaseDir(entity &actor, entityref enemy, float dist)
 	olddir = anglemod((int)(actor.ideal_yaw / 45) * 45);
 	turnaround = anglemod(olddir - 180);
 
-	deltax = enemy->s.origin[0] - actor.s.origin[0];
-	deltay = enemy->s.origin[1] - actor.s.origin[1];
+	deltax = enemy->origin[0] - actor.origin[0];
+	deltay = enemy->origin[1] - actor.origin[1];
 	if (deltax > 10)
 		d.y = 0;
 	else if (deltax < -10)
@@ -639,39 +637,11 @@ void SV_NewChaseDir(entity &actor, entityref enemy, float dist)
 		SV_FixCheckBottom(actor);
 }
 
-/*
-======================
-SV_CloseEnough
-
-======================
-*/
-static inline bool SV_CloseEnough(entity &ent, entity &goal, const float &dist)
-{
-	if (goal.absmin.x > ent.absmax.x + dist)
-		return false;
-	if (goal.absmax.x < ent.absmin.x - dist)
-		return false;
-	if (goal.absmin.y > ent.absmax.y + dist)
-		return false;
-	if (goal.absmax.y < ent.absmin.y - dist)
-		return false;
-	if (goal.absmin.z > ent.absmax.z + dist)
-		return false;
-	if (goal.absmax.z < ent.absmin.z - dist)
-		return false;
-	return true;
-}
-
-
 void M_MoveToGoal(entity &ent, float dist)
 {
 	entityref goal = ent.goalentity;
 
 	if (!ent.groundentity.has_value() && !(ent.flags & (FL_FLY | FL_SWIM)))
-		return;
-
-// if the next step hits the enemy, return immediately
-	if (ent.enemy.has_value() && SV_CloseEnough(ent, ent.enemy, dist))
 		return;
 
 // bump around...

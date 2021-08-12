@@ -1,105 +1,8 @@
 #include "config.h"
 #include "gi.h"
 #include "lib/string/format.h"
-#include <cstdarg>
 
 game_import gi;
-
-extern "C" struct game_import_impl
-{
-	// special messages
-	void (*bprintf)(int32_t printlevel, const char *fmt, ...);
-	void (*dprintf)(const char *fmt, ...);
-	void (*cprintf)(entity *ent, int32_t printlevel, const char *fmt, ...);
-	void (*centerprintf)(entity *ent, const char *fmt, ...);
-	void (*sound)(entity *ent, int32_t channel, int soundindex, float volume, float attenuation, float timeofs);
-	void (*positioned_sound)(const float *origin, entity *ent, int32_t channel, int32_t soundindex, float volume, float attenuation, float timeofs);
-
-	// config strings hold all the index strings, the lightstyles,
-	// and misc data like the sky definition and cdtrack.
-	// All of the current configstrings are sent to clients when
-	// they connect, and changes are sent to all connected clients.
-	void (*configstring)(int32_t num, const char *string);
-
-	void (*error)(const char *fmt, ...);
-
-	// the *index functions create configstrings and some internal server state
-	int (*modelindex)(const char *name);
-	int (*soundindex)(const char *name);
-	int (*imageindex)(const char *name);
-
-	void (*setmodel)(entity *ent, const char *name);
-
-	// collision detection
-	trace(*trace)(const float *start, const float *mins, const float *maxs, const float *end, entity *passent, int32_t contentmask);
-	int32_t(*pointcontents)(const float *point);
-	qboolean(*inPVS)(const float *p1, const float *p2);
-	qboolean(*inPHS)(const float *p1, const float *p2);
-	void (*SetAreaPortalState)(int portalnum, qboolean open);
-	qboolean(*AreasConnected)(int area1, int area2);
-
-	// an entity will never be sent to a client or used for collision
-	// if it is not passed to linkentity.  If the size, position, or
-	// solidity changes, it must be relinked.
-	void (*linkentity)(entity *ent);
-	void (*unlinkentity)(entity *ent);     // call before removing an interactive edict
-	int (*BoxEdicts)(const float *mins, const float *maxs, entity **list, int maxcount, int32_t areatype);
-	void (*Pmove)(pmove_t *pmove);          // player movement code common with client prediction
-
-	// network messaging
-	void (*multicast)(const float *origin, int32_t to);
-	void (*unicast)(entity *ent, qboolean reliable);
-	void (*WriteChar)(int c);
-	void (*WriteByte)(int c);
-	void (*WriteShort)(int c);
-	void (*WriteLong)(int c);
-	void (*WriteFloat)(float f);
-	void (*WriteString)(const char *s);
-	void (*WritePosition)(const float *pos);    // some fractional bits
-	void (*WriteDir)(const float *pos);         // single byte encoded, very coarse
-	void (*WriteAngle)(float f);
-
-	// managed memory allocation
-	void *(*TagMalloc)(uint32_t size, uint32_t tag);
-	void (*TagFree)(void *block);
-	void (*FreeTags)(uint32_t tag);
-
-	// console variable interaction
-	cvar *(*cvar)(const char *var_name, const char *value, int32_t flags);
-	::cvar *(*cvar_set)(const char *var_name, const char *value);
-	::cvar *(*cvar_forceset)(const char *var_name, const char *value);
-
-	// ClientCommand and ServerCommand parameter access
-	int (*argc)(void);
-	char *(*argv)(int n);
-	char *(*args)(void);     // concatenation of all argv >= 1
-
-	// add commands to the server console as if they were typed in
-	// for map changing, etc
-	void (*AddCommandString)(const char *text);
-
-	void (*DebugGraph)(float value, int color);
-
-	// Knightmare- support game DLL loading from pak files thru engine
-	// This can be used to load script files, etc
-#ifdef KMQUAKE2_ENGINE_MOD
-	char **(*ListPak) (char *find, int *num);	// Deprecated- DO NOT USE!
-	int		(*LoadFile) (char *name, void **buf);
-	void	(*FreeFile) (void *buf);
-	void	(*FreeFileList) (char **list, int n);
-	int		(*OpenFile) (const char *name, fileHandle_t *f, fsMode_t mode);
-	int		(*OpenCompressedFile) (const char *zipName, const char *fileName, fileHandle_t *f, fsMode_t mode);
-	void	(*CloseFile) (fileHandle_t f);
-	int		(*FRead) (void *buffer, int size, fileHandle_t f);
-	int		(*FWrite) (const void *buffer, int size, fileHandle_t f);
-	char *(*FS_GameDir) (void);
-	char *(*FS_SaveGameDir) (void);
-	void	(*CreatePath) (char *path);
-	char **(*GetFileList) (const char *path, const char *extension, int *num);
-#endif
-};
-
-static game_import_impl impl;
 
 void game_import::set_impl(game_import_impl *implptr)
 {
@@ -126,48 +29,6 @@ void game_import::FreeTags(uint32_t tag)
 	impl.FreeTags(tag);
 }
 
-// chat functions
-
-// broadcast print; prints to all connected clients + console
-void game_import::bprintf(print_level printlevel, stringlit fmt, ...)
-{
-	va_list	argptr;
-	va_start(argptr, fmt);
-	string b = va(fmt, argptr);
-	impl.bprintf(printlevel, "%s", b.ptr());
-	va_end(argptr);
-}
-
-// debug print; prints only to console or listen server host
-void game_import::dprintf(stringlit fmt, ...)
-{
-	va_list	argptr;
-	va_start(argptr, fmt);
-	string b = va(fmt, argptr);
-	impl.dprintf("%s", b.ptr());
-	va_end(argptr);
-}
-
-// client print; prints to one client
-void game_import::cprintf(const entity &ent, print_level printlevel, stringlit fmt, ...)
-{
-	va_list	argptr;
-	va_start(argptr, fmt);
-	string b = va(fmt, argptr);
-	impl.cprintf(const_cast<entity *>(&ent), printlevel, "%s", b.ptr());
-	va_end(argptr);
-}
-
-// center print; prints on center of screen to client
-void game_import::centerprintf(const entity &ent, stringlit fmt, ...)
-{
-	va_list	argptr;
-	va_start(argptr, fmt);
-	string b = va(fmt, argptr);
-	impl.centerprintf(const_cast<entity *>(&ent), "%s", b.ptr());
-	va_end(argptr);
-}
-
 // sounds
 
 // fetch a sound index from the specified sound file
@@ -177,15 +38,21 @@ sound_index game_import::soundindex(const stringref &name)
 }
 
 // sound; play soundindex on specified entity on channel at specified volume/attn with a time offset of timeofs
-void game_import::sound(const entity &ent, sound_channel channel, sound_index soundindex, float volume, sound_attn attenuation, float timeofs)
+void game_import::sound(const entity &ent, sound_channel channel, sound_index soundindex, float volume, sound_attn attenuation, float time_offset)
 {
-	impl.sound(const_cast<entity *>(&ent), channel, (int32_t) soundindex, volume, attenuation, timeofs);
+	if ((channel & (CHAN_NO_PHS_ADD | CHAN_RELIABLE)) == (CHAN_NO_PHS_ADD | CHAN_RELIABLE))
+		gi.dprint("invalid sound parameters passed; no_phs | reliable is not supported in most engines\n");
+
+	impl.sound(const_cast<entity *>(&ent), channel, (int32_t) soundindex, volume, attenuation, time_offset);
 }
 
 // sound; play soundindex at specified origin (from specified entity) on channel at specified volume/attn with a time offset of timeofs
-void game_import::positioned_sound(vector origin, entityref ent, sound_channel channel, sound_index soundindex, float volume, sound_attn attenuation, float timeofs)
+void game_import::positioned_sound(vector origin, entityref ent, sound_channel channel, sound_index soundindex, float volume, sound_attn attenuation, float time_offset)
 {
-	impl.positioned_sound(&origin.x, ent, channel, (int32_t) soundindex, volume, attenuation, timeofs);
+	if ((channel & (CHAN_NO_PHS_ADD | CHAN_RELIABLE)) == (CHAN_NO_PHS_ADD | CHAN_RELIABLE))
+		gi.dprint("invalid sound parameters passed; no_phs | reliable is not supported in most engines\n");
+
+	impl.positioned_sound(&origin.x, ent, channel, (int32_t) soundindex, volume, attenuation, time_offset);
 }
 
 // models
@@ -240,7 +107,7 @@ dynarray<entityref> game_import::BoxEdicts(bbox bounds, box_edicts_area areatype
 	return dynarray<entityref>(ents.data(), ents.data() + size);
 }
 // player movement code common with client prediction
-void game_import::Pmove(pmove_t &pmove)
+void game_import::Pmove(pmove &pmove)
 {
 	impl.Pmove(&pmove);
 }
@@ -259,7 +126,7 @@ void game_import::Pmove(pmove_t &pmove)
 
 	if (tr.fraction == 1.0f && *(void **)(&tr.contents - 1) == nullptr)
 	{
-		gi.dprintf("Q2PRO runaway trace trapped, re-tracing...\n");
+		gi.dprint("Q2PRO runaway trace trapped, re-tracing...\n");
 		tr = impl.trace(&start.x, &bounds.mins.x, &bounds.maxs.x, &end.x, passent, contentmask);
 	}
 
@@ -307,7 +174,7 @@ void game_import::WriteShort(int16_t c)
 }
 void game_import::WriteEntity(const server_entity &e)
 {
-	impl.WriteShort(e.s.number);
+	impl.WriteShort(e.number);
 }
 void game_import::WriteLong(int32_t c)
 {
@@ -325,9 +192,9 @@ void game_import::WritePosition(vector pos)
 {
 	impl.WritePosition(&pos.x);
 }
-void game_import::WriteDir(vector pos)
+void game_import::WriteDir(vector dir)
 {
-	impl.WriteDir(&pos.x);
+	impl.WriteDir(&dir.x);
 }
 void game_import::WriteAngle(float f)
 {
@@ -402,15 +269,4 @@ void game_import::AddCommandString(const stringref &text)
 void game_import::DebugGraph(float value, int color)
 {
 	impl.DebugGraph(value, color);
-}
-
-// drop to console, error
-[[noreturn]] void game_import::error(stringlit fmt, ...)
-{
-	va_list	argptr;
-	va_start(argptr, fmt);
-	string b = va(fmt, argptr);
-	va_end(argptr);
-	impl.error("%s", b.ptr());
-	exit(0);
 }

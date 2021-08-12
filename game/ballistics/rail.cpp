@@ -9,6 +9,8 @@
 #include "game/game.h"
 #include "rail.h"
 
+constexpr means_of_death MOD_RAILGUN { .other_kill_fmt = "{0} was railed by {3}.\n" };
+
 /*
 =================
 fire_rail
@@ -45,26 +47,17 @@ void fire_rail(entity &self, vector start, vector aimdir, int32_t damage, int32_
 				ignore = nullptr;
 
 			if ((tr.ent != self) && (tr.ent.takedamage))
-				T_Damage(tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, DAMAGE_NONE, MOD_RAILGUN);
+				T_Damage(tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, { DAMAGE_NONE }, MOD_RAILGUN);
 		}
 
 		from = tr.endpos;
 	}
 
 	// send gun puff / flash
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte(TE_RAILTRAIL);
-	gi.WritePosition(start);
-	gi.WritePosition(tr.endpos);
-	gi.multicast(self.s.origin, MULTICAST_PHS);
+	gi.ConstructMessage(svc_temp_entity, TE_RAILTRAIL, start, tr.endpos).multicast(self.origin, MULTICAST_PHS);
+
 	if (water)
-	{
-		gi.WriteByte(svc_temp_entity);
-		gi.WriteByte(TE_RAILTRAIL);
-		gi.WritePosition(start);
-		gi.WritePosition(tr.endpos);
-		gi.multicast(tr.endpos, MULTICAST_PHS);
-	}
+		gi.ConstructMessage(svc_temp_entity, TE_RAILTRAIL, start, tr.endpos).multicast(tr.endpos, MULTICAST_PHS);
 #ifdef SINGLE_PLAYER
 
 	if (self.is_client())

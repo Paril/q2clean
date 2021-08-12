@@ -31,11 +31,14 @@ static void GrappleReset(entity &self)
 	if (cl.client->silencer_shots)
 		volume = 0.2f;
 
+	gi.sound(cl, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex(
 #ifdef HOOK_STANDARD_ASSETS
-	gi.sound(cl, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/Sshotr1b.wav"), volume, ATTN_NORM, 0);
+		"weapons/Sshotr1b.wav"
 #else
-	gi.sound(cl, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grreset.wav"), volume, ATTN_NORM, 0);
+		"weapons/grapple/grreset.wav"
 #endif
+		), volume);
+
 	cl.client->grapple = 0;
 	cl.client->grapplereleaseframenum = level.framenum;
 	cl.client->grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
@@ -48,6 +51,8 @@ void GrapplePlayerReset(entity &ent)
 	if (ent.is_client() && ent.client->grapple.has_value())
 		GrappleReset(ent.client->grapple);
 }
+
+constexpr means_of_death MOD_GRAPPLE { .other_kill_fmt = "{0} was hooked to death by {3}'s grapple.\n" };
 
 static void GrappleTouch(entity &self, entity &other, vector plane, const surface &surf)
 {
@@ -68,12 +73,12 @@ static void GrappleTouch(entity &self, entity &other, vector plane, const surfac
 	self.velocity = vec3_origin;
 #if defined(SINGLE_PLAYER)
 
-	PlayerNoise(self.owner, self.s.origin, PNOISE_IMPACT);
+	PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
 	if (other.takedamage)
 	{
-		T_Damage(other, self, self.owner, self.velocity, self.s.origin, plane, self.dmg, 1, DAMAGE_NONE, MOD_GRAPPLE);
+		T_Damage(other, self, self.owner, self.velocity, self.origin, plane, self.dmg, 1, { DAMAGE_NONE }, MOD_GRAPPLE);
 		GrappleReset(self);
 		return;
 	}
@@ -87,17 +92,13 @@ static void GrappleTouch(entity &self, entity &other, vector plane, const surfac
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
-	gi.sound(self, CHAN_WEAPON, gi.soundindex("flyer/Flyatck1.wav"), volume, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, gi.soundindex("flyer/Flyatck1.wav"), volume);
 #else
-	gi.sound(self.owner, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grpull.wav"), volume, ATTN_NORM, 0);
-	gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/grapple/grhit.wav"), volume, ATTN_NORM, 0);
+	gi.sound(self.owner, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grpull.wav"), volume);
+	gi.sound(self, CHAN_WEAPON, gi.soundindex("weapons/grapple/grhit.wav"), volume);
 #endif
 
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte(TE_SPARKS);
-	gi.WritePosition(self.s.origin);
-	gi.WriteDir(plane);
-	gi.multicast(self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_SPARKS, self.origin, vecdir { plane }).multicast(self.origin, MULTICAST_PVS);
 }
 
 // draw beam between grapple and self
@@ -109,32 +110,24 @@ static void GrappleDrawCable(entity &self)
 
 	AngleVectors(self.owner->client->v_angle, &f, &r, nullptr);
 	offset = { 16.f, self.count ? -16.f : 16.f, self.owner->viewheight - 8.f };
-	start = P_ProjectSource(self.owner, self.owner->s.origin, offset, f, r);
+	start = P_ProjectSource(self.owner, self.owner->origin, offset, f, r);
 
-	offset = start - self.owner->s.origin;
-	dir = start - self.s.origin;
+	offset = start - self.owner->origin;
+	dir = start - self.origin;
 	distance = VectorLength(dir);
 
 	// don't draw cable if close
 	if (distance < 64)
 		return;
 
-	end = self.s.origin;
+	end = self.origin;
 
-	gi.WriteByte(svc_temp_entity);
 #ifdef HOOK_STANDARD_ASSETS
-	gi.WriteByte(TE_PARASITE_ATTACK);
-	gi.WriteEntity(self);
-	gi.WritePosition(start);
-	gi.WritePosition(end);
+	gi.ConstructMessage(svc_temp_entity, TE_PARASITE_ATTACK, self, start, end)
 #else
-	gi.WriteByte(TE_GRAPPLE_CABLE);
-	gi.WriteEntity(self.owner);
-	gi.WritePosition(self.owner->s.origin);
-	gi.WritePosition(end);
-	gi.WritePosition(offset);
+	gi.ConstructMessage(svc_temp_entity, TE_GRAPPLE_CABLE, self.owner, self.owner.origin, end, offset)
 #endif
-	gi.multicast(self.s.origin, MULTICAST_PVS);
+		.multicast(self.origin, MULTICAST_PVS);
 }
 
 // pull the player toward the grapple
@@ -164,7 +157,7 @@ void GrapplePull(entity &self)
 		}
 		else if (self.enemy->solid == SOLID_BBOX)
 		{
-			self.s.origin = self.enemy->s.origin + self.enemy->bounds.center();
+			self.origin = self.enemy->origin + self.enemy->bounds.center();
 			gi.linkentity(self);
 		}
 		else
@@ -183,9 +176,9 @@ void GrapplePull(entity &self)
 		vector forward, up;
 
 		AngleVectors(self.owner->client->v_angle, &forward, nullptr, &up);
-		v = self.owner->s.origin;
+		v = self.owner->origin;
 		v[2] += self.owner->viewheight;
-		hookdir = self.s.origin - v;
+		hookdir = self.origin - v;
 
 		vlen = VectorNormalize(hookdir);
 
@@ -200,14 +193,14 @@ void GrapplePull(entity &self)
 			{
 				self.owner->client->ps.pmove.pm_flags |= PMF_NO_PREDICTION;
 #ifndef HOOK_STANDARD_ASSETS
-				gi.sound(self.owner, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grhang.wav"), volume, ATTN_NORM, 0);
+				gi.sound(self.owner, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grhang.wav"), volume);
 #endif
 				self.owner->client->grapplestate = GRAPPLE_STATE_HANG;
 			}
 #ifdef HOOK_STANDARD_ASSETS
 			else if (self.pain_debounce_framenum < level.framenum)
 			{
-				gi.sound(self.owner, CHAN_WEAPON, gi.soundindex("world/turbine1.wav"), volume, ATTN_NORM, 0);
+				gi.sound(self.owner, CHAN_WEAPON, gi.soundindex("world/turbine1.wav"), volume);
 				self.pain_debounce_framenum = level.framenum + (gtime) (0.5 * BASE_FRAMERATE);
 			}
 #endif
@@ -219,24 +212,24 @@ void GrapplePull(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(GrappleTouch);
+REGISTER_STATIC_SAVABLE(GrappleTouch);
 
 static void CTFFireGrapple(entity &self, vector start, vector dir, int damage, int speed, bool offhand)
 {
 	VectorNormalize(dir);
 
 	entity &grapple = G_Spawn();
-	grapple.s.origin = grapple.s.old_origin = start;
-	grapple.s.angles = vectoangles(dir);
+	grapple.origin = grapple.old_origin = start;
+	grapple.angles = vectoangles(dir);
 	grapple.velocity = dir * speed;
 	grapple.movetype = MOVETYPE_FLYMISSILE;
 	grapple.clipmask = MASK_SHOT;
 	grapple.solid = SOLID_BBOX;
 	grapple.count = offhand;
 #ifdef HOOK_STANDARD_ASSETS
-	grapple.s.modelindex = gi.modelindex("models/objects/debris2/tris.md2");
+	grapple.modelindex = gi.modelindex("models/objects/debris2/tris.md2");
 #else
-	grapple.s.modelindex = gi.modelindex("models/weapons/grapple/hook/tris.md2");
+	grapple.modelindex = gi.modelindex("models/weapons/grapple/hook/tris.md2");
 #endif
 	grapple.owner = self;
 	grapple.touch = SAVABLE(GrappleTouch);
@@ -245,10 +238,10 @@ static void CTFFireGrapple(entity &self, vector start, vector dir, int damage, i
 	self.client->grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
 	gi.linkentity(grapple);
 
-	trace tr = gi.traceline(self.s.origin, grapple.s.origin, grapple, MASK_SHOT);
+	trace tr = gi.traceline(self.origin, grapple.origin, grapple, MASK_SHOT);
 	if (tr.fraction < 1.0)
 	{
-		grapple.s.origin += dir * -10;
+		grapple.origin += dir * -10;
 		grapple.touch(grapple, tr.ent, vec3_origin, null_surface);
 	}
 }
@@ -265,15 +258,15 @@ static void CTFGrappleFire(entity &ent, int damage, bool offhand)
 
 	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 	offset = { 24.f, offhand ? -8.f : 8.f, ent.viewheight - 8.f + 2.f };
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	if (ent.client->silencer_shots)
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
-	gi.sound(ent, CHAN_WEAPON, gi.soundindex("medic/Medatck2.wav"), volume, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_WEAPON, gi.soundindex("medic/Medatck2.wav"), volume);
 #else
-	gi.sound(ent, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grfire.wav"), volume, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grfire.wav"), volume);
 #endif
 	CTFFireGrapple(ent, start, forward, damage, GRAPPLE_SPEED, offhand);
 #if defined(SINGLE_PLAYER)
@@ -314,7 +307,7 @@ void CTFWeapon_Grapple(entity &ent)
 	}
 
 	const weapon_state prevstate = ent.client->weaponstate;
-	Weapon_Generic(ent, 5, 9, 31, 36, G_IsAnyFrame<10, 18, 27>, G_IsAnyFrame<6>, Weapon_Grapple_Fire);
+	Weapon_Generic(ent, 5, 9, 31, 36, G_FrameIsOneOf<10, 18, 27>, G_FrameIsOneOf<6>, Weapon_Grapple_Fire);
 
 	// if we just switched back to grapple, immediately go to fire frame
 	if (prevstate == WEAPON_ACTIVATING &&

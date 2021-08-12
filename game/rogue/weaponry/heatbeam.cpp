@@ -47,15 +47,12 @@ static void Heatbeam_Fire(entity &ent)
 // This offset is the "view" offset for the beam start (used by trace)
 	
 	vector offset { 7, 2, ent.viewheight - 3.f };
-	vector start = P_ProjectSource (ent, ent.s.origin, offset, forward, right);
+	vector start = P_ProjectSource (ent, ent.origin, offset, forward, right);
 
 	fire_heatbeam (ent, start, forward, damage, kick, false);
 
 	// send muzzle flash
-	gi.WriteByte (svc_muzzleflash);
-	gi.WriteShort (ent.s.number);
-	gi.WriteByte (MZ_HEATBEAM | is_silenced);
-	gi.multicast (ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_HEATBEAM | is_silenced).multicast (ent.origin, MULTICAST_PVS);
 #if defined(SINGLE_PLAYER)
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -67,12 +64,12 @@ static void Heatbeam_Fire(entity &ent)
 	ent.client->anim_priority = ANIM_ATTACK;
 	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 	{
-		ent.s.frame = FRAME_crattak1 - 1;
+		ent.frame = FRAME_crattak1 - 1;
 		ent.client->anim_end = FRAME_crattak9;
 	}
 	else
 	{
-		ent.s.frame = FRAME_attack1 - 1;
+		ent.frame = FRAME_attack1 - 1;
 		ent.client->anim_end = FRAME_attack8;
 	}
 }
@@ -105,6 +102,6 @@ void Weapon_Heatbeam(entity &ent)
 		ent.client->weapon_sound = SOUND_NONE;
 	}
 
-	Weapon_Generic (ent, 8, 12, 39, 44, G_IsAnyFrame<35>, G_IsAnyFrame<9, 10, 11, 12>, Heatbeam_Fire);
+	Weapon_Generic (ent, 8, 12, 39, 44, G_FrameIsOneOf<35>, G_FrameIsBetween<9, 12>, Heatbeam_Fire);
 }
 #endif

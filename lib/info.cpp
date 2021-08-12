@@ -14,7 +14,7 @@ key and returns the associated value, or an empty string.
 */
 string Info_ValueForKey(const stringref &s, stringlit key)
 {
-	string key_string = va("\\%s\\", key);
+	string key_string = format("\\{}\\", key);
 	size_t key_start = strstr(s, key_string);
 	
 	if (key_start == (size_t) -1)
@@ -43,7 +43,7 @@ Info_RemoveKey
 string Info_RemoveKey(const stringref &s, stringlit key)
 {
 	string result = s;
-	string key_string = va("\\%s\\", key);
+	string key_string = format("\\{}\\", key);
 	
 	size_t key_start;
 	while ((key_start = strstr(result, key_string)) != (size_t) -1)

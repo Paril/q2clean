@@ -19,21 +19,15 @@ void Blaster_Fire(entity &ent, vector g_offset, int32_t damage, bool hyper, enti
 	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 	offset = { 24, 8, ent.viewheight - 8.f };
 	offset += g_offset;
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	ent.client->kick_origin = forward * -2;
 	ent.client->kick_angles[0] = -1.f;
 
-	fire_blaster(ent, start, forward, damage, 1000, effect, hyper ? MOD_HYPERBLASTER : MOD_BLASTER, hyper);
+	fire_blaster(ent, start, forward, damage, 1000, effect, hyper);
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	if (hyper)
-		gi.WriteByte(MZ_HYPERBLASTER | is_silenced);
-	else
-		gi.WriteByte(MZ_BLASTER | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, (hyper ? MZ_HYPERBLASTER : MZ_BLASTER) | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 #ifdef SINGLE_PLAYER
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -58,5 +52,5 @@ static void Weapon_Blaster_Fire(entity &ent)
 
 void Weapon_Blaster(entity &ent)
 {
-	Weapon_Generic(ent, 4, 8, 52, 55, G_IsAnyFrame<19, 32>, G_IsAnyFrame<5>, Weapon_Blaster_Fire);
+	Weapon_Generic(ent, 4, 8, 52, 55, G_FrameIsOneOf<19, 32>, G_FrameIsOneOf<5>, Weapon_Blaster_Fire);
 }

@@ -17,6 +17,8 @@
 #include "game/xatrix/misc.h"
 #include "gekk.h"
 
+constexpr means_of_death MOD_GEKK { .self_kill_fmt = "{0}... that's gotta hurt!\n" };
+
 static sound_index	sound_swing;
 static sound_index	sound_hit;
 static sound_index	sound_hit2;
@@ -57,8 +59,8 @@ static bool gekk_check_jump(entity &self)
 	if (self.absbounds.maxs[2] < (self.enemy->absbounds.mins[2] + 0.25f * self.enemy->size[2]))
 		return false;
 
-	vector v {	self.s.origin[0] - self.enemy->s.origin[0],
-				self.s.origin[1] - self.enemy->s.origin[1],
+	vector v {	self.origin[0] - self.enemy->origin[0],
+				self.origin[1] - self.enemy->origin[1],
 				0 };
 	float distance = VectorLength(v);
 
@@ -76,13 +78,13 @@ static bool gekk_check_jump_close(entity &self)
 	if (!self.enemy.has_value())
 		return false;
 
-	vector v {	self.s.origin[0] - self.enemy->s.origin[0],
-				self.s.origin[1] - self.enemy->s.origin[1],
+	vector v {	self.origin[0] - self.enemy->origin[0],
+				self.origin[1] - self.enemy->origin[1],
 				0 };
 	float distance = VectorLength(v);
 
 	if (distance < 100)
-		return self.s.origin[2] < self.enemy->s.origin[2];
+		return self.origin[2] < self.enemy->origin[2];
 	
 	return true;
 }
@@ -104,7 +106,7 @@ static bool gekk_checkattack(entity &self)
 		return true;
 	}
 
-	if (gekk_check_jump_close (self) && self.waterlevel <= 1)
+	if (gekk_check_jump_close (self) && self.waterlevel <= WATER_LEGS)
 	{	
 		self.monsterinfo.attack_state = AS_MISSILE;
 		return true;
@@ -113,7 +115,7 @@ static bool gekk_checkattack(entity &self)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_checkattack);
+REGISTER_STATIC_SAVABLE(gekk_checkattack);
 
 //
 // SOUNDS
@@ -124,19 +126,19 @@ static void gekk_step(entity &self)
 	int n = Q_rand_uniform(3);
 
 	if (n == 0)
-		gi.sound (self, CHAN_VOICE, sound_step1, 1, ATTN_NORM, 0);		
+		gi.sound (self, CHAN_VOICE, sound_step1);		
 	else if (n == 1)
-		gi.sound (self, CHAN_VOICE, sound_step2, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_VOICE, sound_step2);
 	else
-		gi.sound (self, CHAN_VOICE, sound_step3, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_VOICE, sound_step3);
 }
 
 static void gekk_sight(entity &self, entity &)
 {
-	gi.sound (self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_VOICE, sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_sight);
+REGISTER_STATIC_SAVABLE(gekk_sight);
 
 static void gekk_search(entity &self)
 {
@@ -144,28 +146,28 @@ static void gekk_search(entity &self)
 	{
 		float r = random();
 		if (r < 0.33)
-			gi.sound (self, CHAN_VOICE, sound_chantlow, 1, ATTN_NORM, 0);
+			gi.sound (self, CHAN_VOICE, sound_chantlow);
 		else if (r < 0.66)
-			gi.sound (self, CHAN_VOICE, sound_chantmid, 1, ATTN_NORM, 0);
+			gi.sound (self, CHAN_VOICE, sound_chantmid);
 		else
-			gi.sound (self, CHAN_VOICE, sound_chanthigh, 1, ATTN_NORM, 0);
+			gi.sound (self, CHAN_VOICE, sound_chanthigh);
 	}
 	else
-		gi.sound (self, CHAN_VOICE, sound_search, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_VOICE, sound_search);
 
 	self.health += (int32_t) random(10.f, 20.f);
 	if (self.health > self.max_health)
 		self.health = self.max_health;
 
 	if (self.health < (self.max_health / 4))
-		self.s.skinnum = 2;
+		self.skinnum = 2;
 	else if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
+		self.skinnum = 1;
 	else 
-		self.s.skinnum = 0;
+		self.skinnum = 0;
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_search);
+REGISTER_STATIC_SAVABLE(gekk_search);
 
 
 //
@@ -176,7 +178,7 @@ static void gekk_jump_touch(entity &self, entity &other, vector, const surface &
 {
 	if (self.health <= 0)
 	{
-		self.touch = 0;
+		self.touch = nullptr;
 		return;
 	}
 
@@ -185,10 +187,10 @@ static void gekk_jump_touch(entity &self, entity &other, vector, const surface &
 		vector normal = self.velocity;
 		VectorNormalize(normal);
 
-		vector point = self.s.origin + (normal * self.bounds.maxs[0]);
+		vector point = self.origin + (normal * self.bounds.maxs[0]);
 		int damage = (int32_t) random(10.f, 20.f);
 
-		T_Damage (other, self, self, self.velocity, point, normal, damage, damage, DAMAGE_NONE, MOD_GEKK);
+		T_Damage (other, self, self, self.velocity, point, normal, damage, damage, { DAMAGE_NONE }, MOD_GEKK);
 	}
 
 	if (!M_CheckBottom (self))
@@ -196,25 +198,25 @@ static void gekk_jump_touch(entity &self, entity &other, vector, const surface &
 		if (self.groundentity != null_entity)
 		{
 			self.monsterinfo.nextframe = FRAME_leapatk_11;
-			self.touch = 0;
+			self.touch = nullptr;
 		}
 
 		return;
 	}
 
-	self.touch = 0;
+	self.touch = nullptr;
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_jump_touch);
+REGISTER_STATIC_SAVABLE(gekk_jump_touch);
 
 static void gekk_jump_takeoff(entity &self)
 {
-	gi.sound (self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_VOICE, sound_sight);
 
 	vector	forward;
-	AngleVectors (self.s.angles, &forward, nullptr, nullptr);
+	AngleVectors (self.angles, &forward, nullptr, nullptr);
 
-	self.s.origin[2] += 1;
+	self.origin[2] += 1;
 	
 	// high jump
 	if (gekk_check_jump (self))
@@ -236,12 +238,12 @@ static void gekk_jump_takeoff(entity &self)
 
 static void gekk_jump_takeoff2(entity &self)
 {
-	gi.sound (self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_VOICE, sound_sight);
 
 	vector	forward;
-	AngleVectors (self.s.angles, &forward, nullptr, nullptr);
+	AngleVectors (self.angles, &forward, nullptr, nullptr);
 
-	self.s.origin[2] = self.enemy->s.origin[2];
+	self.origin[2] = self.enemy->origin[2];
 	
 	if (gekk_check_jump (self))
 	{
@@ -270,7 +272,7 @@ static void gekk_check_landing(entity &self)
 {
 	if (self.groundentity != null_entity)
 	{
-		gi.sound (self, CHAN_WEAPON, sound_thud, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_WEAPON, sound_thud);
 		self.monsterinfo.attack_finished = 0;
 		self.monsterinfo.aiflags &= ~AI_DUCKED;
 		self.velocity = vec3_origin;
@@ -287,7 +289,7 @@ static void land_to_water(entity &self);
 
 static void gekk_check_underwater(entity &self)
 {
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		land_to_water (self);
 }
 
@@ -318,7 +320,7 @@ constexpr mframe_t gekk_frames_leapatk2[] =
 };
 constexpr mmove_t gekk_move_leapatk2 = { FRAME_leapatk_01, FRAME_leapatk_19, gekk_frames_leapatk2, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_leapatk2);
+REGISTER_STATIC_SAVABLE(gekk_move_leapatk2);
 
 static void water_to_land(entity &self)
 {
@@ -337,7 +339,7 @@ static void gekk_swim(entity &self)
 {
 	if (gekk_checkattack(self))	// Knightmare fixed, added argument
 	{
-		if (self.enemy->waterlevel <= 1 && random() > 0.7)
+		if (self.enemy->waterlevel <= WATER_LEGS && random() > 0.7)
 			water_to_land (self);
 	}
 	else
@@ -356,7 +358,7 @@ constexpr mframe_t gekk_frames_swim [] =
 };
 constexpr mmove_t gekk_move_swim_loop = { FRAME_amb_01, FRAME_amb_04, gekk_frames_swim, gekk_swim_loop };
 
-static REGISTER_SAVABLE_DATA(gekk_move_swim_loop);
+REGISTER_STATIC_SAVABLE(gekk_move_swim_loop);
 
 static void gekk_swim_loop(entity &self)
 {
@@ -369,9 +371,9 @@ static void gekk_hit_left(entity &self)
 	vector aim { MELEE_DISTANCE, self.bounds.mins[0], 8 };
 
 	if (fire_hit (self, aim, (15 + (Q_rand() %5)), 100))
-		gi.sound (self, CHAN_WEAPON, sound_hit, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_WEAPON, sound_hit);
 	else
-		gi.sound (self, CHAN_WEAPON, sound_swing, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_WEAPON, sound_swing);
 }
 
 static void gekk_hit_right(entity &self)
@@ -379,9 +381,9 @@ static void gekk_hit_right(entity &self)
 	vector aim { MELEE_DISTANCE, self.bounds.maxs[0], 8 };
 
 	if (fire_hit (self, aim, (15 + (Q_rand() %5)), 100))
-		gi.sound (self, CHAN_WEAPON, sound_hit2, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_WEAPON, sound_hit2);
 	else
-		gi.sound (self, CHAN_WEAPON, sound_swing, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_WEAPON, sound_swing);
 }
 
 static void gekk_bite(entity &self)
@@ -430,7 +432,7 @@ constexpr mframe_t gekk_frames_swim_start [] =
 };
 constexpr mmove_t gekk_move_swim_start = { FRAME_swim_01, FRAME_swim_32, gekk_frames_swim_start, gekk_swim_loop };
 
-static REGISTER_SAVABLE_DATA(gekk_move_swim_start);
+REGISTER_STATIC_SAVABLE(gekk_move_swim_start);
 
 static void land_to_water(entity &self)
 {
@@ -457,7 +459,7 @@ constexpr mframe_t gekk_frames_run[] =
 };
 constexpr mmove_t gekk_move_run = { FRAME_run_01, FRAME_run_06, gekk_frames_run };
 
-static REGISTER_SAVABLE_DATA(gekk_move_run);
+REGISTER_STATIC_SAVABLE(gekk_move_run);
 
 static void gekk_face(entity &self)
 {
@@ -537,7 +539,7 @@ constexpr mframe_t gekk_frames_stand [] =
 };
 constexpr mmove_t gekk_move_stand = { FRAME_stand_01, FRAME_stand_39, gekk_frames_stand };
 
-static REGISTER_SAVABLE_DATA(gekk_move_stand);
+REGISTER_STATIC_SAVABLE(gekk_move_stand);
 
 constexpr mframe_t gekk_frames_standunderwater[] =
 {
@@ -549,17 +551,17 @@ constexpr mframe_t gekk_frames_standunderwater[] =
 };
 constexpr mmove_t gekk_move_standunderwater = { FRAME_amb_01, FRAME_amb_04, gekk_frames_standunderwater };
 
-static REGISTER_SAVABLE_DATA(gekk_move_standunderwater);
+REGISTER_STATIC_SAVABLE(gekk_move_standunderwater);
 
 static void gekk_stand(entity &self)
 {
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_standunderwater);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_stand);
+REGISTER_STATIC_SAVABLE(gekk_stand);
 
 //
 // IDLE
@@ -613,7 +615,7 @@ constexpr mframe_t gekk_frames_idle2 [] =
 };
 constexpr mmove_t gekk_move_chant = { FRAME_idle_01, FRAME_idle_32, gekk_frames_idle2, gekk_chant };
 
-static REGISTER_SAVABLE_DATA(gekk_move_chant);
+REGISTER_STATIC_SAVABLE(gekk_move_chant);
 
 static void gekk_chant(entity &self)
 {
@@ -661,18 +663,18 @@ constexpr mframe_t gekk_frames_idle [] =
 constexpr mmove_t gekk_move_idle = { FRAME_idle_01, FRAME_idle_32, gekk_frames_idle, gekk_stand };
 constexpr mmove_t gekk_move_idle2 = { FRAME_idle_01, FRAME_idle_32, gekk_frames_idle, gekk_face };
 
-static REGISTER_SAVABLE_DATA(gekk_move_idle);
-static REGISTER_SAVABLE_DATA(gekk_move_idle2);
+REGISTER_STATIC_SAVABLE(gekk_move_idle);
+REGISTER_STATIC_SAVABLE(gekk_move_idle2);
 
 static void gekk_idle(entity &self)
 {
-	if (self.waterlevel <= 1)
+	if (self.waterlevel <= WATER_LEGS)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_idle);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_swim_start);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_idle);
+REGISTER_STATIC_SAVABLE(gekk_idle);
 
 //
 // WALK
@@ -689,14 +691,14 @@ constexpr mframe_t gekk_frames_walk[] =
 };
 constexpr mmove_t gekk_move_walk = { FRAME_run_01, FRAME_run_06, gekk_frames_walk };
 
-static REGISTER_SAVABLE_DATA(gekk_move_walk);
+REGISTER_STATIC_SAVABLE(gekk_move_walk);
 
 static void gekk_walk(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(gekk_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_walk);
+REGISTER_STATIC_SAVABLE(gekk_walk);
 
 //
 // RUN
@@ -704,7 +706,7 @@ static REGISTER_SAVABLE_FUNCTION(gekk_walk);
 
 static void gekk_run(entity &self)
 {
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_swim_start);
 	else if (self.monsterinfo.aiflags & AI_STAND_GROUND)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_stand);
@@ -712,7 +714,7 @@ static void gekk_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_run);
+REGISTER_STATIC_SAVABLE(gekk_run);
 
 constexpr mframe_t gekk_frames_run_st[] = 
 {
@@ -721,17 +723,17 @@ constexpr mframe_t gekk_frames_run_st[] =
 };
 constexpr mmove_t gekk_move_run_start = { FRAME_stand_01, FRAME_stand_02, gekk_frames_run_st, gekk_run };
 
-static REGISTER_SAVABLE_DATA(gekk_move_run_start);
+REGISTER_STATIC_SAVABLE(gekk_move_run_start);
 
 static void gekk_run_start(entity &self)
 {
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_swim_start);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_run_start);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_run_start);
+REGISTER_STATIC_SAVABLE(gekk_run_start);
 
 //
 // MELEE
@@ -749,28 +751,28 @@ static void loogie_touch(entity &self, entity &other, vector normal, const surfa
 	}
 
 	if (other.takedamage)
-		T_Damage (other, self, self.owner, self.velocity, self.s.origin, normal, self.dmg, 1, DAMAGE_ENERGY, MOD_GEKK);
+		T_Damage (other, self, self.owner, self.velocity, self.origin, normal, self.dmg, 1, { DAMAGE_ENERGY }, MOD_GEKK);
 	
 	G_FreeEdict (self);
 };
 
-static REGISTER_SAVABLE_FUNCTION(loogie_touch);
+REGISTER_STATIC_SAVABLE(loogie_touch);
 	
 static void fire_loogie(entity &self, vector start, vector dir, int32_t damage, int32_t speed)
 {
 	VectorNormalize (dir);
 
 	entity &loogie = G_Spawn();
-	loogie.s.origin = start;
-	loogie.s.old_origin = start;
-	loogie.s.angles = vectoangles (dir);
+	loogie.origin = start;
+	loogie.old_origin = start;
+	loogie.angles = vectoangles (dir);
 	loogie.velocity = dir * speed;
 	loogie.movetype = MOVETYPE_FLYMISSILE;
 	loogie.clipmask = MASK_SHOT;
 	loogie.solid = SOLID_BBOX;
-	loogie.s.effects |= EF_BLASTER;
+	loogie.effects |= EF_BLASTER;
 	
-	loogie.s.modelindex = gi.modelindex ("models/objects/loogy/tris.md2");
+	loogie.modelindex = gi.modelindex ("models/objects/loogy/tris.md2");
 	loogie.owner = self;
 	loogie.touch = SAVABLE(loogie_touch);
 	loogie.nextthink = level.framenum + (2 * BASE_FRAMETIME);
@@ -778,11 +780,11 @@ static void fire_loogie(entity &self, vector start, vector dir, int32_t damage, 
 	loogie.dmg = damage;
 	gi.linkentity (loogie);
 
-	trace tr = gi.traceline(self.s.origin, loogie.s.origin, loogie, MASK_SHOT);
+	trace tr = gi.traceline(self.origin, loogie.origin, loogie, MASK_SHOT);
 
 	if (tr.fraction < 1.0)
 	{
-		loogie.s.origin += dir * -10;
+		loogie.origin += dir * -10;
 		loogie.touch (loogie, tr.ent, vec3_origin, null_surface);
 	}
 }	
@@ -793,12 +795,12 @@ static void loogie(entity &self)
 		return;
 
 	vector forward, right, up;
-	AngleVectors (self.s.angles, &forward, &right, &up);
+	AngleVectors (self.angles, &forward, &right, &up);
 
-	vector start = G_ProjectSource (self.s.origin, { -18, -0.8f, 24 }, forward, right);
+	vector start = G_ProjectSource (self.origin, { -18, -0.8f, 24 }, forward, right);
 	start += up * 2;
 	
-	vector end = self.enemy->s.origin;
+	vector end = self.enemy->origin;
 	end[2] += self.enemy->viewheight;
 
 	vector dir = end - start;
@@ -833,7 +835,7 @@ constexpr mframe_t gekk_frames_spit [] =
 };
 constexpr mmove_t gekk_move_spit = { FRAME_spit_01, FRAME_spit_07, gekk_frames_spit, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_spit);
+REGISTER_STATIC_SAVABLE(gekk_move_spit);
 
 static void do_spit(entity &self)
 {
@@ -858,7 +860,7 @@ constexpr mframe_t gekk_frames_attack1 [] =
 };
 constexpr mmove_t gekk_move_attack1 = { FRAME_clawatk3_01, FRAME_clawatk3_09, gekk_frames_attack1, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_attack1);
+REGISTER_STATIC_SAVABLE(gekk_move_attack1);
 
 constexpr mframe_t gekk_frames_attack2[] = 
 {
@@ -876,7 +878,7 @@ constexpr mframe_t gekk_frames_attack2[] =
 };
 constexpr mmove_t gekk_move_attack2 = { FRAME_clawatk5_01, FRAME_clawatk5_09, gekk_frames_attack2, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_attack2);
+REGISTER_STATIC_SAVABLE(gekk_move_attack2);
 
 static void gekk_check_refire(entity &self)
 {
@@ -885,9 +887,9 @@ static void gekk_check_refire(entity &self)
 
 	if (random() < ((int32_t) skill * 0.1f) && range (self, self.enemy) == RANGE_MELEE)
 	{
-		if (self.s.frame == FRAME_clawatk3_09)
+		if (self.frame == FRAME_clawatk3_09)
 			self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack2);
-		else if (self.s.frame == FRAME_clawatk5_09)
+		else if (self.frame == FRAME_clawatk5_09)
 			self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack1);
 	}
 }
@@ -917,7 +919,7 @@ constexpr mframe_t gekk_frames_leapatk[] =
 };
 constexpr mmove_t gekk_move_leapatk = { FRAME_leapatk_01, FRAME_leapatk_19, gekk_frames_leapatk, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_leapatk);
+REGISTER_STATIC_SAVABLE(gekk_move_leapatk);
 
 constexpr mframe_t gekk_frames_attack [] =
 {
@@ -947,11 +949,11 @@ constexpr mframe_t gekk_frames_attack [] =
 };
 constexpr mmove_t gekk_move_attack = { FRAME_attack_01, FRAME_attack_21, gekk_frames_attack, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_attack);
+REGISTER_STATIC_SAVABLE(gekk_move_attack);
 
 static void gekk_melee(entity &self)
 {
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack);
 	else if (random() > 0.66)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack1);
@@ -959,11 +961,11 @@ static void gekk_melee(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_melee);
+REGISTER_STATIC_SAVABLE(gekk_melee);
 
 static void gekk_jump(entity &self)
 {
-	if ((self.flags & FL_SWIM) || self.waterlevel > 1)
+	if ((self.flags & FL_SWIM) || self.waterlevel > WATER_LEGS)
 	{
 		water_to_land(self);
 		return;
@@ -977,7 +979,7 @@ static void gekk_jump(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_leapatk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_jump);
+REGISTER_STATIC_SAVABLE(gekk_jump);
 
 //
 // PAIN
@@ -994,7 +996,7 @@ constexpr mframe_t gekk_frames_pain[] =
 };
 constexpr mmove_t gekk_move_pain = { FRAME_pain_01, FRAME_pain_06, gekk_frames_pain, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_pain);
+REGISTER_STATIC_SAVABLE(gekk_move_pain);
 
 constexpr mframe_t gekk_frames_pain1[] = 
 {
@@ -1013,7 +1015,7 @@ constexpr mframe_t gekk_frames_pain1[] =
 };
 constexpr mmove_t gekk_move_pain1 = { FRAME_pain3_01, FRAME_pain3_11, gekk_frames_pain1, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_pain1);
+REGISTER_STATIC_SAVABLE(gekk_move_pain1);
 
 constexpr mframe_t gekk_frames_pain2[] = 
 {
@@ -1034,33 +1036,40 @@ constexpr mframe_t gekk_frames_pain2[] =
 };
 constexpr mmove_t gekk_move_pain2 = { FRAME_pain4_01, FRAME_pain4_13, gekk_frames_pain2, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_pain2);
+REGISTER_STATIC_SAVABLE(gekk_move_pain2);
 
 static void gekk_pain(entity &self, entity &, float, int32_t)
+{
+	if (self.health < (self.max_health / 4))
+		self.skinnum = 2;
+	else if (self.health < (self.max_health / 2))
+		self.skinnum = 1;
+	else
+		self.skinnum = 0;
+}
+
+REGISTER_STATIC_SAVABLE(gekk_pain);
+
+static void gekk_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
 	if (self.spawnflags & GEKK_CHANT)
 	{
 		self.spawnflags &= ~GEKK_CHANT;
 		return;
 	}
-	
-	if (self.health < (self.max_health /4))
-		self.s.skinnum = 2;
-	else if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
 
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
 	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
 
-	gi.sound (self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
-		
-	if (self.waterlevel > 1)
+	gi.sound (self, CHAN_VOICE, sound_pain1);
+
+	if (self.waterlevel > WATER_LEGS)
 	{
 		if (!(self.flags & FL_SWIM))
 			self.flags |= FL_SWIM;
-		
+
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_pain);
 	}
 	else if (random() > 0.5)
@@ -1069,7 +1078,7 @@ static void gekk_pain(entity &self, entity &, float, int32_t)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_pain2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_pain);
+REGISTER_STATIC_SAVABLE(gekk_reacttodamage);
 
 //
 // DEATH
@@ -1078,7 +1087,7 @@ static REGISTER_SAVABLE_FUNCTION(gekk_pain);
 static void gekk_dead(entity &self)
 {
 	// fix this because of no blocking problem
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		return;
 		
 	self.bounds = {
@@ -1095,7 +1104,7 @@ inline void gekk_gibfest(entity &self)
 {
 	const int32_t damage = 20;
 	
-	gi.sound (self, CHAN_VOICE, gi.soundindex ("misc/udeath.wav"), 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_VOICE, gi.soundindex ("misc/udeath.wav"));
 	
 	ThrowGibACID (self, "models/objects/gekkgib/pelvis/tris.md2", damage, GIB_ORGANIC);
 	ThrowGibACID (self, "models/objects/gekkgib/arm/tris.md2", damage, GIB_ORGANIC);
@@ -1131,7 +1140,7 @@ constexpr mframe_t gekk_frames_death1[] =
 };
 constexpr mmove_t gekk_move_death1 = { FRAME_death1_01, FRAME_death1_10, gekk_frames_death1, gekk_dead };
 
-static REGISTER_SAVABLE_DATA(gekk_move_death1);
+REGISTER_STATIC_SAVABLE(gekk_move_death1);
 
 constexpr mframe_t gekk_frames_death3[] =
 {
@@ -1145,7 +1154,7 @@ constexpr mframe_t gekk_frames_death3[] =
 };
 constexpr mmove_t gekk_move_death3 = { FRAME_death3_01, FRAME_death3_07, gekk_frames_death3, gekk_dead };
 
-static REGISTER_SAVABLE_DATA(gekk_move_death3);
+REGISTER_STATIC_SAVABLE(gekk_move_death3);
 
 constexpr mframe_t gekk_frames_death4[] = 
 {
@@ -1187,7 +1196,7 @@ constexpr mframe_t gekk_frames_death4[] =
 };
 constexpr mmove_t gekk_move_death4 = { FRAME_death4_01, FRAME_death4_35, gekk_frames_death4, gekk_dead };
 
-static REGISTER_SAVABLE_DATA(gekk_move_death4);
+REGISTER_STATIC_SAVABLE(gekk_move_death4);
 
 constexpr mframe_t gekk_frames_wdeath[] = 
 {
@@ -1239,13 +1248,13 @@ constexpr mframe_t gekk_frames_wdeath[] =
 };
 constexpr mmove_t gekk_move_wdeath = { FRAME_wdeath_01, FRAME_wdeath_45, gekk_frames_wdeath, gekk_dead };
 
-static REGISTER_SAVABLE_DATA(gekk_move_wdeath);
+REGISTER_STATIC_SAVABLE(gekk_move_wdeath);
 
 static void gekk_die(entity &self, entity &, entity &, int32_t damage, vector)
 {
 	if (self.health <= self.gib_health)
 	{
-		gi.sound (self, CHAN_VOICE, gi.soundindex ("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_VOICE, gi.soundindex ("misc/udeath.wav"));
 
 		ThrowGibACID (self, "models/objects/gekkgib/pelvis/tris.md2", damage, GIB_ORGANIC);
 		ThrowGibACID (self, "models/objects/gekkgib/arm/tris.md2", damage, GIB_ORGANIC);
@@ -1264,12 +1273,12 @@ static void gekk_die(entity &self, entity &, entity &, int32_t damage, vector)
 	if (self.deadflag == DEAD_DEAD)
 		return;
 
-	gi.sound (self, CHAN_VOICE, sound_death, 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_VOICE, sound_death);
 	self.deadflag = DEAD_DEAD;
 	self.takedamage = true;
-	self.s.skinnum = 2;
+	self.skinnum = 2;
 
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_wdeath);
 	else
 	{
@@ -1283,7 +1292,7 @@ static void gekk_die(entity &self, entity &, entity &, int32_t damage, vector)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_die);
+REGISTER_STATIC_SAVABLE(gekk_die);
 
 /*
  duck
@@ -1307,7 +1316,7 @@ constexpr mframe_t gekk_frames_lduck[] =
 };
 constexpr mmove_t gekk_move_lduck = { FRAME_lduck_01, FRAME_lduck_13, gekk_frames_lduck, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_lduck);
+REGISTER_STATIC_SAVABLE(gekk_move_lduck);
 
 constexpr mframe_t gekk_frames_rduck[] = 
 {
@@ -1327,7 +1336,7 @@ constexpr mframe_t gekk_frames_rduck[] =
 };
 constexpr mmove_t gekk_move_rduck = { FRAME_rduck_01, FRAME_rduck_13, gekk_frames_rduck, gekk_run_start };
 
-static REGISTER_SAVABLE_DATA(gekk_move_rduck);
+REGISTER_STATIC_SAVABLE(gekk_move_rduck);
 
 #ifdef GROUND_ZERO
 static void gekk_dodge(entity &self, entity &attacker, float eta, trace &)
@@ -1341,7 +1350,7 @@ static void gekk_dodge(entity &self, entity &attacker, float eta)
 	if (!self.enemy.has_value())
 		self.enemy = attacker;
 
-	if (self.waterlevel > 1)
+	if (self.waterlevel > WATER_LEGS)
 	{
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack);
 		return;
@@ -1356,7 +1365,7 @@ static void gekk_dodge(entity &self, entity &attacker, float eta)
 		return;
 	}
 
-	self.monsterinfo.pause_framenum = level.framenum + (int)((eta + 0.3) * BASE_FRAMERATE);
+	self.monsterinfo.pause_framenum = level.framenum + (gtime)((eta + 0.3) * BASE_FRAMERATE);
 
 	if (skill == 1)
 	{
@@ -1402,7 +1411,7 @@ static void gekk_dodge(entity &self, entity &attacker, float eta)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(gekk_dodge);
+REGISTER_STATIC_SAVABLE(gekk_dodge);
 
 //
 // SPAWN
@@ -1436,7 +1445,7 @@ static void SP_monster_gekk(entity &self)
 	
 	self.movetype = MOVETYPE_STEP;
 	self.solid = SOLID_BBOX;
-	self.s.modelindex = gi.modelindex ("models/monsters/gekk/tris.md2");
+	self.modelindex = gi.modelindex ("models/monsters/gekk/tris.md2");
 	self.bounds = bbox::sized(24.f);
 
 	gi.modelindex ("models/objects/gekkgib/pelvis/tris.md2");
@@ -1449,6 +1458,7 @@ static void SP_monster_gekk(entity &self)
 	self.health = 125;
 	self.gib_health = -30;
 	self.mass = 300;
+	self.bleed_style = BLEED_GREEN;
 
 	self.pain = SAVABLE(gekk_pain);
 	self.die = SAVABLE(gekk_die);
@@ -1465,6 +1475,7 @@ static void SP_monster_gekk(entity &self)
 	self.monsterinfo.search = SAVABLE(gekk_search);
 	self.monsterinfo.idle = SAVABLE(gekk_idle);
 	self.monsterinfo.checkattack = SAVABLE(gekk_checkattack);
+	self.monsterinfo.reacttodamage = SAVABLE(gekk_reacttodamage);
 
 	gi.linkentity (self);
 	

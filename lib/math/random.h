@@ -13,6 +13,18 @@ uint32_t Q_rand();
 // if max is zero, always returns 0.
 uint32_t Q_rand_uniform(const uint32_t &max);
 
+template<typename T>
+auto random_of(const std::initializer_list<T> &args)
+{
+	return *(args.begin() + Q_rand_uniform(args.size()));
+}
+
+template<typename T, size_t N>
+auto random_of(const T (&args)[N])
+{
+	return args[Q_rand_uniform(lengthof(args))];
+}
+
 // return a random float between [0, 1)
 float random();
 

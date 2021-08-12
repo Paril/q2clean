@@ -6,6 +6,8 @@
 #include "powerups.h"
 #include "keys.h"
 #include "health.h"
+#include "entity.h"
+#include "lib/gi.h"
 
 #ifdef GRAPPLE
 #include "game/ctf/grapple.h"
@@ -173,10 +175,11 @@ always owned, never in the world
 		.pickup_name = "Grapple",
 		.flags = IT_WEAPON_MASK,
 #ifdef HOOK_STANDARD_ASSETS
-		.precaches = "models/objects/debris2/tris.md2 medic/Medatck2.wav flyer/Flyatck1.wav world/turbine1.wav weapons/Sshotr1b.wav"
+		.precaches = "models/objects/debris2/tris.md2 medic/Medatck2.wav flyer/Flyatck1.wav world/turbine1.wav weapons/Sshotr1b.wav",
 #else
-		.precaches = "models/weapons/grapple/hook/tris.md2 weapons/grapple/grfire.wav weapons/grapple/grpull.wav weapons/grapple/grhang.wav weapons/grapple/grreset.wav weapons/grapple/grhit.wav"
+		.precaches = "models/weapons/grapple/hook/tris.md2 weapons/grapple/grfire.wav weapons/grapple/grpull.wav weapons/grapple/grhang.wav weapons/grapple/grreset.wav weapons/grapple/grhit.wav",
 #endif
+		.chain = ITEM_BLASTER
 	},
 #endif
 
@@ -213,7 +216,8 @@ always owned, never in the world
 		.icon = "w_chainfist",
 		.pickup_name = "Chainfist",
 		.flags = IT_WEAPON_MASK,
-		.precaches = "weapons/sawidle.wav weapons/sawhit.wav"
+		.precaches = "weapons/sawidle.wav weapons/sawhit.wav",
+		.chain = ITEM_BLASTER
 	},
 #endif
 
@@ -299,7 +303,8 @@ always owned, never in the world
 		.quantity = 1,
 		.ammo = ITEM_FLECHETTES,
 		.flags = IT_WEAPON_MASK,
-		.precaches = "weapons/nail1.wav models/proj/flechette/tris.md2"
+		.precaches = "weapons/nail1.wav models/proj/flechette/tris.md2",
+		.chain = ITEM_MACHINEGUN
 	},
 #endif
 	
@@ -365,7 +370,8 @@ always owned, never in the world
 		.ammo = ITEM_TRAP,
 		.flags = IT_AMMO | IT_WEAPON,
 		.ammotag = AMMO_TRAP,
-		.precaches = "weapons/trapcock.wav weapons/traploop.wav weapons/trapsuck.wav weapons/trapdown.wav"
+		.precaches = "weapons/trapcock.wav weapons/traploop.wav weapons/trapsuck.wav weapons/trapdown.wav",
+		.chain = ITEM_GRENADES
 	},
 #endif
 
@@ -388,7 +394,8 @@ always owned, never in the world
 		.ammo = ITEM_TESLA,
 		.flags = IT_AMMO | IT_WEAPON,
 		.ammotag = AMMO_TESLA,
-		.precaches = "models/weapons/v_tesla2/tris.md2 weapons/teslaopen.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav models/weapons/g_tesla/tris.md2"
+		.precaches = "models/weapons/v_tesla2/tris.md2 weapons/teslaopen.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav models/weapons/g_tesla/tris.md2",
+		.chain = ITEM_GRENADES
 	},
 #endif
 
@@ -432,7 +439,8 @@ always owned, never in the world
 		.quantity = 1,
 		.ammo = ITEM_PROX,
 		.flags = IT_WEAPON_MASK,
-		.precaches = "weapons/grenlf1a.wav weapons/grenlr1b.wav weapons/grenlb1b.wav weapons/proxwarn.wav weapons/proxopen.wav models/weapons/g_prox/tris.md2"
+		.precaches = "weapons/grenlf1a.wav weapons/grenlr1b.wav weapons/grenlb1b.wav weapons/proxwarn.wav weapons/proxopen.wav models/weapons/g_prox/tris.md2",
+		.chain = ITEM_GRENADE_LAUNCHER
 	},
 #endif
 
@@ -497,7 +505,8 @@ always owned, never in the world
 		.quantity = 2,
 		.ammo = ITEM_CELLS,
 		.flags = IT_WEAPON_MASK,
-		.precaches = "weapons/rg_hum.wav weapons/rippfire.wav"
+		.precaches = "weapons/rg_hum.wav weapons/rippfire.wav",
+		.chain = ITEM_HYPERBLASTER
 	},
 #endif
 
@@ -520,7 +529,8 @@ always owned, never in the world
 		.quantity = 2,
 		.ammo = ITEM_CELLS,
 		.flags = IT_WEAPON_MASK,
-		.precaches = "models/weapons/v_beamer2/tris.md2 weapons/bfg__l1a.wav"
+		.precaches = "models/weapons/v_beamer2/tris.md2 weapons/bfg__l1a.wav",
+		.chain = ITEM_HYPERBLASTER
 	},
 #endif
 	
@@ -564,7 +574,8 @@ always owned, never in the world
 		.quantity = 1,
 		.ammo = ITEM_MAGSLUG,
 		.flags = IT_WEAPON_MASK,
-		.precaches = "weapons/plasshot.wav"
+		.precaches = "weapons/plasshot.wav",
+		.chain = ITEM_RAILGUN
 	},
 #endif
 
@@ -608,7 +619,8 @@ always owned, never in the world
 		.quantity = 1,
 		.ammo = ITEM_ROUNDS,
 		.flags = IT_WEAPON_MASK,
-		.precaches = "models/items/spawngro/tris.md2 models/proj/disintegrator/tris.md2 weapons/disrupt.wav weapons/disint2.wav weapons/disrupthit.wav"
+		.precaches = "models/items/spawngro/tris.md2 models/proj/disintegrator/tris.md2 weapons/disrupt.wav weapons/disint2.wav weapons/disrupthit.wav",
+		.chain = ITEM_BFG
 	},
 #endif
 
@@ -1376,15 +1388,39 @@ const array<gitem_t, ITEM_TOTAL> &item_list()
 
 void InitItems()
 {
-	uint8_t weapon_id = 1;
+	constexpr size_t MAX_VWEPS = 19;
 
 	for (auto &it : itemlist)
 	{
 		it.id = (gitem_id)(&it - itemlist.data());
+		it.type = *gi.TagNew<entity_type>(TAG_GAME, it.classname, ET_ITEM);
+	}
+}
+
+void InitVWeps()
+{
+	constexpr size_t MAX_VWEPS = 19;
+
+	uint8_t weapon_id = 1;
+
+	for (auto &it : itemlist)
+	{
+		if (it.vwep_id)
+			continue;
 
 		if (it.vwep_model)
+		{
 			it.vwep_id = weapon_id++;
+			gi.modelindex(it.vwep_model);
+
+			for (gitem_id i = (gitem_id) (it.id + 1); i < item_list().size(); i = (gitem_id) (i + 1))
+				if (striequals(it.vwep_model, itemlist[i].vwep_model))
+					itemlist[i].vwep_id = it.vwep_id;
+		}
 	}
+
+	if (weapon_id > (MAX_VWEPS + 1))
+		gi.dprintfmt("WARNING: More than {} vwep models registered\n", MAX_VWEPS);
 }
 
 itemref::itemref() :

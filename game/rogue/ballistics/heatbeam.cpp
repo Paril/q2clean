@@ -10,7 +10,9 @@
 #endif
 #include "heatbeam.h"
 
-static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_beam, means_of_death mod)
+constexpr means_of_death MOD_HEATBEAM { .other_kill_fmt = "{0} was scorched by {3}'s plasma beam.\n" };
+
+static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_beam, means_of_death_ref mod)
 {
 	vector dir = vectoangles(aimdir), water_start = vec3_origin;
 
@@ -32,16 +34,10 @@ static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage
 	if (tr.contents & MASK_WATER)
 	{
 		water = true;
-		vector water_start = tr.endpos;
+		water_start = tr.endpos;
 
 		if (start != tr.endpos)
-		{
-			gi.WriteByte (svc_temp_entity);
-			gi.WriteByte (TE_HEATBEAM_SPARKS);
-			gi.WritePosition (water_start);
-			gi.WriteDir (tr.normal);
-			gi.multicast (tr.endpos, MULTICAST_PVS);
-		}
+			gi.ConstructMessage(svc_temp_entity, TE_HEATBEAM_SPARKS, water_start, vecdir { tr.normal }).multicast(tr.endpos, MULTICAST_PVS);
 
 		// re-trace ignoring water this time
 		tr = gi.traceline (water_start, end, self, MASK_SHOT);
@@ -57,15 +53,11 @@ static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage
 	if (tr.fraction < 1.0 && !(tr.surface.flags & SURF_SKY))
 	{
 		if (tr.ent.takedamage)
-			T_Damage (tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, DAMAGE_ENERGY, mod);
+			T_Damage (tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, { DAMAGE_ENERGY }, mod);
 		else if (!water && (strncmp (tr.surface.name, "sky", 3)))
 		{
 			// This is the truncated steam entry - uses 1+1+2 extra bytes of data
-			gi.WriteByte (svc_temp_entity);
-			gi.WriteByte (TE_HEATBEAM_STEAM);
-			gi.WritePosition (tr.endpos);
-			gi.WriteDir (tr.normal);
-			gi.multicast (tr.endpos, MULTICAST_PVS);
+			gi.ConstructMessage(svc_temp_entity, TE_HEATBEAM_STEAM, tr.endpos, vecdir { tr.normal }).multicast(tr.endpos, MULTICAST_PVS);
 #if defined(SINGLE_PLAYER)
 
 			if (self.is_client())
@@ -86,14 +78,9 @@ static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage
 		else
 			tr = gi.traceline(pos, water_start, tr.ent, MASK_WATER);
 
-		pos = water_start + tr.endpos;
-		pos *= 0.5f;
+		pos = (water_start + tr.endpos) * 0.5f;
 
-		gi.WriteByte (svc_temp_entity);
-		gi.WriteByte (TE_BUBBLETRAIL2);
-		gi.WritePosition (water_start);
-		gi.WritePosition (tr.endpos);
-		gi.multicast (pos, MULTICAST_PVS);
+		gi.ConstructMessage(svc_temp_entity, TE_BUBBLETRAIL2, water_start, tr.endpos).multicast(pos, MULTICAST_PVS);
 	}
 
 	vector beam_endpt;
@@ -102,13 +89,8 @@ static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage
 		beam_endpt = tr.endpos;
 	else
 		beam_endpt = endpoint;
-	
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (te_beam);
-	gi.WriteShort (self.s.number);
-	gi.WritePosition (start);
-	gi.WritePosition (beam_endpt);
-	gi.multicast (self.s.origin, MULTICAST_ALL);
+
+	gi.ConstructMessage(svc_temp_entity, te_beam, self, start, beam_endpt).multicast(self.origin, MULTICAST_ALL);
 }
 
 void fire_heatbeam(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, bool monster)

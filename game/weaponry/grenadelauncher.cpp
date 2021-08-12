@@ -31,7 +31,7 @@ static void weapon_grenadelauncher_fire(entity &ent)
 
 	offset = { 8, 8, ent.viewheight - 8.f };
 	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
-	start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 	ent.client->kick_origin = forward * -2;
 	ent.client->kick_angles[0] = -1.f;
@@ -43,10 +43,7 @@ static void weapon_grenadelauncher_fire(entity &ent)
 #endif
 		fire_grenade(ent, start, forward, damage, 600, 2.5f, radius);
 
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte(MZ_GRENADE | is_silenced);
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, MZ_GRENADE | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
 	ent.client->ps.gunframe++;
 #ifdef SINGLE_PLAYER
@@ -60,5 +57,5 @@ static void weapon_grenadelauncher_fire(entity &ent)
 
 void Weapon_GrenadeLauncher(entity &ent)
 {
-	Weapon_Generic(ent, 5, 16, 59, 64, G_IsAnyFrame<34, 51, 59>, G_IsAnyFrame<6>, weapon_grenadelauncher_fire);
+	Weapon_Generic(ent, 5, 16, 59, 64, G_FrameIsOneOf<34, 51, 59>, G_FrameIsOneOf<6>, weapon_grenadelauncher_fire);
 }

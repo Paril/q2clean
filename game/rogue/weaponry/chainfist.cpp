@@ -9,6 +9,8 @@
 #include "chainfist.h"
 #include "game/rogue/ballistics/melee.h"
 
+constexpr means_of_death MOD_CHAINFIST { .other_kill_fmt = "{0} was shredded by {3}'s ripsaw.\n" };
+
 constexpr int32_t CHAINFIST_REACH = 64;
 
 static void weapon_chainfist_fire(entity &ent)
@@ -36,7 +38,7 @@ static void weapon_chainfist_fire(entity &ent)
 
 	// set start point
 	vector offset { 0, 8, ent.viewheight - 4.f };
-	vector start = P_ProjectSource (ent, ent.s.origin, offset, forward, right);
+	vector start = P_ProjectSource (ent, ent.origin, offset, forward, right);
 
 	fire_player_melee (ent, start, forward, CHAINFIST_REACH, damage, 100, MOD_CHAINFIST);
 #if defined(SINGLE_PLAYER)
@@ -56,12 +58,9 @@ static void chainfist_smoke(entity &ent)
 	AngleVectors(ent.client->v_angle, &forward, &right, &up);
 
 	vector offset { 8, 8, ent.viewheight - 4.f };
-	vector v = P_ProjectSource (ent, ent.s.origin, offset, forward, right);
+	vector v = P_ProjectSource (ent, ent.origin, offset, forward, right);
 
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (TE_CHAINFIST_SMOKE);
-	gi.WritePosition (v);
-	gi.unicast (ent, 0);
+	gi.ConstructMessage(svc_temp_entity, TE_CHAINFIST_SMOKE, v).unicast(ent, false);
 }
 
 void Weapon_ChainFist(entity &ent)
@@ -88,7 +87,7 @@ void Weapon_ChainFist(entity &ent)
 	else
 		ent.client->weapon_sound = gi.soundindex("weapons/sawidle.wav");
 
-	Weapon_Generic (ent, 4, 32, 57, 60, G_IsAnyFrame, G_IsAnyFrame<8, 9, 16, 17, 18, 30, 31>, weapon_chainfist_fire);
+	Weapon_Generic (ent, 4, 32, 57, 60, G_FrameIsNone, G_FrameIsOneOf<8, 9, 16, 17, 18, 30, 31>, weapon_chainfist_fire);
 
 	if (ent.client->buttons & BUTTON_ATTACK)
 	{
@@ -106,18 +105,18 @@ void Weapon_ChainFist(entity &ent)
 		float chance = random();
 
 		if (ent.client->chainfist_last_sequence == 13)		// if we just did sequence 1, do 2 or 3.
-			chance -= 0.34;
+			chance -= 0.34f;
 		else if (ent.client->chainfist_last_sequence == 23)	// if we just did sequence 2, do 1 or 3
-			chance += 0.33;
+			chance += 0.33f;
 		else if (ent.client->chainfist_last_sequence == 32)	// if we just did sequence 3, do 1 or 2
 		{
-			if (chance >= 0.33)
-				chance += 0.34;
+			if (chance >= 0.33f)
+				chance += 0.34f;
 		}
 
-		if (chance < 0.33)
+		if (chance < 0.33f)
 			ent.client->ps.gunframe = 14;
-		else if (chance < 0.66)
+		else if (chance < 0.66f)
 			ent.client->ps.gunframe = 24;
 	}
 }

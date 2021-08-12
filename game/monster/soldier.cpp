@@ -37,20 +37,16 @@ static model_index	soldierh_modelindex;
 static void soldier_idle(entity &self)
 {
 	if (random() > 0.8f)
-		gi.sound(self, CHAN_VOICE, sound_idle, 1, ATTN_IDLE, 0);
+		gi.sound(self, CHAN_VOICE, sound_idle, ATTN_IDLE);
 }
 
 static void soldier_cock(entity &self)
 {
-	if (self.s.frame == FRAME_stand322)
-		gi.sound(self, CHAN_WEAPON, sound_cock, 1, ATTN_IDLE, 0);
-	else
-		gi.sound(self, CHAN_WEAPON, sound_cock, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_cock, self.frame == FRAME_stand322 ? ATTN_IDLE : ATTN_NORM);
 }
 
-
 // STAND
-static void soldier_stand(entity& self);
+static void soldier_stand(entity &self);
 
 constexpr mframe_t soldier_frames_stand1 [] = {
 	{ ai_stand, 0, soldier_idle },
@@ -88,7 +84,7 @@ constexpr mframe_t soldier_frames_stand1 [] = {
 };
 constexpr mmove_t soldier_move_stand1 = { FRAME_stand101, FRAME_stand130, soldier_frames_stand1, soldier_stand };
 
-static REGISTER_SAVABLE_DATA(soldier_move_stand1);
+REGISTER_STATIC_SAVABLE(soldier_move_stand1);
 
 constexpr mframe_t soldier_frames_stand3 [] = {
 	{ ai_stand },
@@ -136,7 +132,7 @@ constexpr mframe_t soldier_frames_stand3 [] = {
 };
 constexpr mmove_t soldier_move_stand3 = { FRAME_stand301, FRAME_stand339, soldier_frames_stand3, soldier_stand };
 
-static REGISTER_SAVABLE_DATA(soldier_move_stand3);
+REGISTER_STATIC_SAVABLE(soldier_move_stand3);
 
 static void soldier_stand(entity &self)
 {
@@ -146,7 +142,7 @@ static void soldier_stand(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_stand3);
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_stand);
+REGISTER_STATIC_SAVABLE(soldier_stand);
 
 //
 // WALK
@@ -195,7 +191,7 @@ constexpr mframe_t soldier_frames_walk1 [] = {
 };
 constexpr mmove_t soldier_move_walk1 = { FRAME_walk101, FRAME_walk133, soldier_frames_walk1 };
 
-static REGISTER_SAVABLE_DATA(soldier_move_walk1);
+REGISTER_STATIC_SAVABLE(soldier_move_walk1);
 
 constexpr mframe_t soldier_frames_walk2 [] = {
 	{ ai_walk, 4 },
@@ -211,7 +207,7 @@ constexpr mframe_t soldier_frames_walk2 [] = {
 };
 constexpr mmove_t soldier_move_walk2 = { FRAME_walk209, FRAME_walk218, soldier_frames_walk2 };
 
-static REGISTER_SAVABLE_DATA(soldier_move_walk2);
+REGISTER_STATIC_SAVABLE(soldier_move_walk2);
 
 static void soldier_walk(entity &self)
 {
@@ -221,7 +217,7 @@ static void soldier_walk(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_walk2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_walk);
+REGISTER_STATIC_SAVABLE(soldier_walk);
 
 //
 // RUN
@@ -234,7 +230,7 @@ constexpr mframe_t soldier_frames_start_run [] = {
 };
 constexpr mmove_t soldier_move_start_run = { FRAME_run01, FRAME_run02, soldier_frames_start_run, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_start_run);
+REGISTER_STATIC_SAVABLE(soldier_move_start_run);
 
 #ifdef ROGUE_AI
 static void soldier_start_charge (entity &self)
@@ -266,7 +262,7 @@ constexpr mframe_t soldier_frames_run [] = {
 };
 constexpr mmove_t soldier_move_run = { FRAME_run03, FRAME_run08, soldier_frames_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_run);
+REGISTER_STATIC_SAVABLE(soldier_move_run);
 
 static void soldier_run(entity &self)
 {
@@ -288,7 +284,7 @@ static void soldier_run(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_run);
+REGISTER_STATIC_SAVABLE(soldier_run);
 
 //
 // PAIN
@@ -303,7 +299,7 @@ constexpr mframe_t soldier_frames_pain1 [] = {
 };
 constexpr mmove_t soldier_move_pain1 = { FRAME_pain101, FRAME_pain105, soldier_frames_pain1, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_pain1);
+REGISTER_STATIC_SAVABLE(soldier_move_pain1);
 
 constexpr mframe_t soldier_frames_pain2 [] = {
 	{ ai_move, -13 },
@@ -316,7 +312,7 @@ constexpr mframe_t soldier_frames_pain2 [] = {
 };
 constexpr mmove_t soldier_move_pain2 = { FRAME_pain201, FRAME_pain207, soldier_frames_pain2, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_pain2);
+REGISTER_STATIC_SAVABLE(soldier_move_pain2);
 
 constexpr mframe_t soldier_frames_pain3 [] = {
 	{ ai_move, -8 },
@@ -340,7 +336,7 @@ constexpr mframe_t soldier_frames_pain3 [] = {
 };
 constexpr mmove_t soldier_move_pain3 = { FRAME_pain301, FRAME_pain318, soldier_frames_pain3, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_pain3);
+REGISTER_STATIC_SAVABLE(soldier_move_pain3);
 
 constexpr mframe_t soldier_frames_pain4 [] = {
 	{ ai_move },
@@ -363,27 +359,21 @@ constexpr mframe_t soldier_frames_pain4 [] = {
 };
 constexpr mmove_t soldier_move_pain4 = { FRAME_pain401, FRAME_pain417, soldier_frames_pain4, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_pain4);
+REGISTER_STATIC_SAVABLE(soldier_move_pain4);
 
 #ifdef THE_RECKONING
 static void soldierh_end_hyper_sound(entity &self)
 {
-	if (self.s.modelindex == soldierh_modelindex && (self.s.skinnum == 2 || self.s.skinnum == 3))
+	if (self.modelindex == soldierh_modelindex && (self.skinnum == 2 || self.skinnum == 3))
 	{
-		self.s.sound = SOUND_NONE;
-		gi.sound(self, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"), 1, ATTN_NORM, 0);
+		self.sound = SOUND_NONE;
+		gi.sound(self, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"));
 	}
 }
 #endif
 
-static void soldier_pain(entity &self, entity &, float, int)
+static void soldier_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
-	float	r;
-	int	n;
-
-	if (self.health < (self.max_health / 2))
-		self.s.skinnum |= 1;
-
 #ifdef ROGUE_AI
 	monster_done_dodge (self);
 	soldier_stop_charge(self);
@@ -407,13 +397,13 @@ static void soldier_pain(entity &self, entity &, float, int)
 
 	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
 
-	n = self.s.skinnum | 1;
+	const int32_t n = self.skinnum | 1;
 	if (n == 1)
-		gi.sound(self, CHAN_VOICE, sound_pain_light, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain_light);
 	else if (n == 3)
-		gi.sound(self, CHAN_VOICE, sound_pain, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain);
 	else
-		gi.sound(self, CHAN_VOICE, sound_pain_ss, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain_ss);
 
 	if (self.velocity.z > 100)
 	{
@@ -429,7 +419,7 @@ static void soldier_pain(entity &self, entity &, float, int)
 	if (skill == 3)
 		return;     // no pain anims in nightmare
 
-	r = random();
+	float r = random();
 
 	if (r < 0.33f)
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_pain1);
@@ -448,7 +438,7 @@ static void soldier_pain(entity &self, entity &, float, int)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_pain);
+REGISTER_STATIC_SAVABLE(soldier_reacttodamage);
 
 //
 // ATTACK
@@ -464,21 +454,21 @@ static void soldierh_laserbeam(entity &self, monster_muzzleflash flash_index)
 
 	// RAFAEL
 	// this sound can't be called this frequent
-	if (random() > 0.8)
-		gi.sound(self, CHAN_AUTO, gi.soundindex("misc/lasfly.wav"), 1, ATTN_STATIC, 0);
+	if ((level.framenum % 8) == 0)
+		gi.sound(self, CHAN_WEAPON, gi.soundindex("misc/lasfly.wav"), ATTN_STATIC);
 
-	start = self.s.origin;
-	end = self.enemy->s.origin;
+	start = self.origin;
+	end = self.enemy->origin;
 	dir = end - start;
 	angles = vectoangles (dir);
 	tempvec = monster_flash_offset[flash_index];
 	
 	entity &ent = G_Spawn ();
-	ent.s.origin = self.s.origin;
+	ent.origin = self.origin;
 	tempang = angles;
 	AngleVectors (tempang, &forward, &right, &up);
-	ent.s.angles = tempang;
-	start = ent.s.origin;
+	ent.angles = tempang;
+	start = ent.origin;
 
 	if (flash_index == 85)
 		start += right * (tempvec[0] - 14);
@@ -488,7 +478,7 @@ static void soldierh_laserbeam(entity &self, monster_muzzleflash flash_index)
 	start += up * (tempvec[2] + 8);
 	start += forward * tempvec[1];
 			
-	ent.s.origin = start;
+	ent.origin = start;
 	ent.enemy = self.enemy;
 	ent.owner = self;
 	
@@ -531,19 +521,19 @@ static void soldier_fire(entity &self, int32_t flash_number)
 		flash_number = in_flash_number;
 #endif
 
-	if (self.s.skinnum < 2)
+	if (self.skinnum < 2)
 		flash_index = blaster_flash[flash_number];
-	else if (self.s.skinnum < 4)
+	else if (self.skinnum < 4)
 #ifdef THE_RECKONING
-		flash_index = (self.s.modelindex == soldierh_modelindex) ? blaster_flash[flash_number] : shotgun_flash[flash_number];
+		flash_index = (self.modelindex == soldierh_modelindex) ? blaster_flash[flash_number] : shotgun_flash[flash_number];
 #else
 		flash_index = shotgun_flash[flash_number];
 #endif
 	else
 		flash_index = machinegun_flash[flash_number];
 
-	AngleVectors(self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource(self.s.origin, monster_flash_offset[flash_index], forward, right);
+	AngleVectors(self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource(self.origin, monster_flash_offset[flash_index], forward, right);
 
 	if (flash_number == 5 || flash_number == 6)
 	{
@@ -551,7 +541,7 @@ static void soldier_fire(entity &self, int32_t flash_number)
 	}
 	else
 	{
-		end = self.enemy->s.origin;
+		end = self.enemy->origin;
 		end.z += self.enemy->viewheight;
 		aim = end - start;
 		
@@ -572,7 +562,7 @@ static void soldier_fire(entity &self, int32_t flash_number)
 		AngleVectors(dir, &forward, &right, &up);
 
 #ifdef THE_RECKONING
-		if (self.s.modelindex == soldierh_modelindex)
+		if (self.modelindex == soldierh_modelindex)
 		{
 			r = random(-100.f, 100.f);
 			u = random(-50.f, 50.f);
@@ -614,18 +604,18 @@ static void soldier_fire(entity &self, int32_t flash_number)
 #endif
 	}
 
-	if (self.s.skinnum <= 1) {
+	if (self.skinnum <= 1) {
 #ifdef THE_RECKONING
-		if (self.s.modelindex == soldierh_modelindex)
+		if (self.modelindex == soldierh_modelindex)
 			monster_fire_ionripper (self, start, aim, 5, 600, flash_index, EF_IONRIPPER);
 		else
 #endif
 			monster_fire_blaster(self, start, aim, 5, 600, flash_index, EF_BLASTER);
-	} else if (self.s.skinnum <= 3) {
+	} else if (self.skinnum <= 3) {
 #ifdef THE_RECKONING
-		if (self.s.modelindex == soldierh_modelindex)
+		if (self.modelindex == soldierh_modelindex)
 		{
-			self.s.sound = gi.soundindex("weapons/hyprbl1a.wav");
+			self.sound = gi.soundindex("weapons/hyprbl1a.wav");
 			monster_fire_blueblaster(self, start, aim, 1, 600, flash_index, EF_BLUEHYPERBLASTER);
 		}
 		else
@@ -641,7 +631,7 @@ static void soldier_fire(entity &self, int32_t flash_number)
 				level.framenum + (3 + Q_rand() % 8);
 
 #ifdef THE_RECKONING
-		if (self.s.modelindex == soldierh_modelindex)
+		if (self.modelindex == soldierh_modelindex)
 			soldierh_laserbeam (self, flash_index);
 		else
 #endif
@@ -665,12 +655,12 @@ static void soldier_fire(entity &self, int32_t flash_number)
 #ifdef THE_RECKONING
 static void soldierh_hyper_refire1(entity &self)
 {
-	if (self.s.modelindex != soldierh_modelindex || self.s.skinnum < 2)
+	if (self.modelindex != soldierh_modelindex || self.skinnum < 2)
 		return;
-	else if (self.s.skinnum < 4)
+	else if (self.skinnum < 4)
 	{
 		if (random() < 0.7)
-			self.s.frame = FRAME_attak103;
+			self.frame = FRAME_attak103;
 		else
 			soldierh_end_hyper_sound(self);
 	}
@@ -678,12 +668,12 @@ static void soldierh_hyper_refire1(entity &self)
 
 static void soldierh_ripper1(entity &self)
 {
-	if (self.s.modelindex != soldierh_modelindex)
+	if (self.modelindex != soldierh_modelindex)
 		return;
 
-	if (self.s.skinnum < 2)
+	if (self.skinnum < 2)
 		soldier_fire (self, 0);
-	else if (self.s.skinnum < 4)
+	else if (self.skinnum < 4)
 		soldier_fire (self, 0);
 }
 #endif
@@ -706,7 +696,7 @@ static void soldier_attack1_refire1(entity &self)
 	if (!self.enemy.has_value())
 		return;
 
-	if (self.s.skinnum > 1)
+	if (self.skinnum > 1)
 		return;
 
 	if (self.enemy->health <= 0)
@@ -723,7 +713,7 @@ static void soldier_attack1_refire2(entity &self)
 	if (!self.enemy.has_value())
 		return;
 
-	if (self.s.skinnum < 2)
+	if (self.skinnum < 2)
 		return;
 
 	if (self.enemy->health <= 0)
@@ -758,7 +748,7 @@ constexpr mframe_t soldier_frames_attack1 [] = {
 };
 constexpr mmove_t soldier_move_attack1 = { FRAME_attak101, FRAME_attak112, soldier_frames_attack1, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_attack1);
+REGISTER_STATIC_SAVABLE(soldier_move_attack1);
 
 // ATTACK2 (blaster/shotgun)
 
@@ -768,12 +758,12 @@ static void soldierh_hyper_refire2(entity &self)
 	if (!self.enemy.has_value())
 		return;
 
-	if (self.s.modelindex != soldierh_modelindex || self.s.skinnum < 2)
+	if (self.modelindex != soldierh_modelindex || self.skinnum < 2)
 		return;
-	else if (self.s.skinnum < 4)
+	else if (self.skinnum < 4)
 	{
 		if (random() < 0.7)
-			self.s.frame = FRAME_attak205;
+			self.frame = FRAME_attak205;
 		else
 			soldierh_end_hyper_sound(self);
 	}
@@ -781,12 +771,12 @@ static void soldierh_hyper_refire2(entity &self)
 
 static void soldierh_ripper2(entity &self)
 {
-	if (self.s.modelindex != soldierh_modelindex)
+	if (self.modelindex != soldierh_modelindex)
 		return;
 
-	if (self.s.skinnum < 2)
+	if (self.skinnum < 2)
 		soldier_fire (self, 1);
-	else if (self.s.skinnum < 4)
+	else if (self.skinnum < 4)
 		soldier_fire (self, 1);
 }
 #endif
@@ -801,7 +791,7 @@ static void soldier_attack2_refire1(entity &self)
 	if (!self.enemy.has_value())
 		return;
 
-	if (self.s.skinnum > 1)
+	if (self.skinnum > 1)
 		return;
 
 	if (self.enemy->health <= 0)
@@ -818,7 +808,7 @@ static void soldier_attack2_refire2(entity &self)
 	if (!self.enemy.has_value())
 		return;
 
-	if (self.s.skinnum < 2)
+	if (self.skinnum < 2)
 		return;
 
 	if (self.enemy->health <= 0)
@@ -859,7 +849,7 @@ constexpr mframe_t soldier_frames_attack2 [] = {
 };
 constexpr mmove_t soldier_move_attack2 = { FRAME_attak201, FRAME_attak218, soldier_frames_attack2, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_attack2);
+REGISTER_STATIC_SAVABLE(soldier_move_attack2);
 
 // ATTACK3 (duck and shoot)
 
@@ -922,7 +912,7 @@ constexpr mframe_t soldier_frames_attack3 [] = {
 };
 constexpr mmove_t soldier_move_attack3 = { FRAME_attak301, FRAME_attak309, soldier_frames_attack3, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_attack3);
+REGISTER_STATIC_SAVABLE(soldier_move_attack3);
 
 // ATTACK4 (machinegun)
 
@@ -941,7 +931,7 @@ constexpr mframe_t soldier_frames_attack4 [] = {
 };
 constexpr mmove_t soldier_move_attack4 = { FRAME_attak401, FRAME_attak406, soldier_frames_attack4, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_attack4);
+REGISTER_STATIC_SAVABLE(soldier_move_attack4);
 
 // ATTACK6 (run & shoot)
 
@@ -1011,7 +1001,7 @@ constexpr mframe_t soldier_frames_attack6 [] =
 };
 constexpr mmove_t soldier_move_attack6 = { FRAME_runs01, FRAME_runs14, soldier_frames_attack6, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_attack6);
+REGISTER_STATIC_SAVABLE(soldier_move_attack6);
 
 static void soldier_attack(entity &self)
 {
@@ -1053,7 +1043,7 @@ static void soldier_attack(entity &self)
 	if ((!(self.monsterinfo.aiflags & (AI_BLOCKED|AI_STAND_GROUND))) &&
 		(range(self, self.enemy) >= RANGE_NEAR) && 
 		(r < (skill * 0.25) && 
-		(self.s.skinnum <= 3)) &&
+		(self.skinnum <= 3)) &&
 		(visible(self, self.enemy)))
 	{
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack6);
@@ -1061,7 +1051,7 @@ static void soldier_attack(entity &self)
 	}
 #endif
 
-	if (self.s.skinnum < 4)
+	if (self.skinnum < 4)
 	{
 		if (random() < 0.5f)
 			self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack1);
@@ -1074,7 +1064,7 @@ static void soldier_attack(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_attack);
+REGISTER_STATIC_SAVABLE(soldier_attack);
 
 //
 // SIGHT
@@ -1083,15 +1073,15 @@ static REGISTER_SAVABLE_FUNCTION(soldier_attack);
 static void soldier_sight(entity &self, entity &)
 {
 	if (random() < 0.5f)
-		gi.sound(self, CHAN_VOICE, sound_sight1, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_sight1);
 	else
-		gi.sound(self, CHAN_VOICE, sound_sight2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_sight2);
 
 	if (skill && self.enemy.has_value() && (range(self, self.enemy) >= RANGE_MID) && visible(self, self.enemy)) {
 		if (random() > 0.5f)
 #if defined(THE_RECKONING) || defined(GROUND_ZERO)
 		{
-			if (self.s.skinnum < 4)	
+			if (self.skinnum < 4)	
 				self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack6);
 			else
 				self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack4);
@@ -1102,7 +1092,7 @@ static void soldier_sight(entity &self, entity &)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_sight);
+REGISTER_STATIC_SAVABLE(soldier_sight);
 
 //
 // DUCK
@@ -1127,7 +1117,7 @@ constexpr mframe_t soldier_frames_duck [] = {
 };
 constexpr mmove_t soldier_move_duck = { FRAME_duck01, FRAME_duck05, soldier_frames_duck, soldier_run };
 
-static REGISTER_SAVABLE_DATA(soldier_move_duck);
+REGISTER_STATIC_SAVABLE(soldier_move_duck);
 
 #ifndef ROGUE_AI
 static void soldier_dodge(entity &self, entity &attacker, float eta)
@@ -1172,7 +1162,7 @@ static void soldier_dodge(entity &self, entity &attacker, float eta)
 	self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack3);
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_dodge);
+REGISTER_STATIC_SAVABLE(soldier_dodge);
 #endif
 
 //
@@ -1183,7 +1173,7 @@ static void soldier_fire6(entity &self)
 {
 #ifdef THE_RECKONING
 	// no fire laser
-	if (self.s.modelindex != soldierh_modelindex || self.s.skinnum < 4)
+	if (self.modelindex != soldierh_modelindex || self.skinnum < 4)
 #endif
 		soldier_fire(self, 5);
 }
@@ -1192,7 +1182,7 @@ static void soldier_fire7(entity &self)
 {
 #ifdef THE_RECKONING
 	// no fire laser
-	if (self.s.modelindex != soldierh_modelindex || self.s.skinnum < 4)
+	if (self.modelindex != soldierh_modelindex || self.skinnum < 4)
 #endif
 		soldier_fire(self, 6);
 }
@@ -1252,7 +1242,7 @@ constexpr mframe_t soldier_frames_death1 [] = {
 };
 constexpr mmove_t soldier_move_death1 = { FRAME_death101, FRAME_death136, soldier_frames_death1, soldier_dead };
 
-static REGISTER_SAVABLE_DATA(soldier_move_death1);
+REGISTER_STATIC_SAVABLE(soldier_move_death1);
 
 constexpr mframe_t soldier_frames_death2 [] = {
 	{ ai_move, -5 },
@@ -1296,7 +1286,7 @@ constexpr mframe_t soldier_frames_death2 [] = {
 };
 constexpr mmove_t soldier_move_death2 = { FRAME_death201, FRAME_death235, soldier_frames_death2, soldier_dead };
 
-static REGISTER_SAVABLE_DATA(soldier_move_death2);
+REGISTER_STATIC_SAVABLE(soldier_move_death2);
 
 constexpr mframe_t soldier_frames_death3 [] = {
 	{ ai_move, -5 },
@@ -1351,7 +1341,7 @@ constexpr mframe_t soldier_frames_death3 [] = {
 };
 constexpr mmove_t soldier_move_death3 = { FRAME_death301, FRAME_death345, soldier_frames_death3, soldier_dead };
 
-static REGISTER_SAVABLE_DATA(soldier_move_death3);
+REGISTER_STATIC_SAVABLE(soldier_move_death3);
 
 constexpr mframe_t soldier_frames_death4 [] = {
 	{ ai_move },
@@ -1415,7 +1405,7 @@ constexpr mframe_t soldier_frames_death4 [] = {
 };
 constexpr mmove_t soldier_move_death4 = { FRAME_death401, FRAME_death453, soldier_frames_death4, soldier_dead };
 
-static REGISTER_SAVABLE_DATA(soldier_move_death4);
+REGISTER_STATIC_SAVABLE(soldier_move_death4);
 
 constexpr mframe_t soldier_frames_death5 [] = {
 	{ ai_move, -5 },
@@ -1447,7 +1437,7 @@ constexpr mframe_t soldier_frames_death5 [] = {
 };
 constexpr mmove_t soldier_move_death5 = { FRAME_death501, FRAME_death524, soldier_frames_death5, soldier_dead };
 
-static REGISTER_SAVABLE_DATA(soldier_move_death5);
+REGISTER_STATIC_SAVABLE(soldier_move_death5);
 
 constexpr mframe_t soldier_frames_death6 [] = {
 	{ ai_move },
@@ -1463,7 +1453,7 @@ constexpr mframe_t soldier_frames_death6 [] = {
 };
 constexpr mmove_t soldier_move_death6 = { FRAME_death601, FRAME_death610, soldier_frames_death6, soldier_dead };
 
-static REGISTER_SAVABLE_DATA(soldier_move_death6);
+REGISTER_STATIC_SAVABLE(soldier_move_death6);
 
 static void soldier_die(entity &self, entity &, entity &, int32_t damage, vector point)
 {
@@ -1476,7 +1466,7 @@ static void soldier_die(entity &self, entity &, entity &, int32_t damage, vector
 // check for gib
 	if (self.health <= self.gib_health)
 	{
-		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"));
 		for (n = 0; n < 3; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowGib(self, "models/objects/gibs/chest/tris.md2", damage, GIB_ORGANIC);
@@ -1491,16 +1481,16 @@ static void soldier_die(entity &self, entity &, entity &, int32_t damage, vector
 // regular death
 	self.deadflag = DEAD_DEAD;
 	self.takedamage = true;
-	self.s.skinnum |= 1;
+	self.skinnum |= 1;
 
-	if (self.s.skinnum == 1)
-		gi.sound(self, CHAN_VOICE, sound_death_light, 1, ATTN_NORM, 0);
-	else if (self.s.skinnum == 3)
-		gi.sound(self, CHAN_VOICE, sound_death, 1, ATTN_NORM, 0);
-	else // (self.s.skinnum == 5)
-		gi.sound(self, CHAN_VOICE, sound_death_ss, 1, ATTN_NORM, 0);
+	if (self.skinnum == 1)
+		gi.sound(self, CHAN_VOICE, sound_death_light);
+	else if (self.skinnum == 3)
+		gi.sound(self, CHAN_VOICE, sound_death);
+	else // (self.skinnum == 5)
+		gi.sound(self, CHAN_VOICE, sound_death_ss);
 
-	if (fabs((self.s.origin[2] + self.viewheight) - point[2]) <= 4) {
+	if (fabs((self.origin[2] + self.viewheight) - point[2]) <= 4) {
 		// head shot
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_death3);
 		return;
@@ -1519,7 +1509,7 @@ static void soldier_die(entity &self, entity &, entity &, int32_t damage, vector
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_death6);
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_die);
+REGISTER_STATIC_SAVABLE(soldier_die);
 
 #ifdef ROGUE_AI
 //
@@ -1528,7 +1518,7 @@ static REGISTER_SAVABLE_FUNCTION(soldier_die);
 
 static void soldier_sidestep (entity &self)
 {
-	if (self.s.skinnum <= 3)
+	if (self.skinnum <= 3)
 	{
 		if (self.monsterinfo.currentmove != &soldier_move_attack6)
 			self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack6);
@@ -1540,7 +1530,7 @@ static void soldier_sidestep (entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_sidestep);
+REGISTER_STATIC_SAVABLE(soldier_sidestep);
 
 static void soldier_duck (entity &self, float eta)
 {
@@ -1583,7 +1573,7 @@ static void soldier_duck (entity &self, float eta)
 	return;
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_duck);
+REGISTER_STATIC_SAVABLE(soldier_duck);
 
 static void soldier_blind (entity &self);
 
@@ -1624,14 +1614,14 @@ constexpr mframe_t soldier_frames_blind [] =
 };
 constexpr mmove_t soldier_move_blind = { FRAME_stand101, FRAME_stand130, soldier_frames_blind, soldier_blind };
 
-static REGISTER_SAVABLE_DATA(soldier_move_blind);
+REGISTER_STATIC_SAVABLE(soldier_move_blind);
 
 static void soldier_blind (entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(soldier_move_blind);
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_blind);
+REGISTER_STATIC_SAVABLE(soldier_blind);
 
 static bool soldier_blocked (entity &self, float dist)
 {
@@ -1648,7 +1638,7 @@ static bool soldier_blocked (entity &self, float dist)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(soldier_blocked);
+REGISTER_STATIC_SAVABLE(soldier_blocked);
 #endif
 
 //
@@ -1657,7 +1647,7 @@ static REGISTER_SAVABLE_FUNCTION(soldier_blocked);
 
 inline void SP_monster_soldier_x(entity &self, stringlit model)
 {
-	self.s.modelindex = gi.modelindex(model);
+	self.modelindex = gi.modelindex(model);
 	self.monsterinfo.scale = MODEL_SCALE;
 	self.bounds = {
 		.mins = { -16, -16, -24 },
@@ -1673,7 +1663,7 @@ inline void SP_monster_soldier_x(entity &self, stringlit model)
 
 	self.mass = 100;
 
-	self.pain = SAVABLE(soldier_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(soldier_die);
 
 	self.monsterinfo.stand = SAVABLE(soldier_stand);
@@ -1681,6 +1671,7 @@ inline void SP_monster_soldier_x(entity &self, stringlit model)
 	self.monsterinfo.run = SAVABLE(soldier_run);
 	self.monsterinfo.attack = SAVABLE(soldier_attack);
 	self.monsterinfo.sight = SAVABLE(soldier_sight);
+	self.monsterinfo.reacttodamage = SAVABLE(soldier_reacttodamage);
 #ifdef ROGUE_AI
 	self.monsterinfo.dodge = SAVABLE(M_MonsterDodge);
 	self.monsterinfo.blocked = SAVABLE(soldier_blocked);
@@ -1712,7 +1703,7 @@ static void SP_monster_soldier_light(entity &self)
 		return;
 	}
 
-	self.s.skinnum = 0;
+	self.skinnum = 0;
 	self.health = 20;
 	self.gib_health = -30;
 
@@ -1741,7 +1732,7 @@ static void SP_monster_soldier(entity &self)
 		return;
 	}
 
-	self.s.skinnum = 2;
+	self.skinnum = 2;
 	self.health = 30;
 	self.gib_health = -30;
 
@@ -1764,7 +1755,7 @@ static void SP_monster_soldier_ss(entity &self)
 		return;
 	}
 
-	self.s.skinnum = 4;
+	self.skinnum = 4;
 	self.health = 40;
 	self.gib_health = -30;
 
@@ -1784,7 +1775,7 @@ REGISTER_ENTITY(MONSTER_SOLDIER_SS, monster_soldier_ss);
 inline void SP_monster_soldier_h(entity &self)
 {
 	SP_monster_soldier_x(self, "models/monsters/soldierh/tris.md2");
-	soldierh_modelindex = self.s.modelindex;
+	soldierh_modelindex = self.modelindex;
 }
 
 
@@ -1798,7 +1789,7 @@ static void SP_monster_soldier_ripper(entity &self)
 		return;
 	}
 
-	self.s.skinnum = 0;
+	self.skinnum = 0;
 	self.health = 50;
 	self.gib_health = -30;
 
@@ -1828,7 +1819,7 @@ static void SP_monster_soldier_hypergun(entity &self)
 		return;
 	}
 
-	self.s.skinnum = 2;
+	self.skinnum = 2;
 	self.health = 60;
 	self.gib_health = -30;
 
@@ -1856,7 +1847,7 @@ static void SP_monster_soldier_lasergun(entity &self)
 		return;
 	}
 
-	self.s.skinnum = 4;
+	self.skinnum = 4;
 	self.health = 70;
 	self.gib_health = -30;
 

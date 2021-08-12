@@ -9,7 +9,7 @@
 
 constexpr float TESLA_DAMAGE_RADIUS = 128.f;
 
-void fire_tesla(entity &self, vector start, vector aimdir, int32_t damage_multiplier, int32_t speed);
+void fire_tesla(entity &self, vector start, vector aimdir, int32_t dmg_multiplier, int32_t speed);
 
 DECLARE_ENTITY(TESLA);
 #endif

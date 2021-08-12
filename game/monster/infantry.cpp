@@ -59,14 +59,14 @@ constexpr mframe_t infantry_frames_stand[] = {
 };
 constexpr mmove_t infantry_move_stand = { FRAME_stand50, FRAME_stand71, infantry_frames_stand };
 
-static REGISTER_SAVABLE_DATA(infantry_move_stand);
+REGISTER_STATIC_SAVABLE(infantry_move_stand);
 
 static void infantry_stand(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(infantry_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_stand);
+REGISTER_STATIC_SAVABLE(infantry_stand);
 
 constexpr mframe_t infantry_frames_fidget[] = {
 	{ ai_stand, 1 },
@@ -121,16 +121,16 @@ constexpr mframe_t infantry_frames_fidget[] = {
 };
 constexpr mmove_t infantry_move_fidget = { FRAME_stand01, FRAME_stand49, infantry_frames_fidget, infantry_stand };
 
-static REGISTER_SAVABLE_DATA(infantry_move_fidget);
+REGISTER_STATIC_SAVABLE(infantry_move_fidget);
 
 static void infantry_fidget(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(infantry_move_fidget);
 
-	gi.sound(self, CHAN_VOICE, sound_idle, 1, ATTN_IDLE, 0);
+	gi.sound(self, CHAN_VOICE, sound_idle, ATTN_IDLE);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_fidget);
+REGISTER_STATIC_SAVABLE(infantry_fidget);
 
 constexpr mframe_t infantry_frames_walk[] = {
 	{ ai_walk, 5 },
@@ -148,14 +148,14 @@ constexpr mframe_t infantry_frames_walk[] = {
 };
 constexpr mmove_t infantry_move_walk = { FRAME_walk03, FRAME_walk14, infantry_frames_walk };
 
-static REGISTER_SAVABLE_DATA(infantry_move_walk);
+REGISTER_STATIC_SAVABLE(infantry_move_walk);
 
 static void infantry_walk(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(infantry_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_walk);
+REGISTER_STATIC_SAVABLE(infantry_walk);
 
 constexpr mframe_t infantry_frames_run[] = {
 	{ ai_run, 10 },
@@ -173,7 +173,7 @@ constexpr mframe_t infantry_frames_run[] = {
 };
 constexpr mmove_t infantry_move_run = { FRAME_run01, FRAME_run08, infantry_frames_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_run);
+REGISTER_STATIC_SAVABLE(infantry_move_run);
 
 static void infantry_run(entity &self)
 {
@@ -187,7 +187,7 @@ static void infantry_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_run);
+REGISTER_STATIC_SAVABLE(infantry_run);
 
 constexpr mframe_t infantry_frames_pain1[] = {
 	{ ai_move, -3 },
@@ -203,7 +203,7 @@ constexpr mframe_t infantry_frames_pain1[] = {
 };
 constexpr mmove_t infantry_move_pain1 = { FRAME_pain101, FRAME_pain110, infantry_frames_pain1, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_pain1);
+REGISTER_STATIC_SAVABLE(infantry_move_pain1);
 
 constexpr mframe_t infantry_frames_pain2[] = {
 	{ ai_move, -3 },
@@ -219,15 +219,10 @@ constexpr mframe_t infantry_frames_pain2[] = {
 };
 constexpr mmove_t infantry_move_pain2 = { FRAME_pain201, FRAME_pain210, infantry_frames_pain2, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_pain2);
+REGISTER_STATIC_SAVABLE(infantry_move_pain2);
 
-static void infantry_pain(entity &self, entity &, float, int32_t)
+static void infantry_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
-	int     n;
-
-	if (self.health < (self.max_health / 2))
-		self.s.skinnum = 1;
-
 #ifdef ROGUE_AI
 	monster_done_dodge(self);
 #endif
@@ -240,14 +235,16 @@ static void infantry_pain(entity &self, entity &, float, int32_t)
 	if (skill == 3)
 		return;     // no pain anims in nightmare
 
-	n = Q_rand() % 2;
-	if (n == 0) {
+	int32_t n = Q_rand() % 2;
+	if (n == 0)
+	{
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_pain1);
-		gi.sound(self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain1);
 	}
-	else {
+	else
+	{
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_pain2);
-		gi.sound(self, CHAN_VOICE, sound_pain2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain2);
 	}
 
 #ifdef ROGUE_AI
@@ -257,7 +254,7 @@ static void infantry_pain(entity &self, entity &, float, int32_t)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_pain);
+REGISTER_STATIC_SAVABLE(infantry_reacttodamage);
 
 static constexpr vector aimangles[] = {
 	{ 0, 5, 0 },
@@ -282,29 +279,29 @@ static void InfantryMachineGun(entity &self)
 	monster_muzzleflash flash_number;
 
 #if defined(THE_RECKONING) || defined(GROUND_ZERO)
-	if (self.s.frame == FRAME_attak103) {
+	if (self.frame == FRAME_attak103) {
 #else
-	if (self.s.frame == FRAME_attak111) {
+	if (self.frame == FRAME_attak111) {
 #endif
 		flash_number = MZ2_INFANTRY_MACHINEGUN_1;
 
-		AngleVectors(self.s.angles, &forward, &right, nullptr);
-		start = G_ProjectSource(self.s.origin, monster_flash_offset[MZ2_INFANTRY_MACHINEGUN_1], forward, right);
+		AngleVectors(self.angles, &forward, &right, nullptr);
+		start = G_ProjectSource(self.origin, monster_flash_offset[MZ2_INFANTRY_MACHINEGUN_1], forward, right);
 
 		if (self.enemy.has_value()) {
-			target = self.enemy->s.origin + (-0.2f * self.enemy->velocity);
+			target = self.enemy->origin + (-0.2f * self.enemy->velocity);
 			target.z += self.enemy->viewheight;
 			forward = target - start;
 			VectorNormalize(forward);
 		}
 	}
 	else {
-		flash_number = (monster_muzzleflash) (MZ2_INFANTRY_MACHINEGUN_2 + (self.s.frame - FRAME_death211));
+		flash_number = (monster_muzzleflash) (MZ2_INFANTRY_MACHINEGUN_2 + (self.frame - FRAME_death211));
 
-		AngleVectors(self.s.angles, &forward, &right, nullptr);
-		start = G_ProjectSource(self.s.origin, monster_flash_offset[flash_number], forward, right);
+		AngleVectors(self.angles, &forward, &right, nullptr);
+		start = G_ProjectSource(self.origin, monster_flash_offset[flash_number], forward, right);
 
-		vec = self.s.angles - aimangles[(flash_number - MZ2_INFANTRY_MACHINEGUN_2)];
+		vec = self.angles - aimangles[(flash_number - MZ2_INFANTRY_MACHINEGUN_2)];
 		AngleVectors(vec, &forward, nullptr, nullptr);
 	}
 
@@ -313,10 +310,10 @@ static void InfantryMachineGun(entity &self)
 
 static void infantry_sight(entity &self, entity &)
 {
-	gi.sound(self, CHAN_BODY, sound_sight, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_BODY, sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_sight);
+REGISTER_STATIC_SAVABLE(infantry_sight);
 
 static void infantry_dead(entity &self)
 {
@@ -355,7 +352,7 @@ constexpr mframe_t infantry_frames_death1[] = {
 };
 constexpr mmove_t infantry_move_death1 = { FRAME_death101, FRAME_death120, infantry_frames_death1, infantry_dead };
 
-static REGISTER_SAVABLE_DATA(infantry_move_death1);
+REGISTER_STATIC_SAVABLE(infantry_move_death1);
 
 // Off with his head
 constexpr mframe_t infantry_frames_death2[] = {
@@ -387,7 +384,7 @@ constexpr mframe_t infantry_frames_death2[] = {
 };
 constexpr mmove_t infantry_move_death2 = { FRAME_death201, FRAME_death225, infantry_frames_death2, infantry_dead };
 
-static REGISTER_SAVABLE_DATA(infantry_move_death2);
+REGISTER_STATIC_SAVABLE(infantry_move_death2);
 
 constexpr mframe_t infantry_frames_death3[] = {
 	{ ai_move },
@@ -402,7 +399,7 @@ constexpr mframe_t infantry_frames_death3[] = {
 };
 constexpr mmove_t infantry_move_death3 = { FRAME_death301, FRAME_death309, infantry_frames_death3, infantry_dead };
 
-static REGISTER_SAVABLE_DATA(infantry_move_death3);
+REGISTER_STATIC_SAVABLE(infantry_move_death3);
 
 static void infantry_die(entity &self, entity &, entity &, int32_t damage, vector)
 {
@@ -410,7 +407,7 @@ static void infantry_die(entity &self, entity &, entity &, int32_t damage, vecto
 
 	// check for gib
 	if (self.health <= self.gib_health) {
-		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"));
 		for (n = 0; n < 2; n++)
 			ThrowGib(self, "models/objects/gibs/bone/tris.md2", damage, GIB_ORGANIC);
 		for (n = 0; n < 4; n++)
@@ -430,19 +427,19 @@ static void infantry_die(entity &self, entity &, entity &, int32_t damage, vecto
 	n = Q_rand() % 3;
 	if (n == 0) {
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_death1);
-		gi.sound(self, CHAN_VOICE, sound_die2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_die2);
 	}
 	else if (n == 1) {
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_death2);
-		gi.sound(self, CHAN_VOICE, sound_die1, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_die1);
 	}
 	else {
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_death3);
-		gi.sound(self, CHAN_VOICE, sound_die2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_die2);
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_die);
+REGISTER_STATIC_SAVABLE(infantry_die);
 
 #ifdef ROGUE_AI
 #define infantry_duck_down monster_duck_down
@@ -486,7 +483,7 @@ constexpr mframe_t infantry_frames_duck[] = {
 };
 constexpr mmove_t infantry_move_duck = { FRAME_duck01, FRAME_duck05, infantry_frames_duck, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_duck);
+REGISTER_STATIC_SAVABLE(infantry_move_duck);
 
 #ifndef ROGUE_AI
 static void infantry_dodge(entity &self, entity &attacker, float)
@@ -500,7 +497,7 @@ static void infantry_dodge(entity &self, entity &attacker, float)
 	self.monsterinfo.currentmove = &SAVABLE(infantry_move_duck);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_dodge);
+REGISTER_STATIC_SAVABLE(infantry_dodge);
 #endif
 
 #if defined(THE_RECKONING) || defined(GROUND_ZERO)
@@ -511,12 +508,12 @@ static void infantry_set_firetime(entity &self)
 
 static void infantry_cock_gun(entity &self)
 {
-	gi.sound(self, CHAN_WEAPON, sound_weapon_cock, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_weapon_cock);
 }
 #else
 static void infantry_cock_gun(entity &self)
 {
-	gi.sound(self, CHAN_WEAPON, sound_weapon_cock, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_weapon_cock);
 	self.monsterinfo.pause_framenum = level.framenum + (Q_rand() & 15) + 3 + 7;
 }
 #endif
@@ -568,18 +565,18 @@ constexpr mframe_t infantry_frames_attack1[] = {
 };
 constexpr mmove_t infantry_move_attack1 = { FRAME_attak101, FRAME_attak115, infantry_frames_attack1, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_attack1);
+REGISTER_STATIC_SAVABLE(infantry_move_attack1);
 
 static void infantry_swing(entity &self)
 {
-	gi.sound(self, CHAN_WEAPON, sound_punch_swing, 1, ATTN_NORM, 0);
+	gi.sound(self, CHAN_WEAPON, sound_punch_swing);
 }
 
 static void infantry_smack(entity &self)
 {
 	constexpr vector aim { MELEE_DISTANCE, 0, 0 };
 	if (fire_hit(self, aim, (5 + (Q_rand() % 5)), 50))
-		gi.sound(self, CHAN_WEAPON, sound_punch_hit, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_WEAPON, sound_punch_hit);
 }
 
 constexpr mframe_t infantry_frames_attack2[] = {
@@ -594,7 +591,7 @@ constexpr mframe_t infantry_frames_attack2[] = {
 };
 constexpr mmove_t infantry_move_attack2 = { FRAME_attak201, FRAME_attak208, infantry_frames_attack2, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_attack2);
+REGISTER_STATIC_SAVABLE(infantry_move_attack2);
 
 static void infantry_attack(entity &self)
 {
@@ -608,7 +605,7 @@ static void infantry_attack(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_attack1);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_attack);
+REGISTER_STATIC_SAVABLE(infantry_attack);
 
 #ifdef ROGUE_AI
 static void infantry_jump_now(entity &self)
@@ -617,7 +614,7 @@ static void infantry_jump_now(entity &self)
 
 	monster_jump_start(self);
 
-	AngleVectors(self.s.angles, &forward, nullptr, &up);
+	AngleVectors(self.angles, &forward, nullptr, &up);
 	self.velocity += forward * 100;
 	self.velocity += up * 300;
 }
@@ -626,13 +623,13 @@ static void infantry_jump_wait_land(entity &self)
 {
 	if (self.groundentity == null_entity)
 	{
-		self.monsterinfo.nextframe = self.s.frame;
+		self.monsterinfo.nextframe = self.frame;
 
 		if (monster_jump_finished(self))
-			self.monsterinfo.nextframe = self.s.frame + 1;
+			self.monsterinfo.nextframe = self.frame + 1;
 	}
 	else
-		self.monsterinfo.nextframe = self.s.frame + 1;
+		self.monsterinfo.nextframe = self.frame + 1;
 }
 
 constexpr mframe_t infantry_frames_jump[] = {
@@ -649,7 +646,7 @@ constexpr mframe_t infantry_frames_jump[] = {
 };
 constexpr mmove_t infantry_move_jump = { FRAME_jump01, FRAME_jump10, infantry_frames_jump, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_jump);
+REGISTER_STATIC_SAVABLE(infantry_move_jump);
 
 constexpr mframe_t infantry_frames_jump2[] = {
 	{ ai_move, -8 },
@@ -665,7 +662,7 @@ constexpr mframe_t infantry_frames_jump2[] = {
 };
 constexpr mmove_t infantry_move_jump2 = { FRAME_jump01, FRAME_jump10, infantry_frames_jump2, infantry_run };
 
-static REGISTER_SAVABLE_DATA(infantry_move_jump2);
+REGISTER_STATIC_SAVABLE(infantry_move_jump2);
 
 static void infantry_jump(entity &self)
 {
@@ -674,7 +671,7 @@ static void infantry_jump(entity &self)
 
 	monster_done_dodge(self);
 
-	if (self.enemy->s.origin[2] > self.s.origin[2])
+	if (self.enemy->origin[2] > self.origin[2])
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_jump2);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_jump);
@@ -697,7 +694,7 @@ static bool infantry_blocked(entity &self, float dist)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_blocked);
+REGISTER_STATIC_SAVABLE(infantry_blocked);
 
 static void infantry_duck(entity &self, float eta)
 {
@@ -732,7 +729,7 @@ static void infantry_duck(entity &self, float eta)
 	self.monsterinfo.currentmove = &SAVABLE(infantry_move_duck);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_duck);
+REGISTER_STATIC_SAVABLE(infantry_duck);
 
 static void infantry_sidestep(entity &self)
 {
@@ -758,7 +755,7 @@ static void infantry_sidestep(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(infantry_sidestep);
+REGISTER_STATIC_SAVABLE(infantry_sidestep);
 #endif
 
 /*QUAKED monster_infantry (1 .5 0) (-16 -16 -24) (16 16 32) Ambush Trigger_Spawn Sight
@@ -787,7 +784,7 @@ static void SP_monster_infantry(entity &self)
 
 	self.movetype = MOVETYPE_STEP;
 	self.solid = SOLID_BBOX;
-	self.s.modelindex = gi.modelindex("models/monsters/infantry/tris.md2");
+	self.modelindex = gi.modelindex("models/monsters/infantry/tris.md2");
 	self.bounds = {
 		.mins = { -16, -16, -24 },
 		.maxs = { 16, 16, 32 }
@@ -797,7 +794,7 @@ static void SP_monster_infantry(entity &self)
 	self.gib_health = -40;
 	self.mass = 200;
 
-	self.pain = SAVABLE(infantry_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(infantry_die);
 
 	self.monsterinfo.stand = SAVABLE(infantry_stand);
@@ -815,6 +812,7 @@ static void SP_monster_infantry(entity &self)
 	self.monsterinfo.attack = SAVABLE(infantry_attack);
 	self.monsterinfo.sight = SAVABLE(infantry_sight);
 	self.monsterinfo.idle = SAVABLE(infantry_fidget);
+	self.monsterinfo.reacttodamage = SAVABLE(infantry_reacttodamage);
 
 	gi.linkentity(self);
 

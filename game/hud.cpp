@@ -12,7 +12,7 @@
 #include "items/itemlist.h"
 #include "hud.h"
 
-void DeathmatchScoreboardMessage(entity &ent, entityref killer)
+void DeathmatchScoreboardMessage(entity &ent, entityref killer, bool reliable)
 {
 #ifdef CTF
 	if (ctf.intVal)
@@ -22,13 +22,8 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 	}
 #endif
 
-	string entry;
-	string str;
-	size_t stringlength;
+	mutable_string str;
 	dynarray<entityref> sorted;
-	int	x, y;
-	uint32_t j;
-	stringlit tag;
 
 	// sort the clients by score
 	for (entity &cl_ent : entity_range(1, game.maxclients))
@@ -40,7 +35,7 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 	}
 
 	// print level name and exit rules
-	stringlength = 0;
+	size_t stringlength = 0;
 
 	std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b)
 		{
@@ -55,46 +50,40 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer)
 
 	for (auto &cl_ent : sorted)
 	{
-		if (i >= 6)
-			x = 160;
-		else
-			x = 0;
-
-		y = 32 + 32 * (i % 6);
+		int32_t x = (i >= 6) ? 160 : 0;
+		int32_t y = 32 + 32 * (i % 6);
+		stringlit tag = nullptr;
 
 		// add a dogtag
 		if (cl_ent == ent)
 			tag = "tag1";
 		else if (cl_ent == killer)
 			tag = "tag2";
-		else
-			tag = nullptr;
 
 		if (tag)
 		{
-			entry = va("xv %i yv %i picn %s ", x + 32, y, tag);
-			j = strlen(entry);
+			mutable_string entry = format("xv {} yv {} picn {} ", x + 32, y, tag);
+			size_t j = strlen(entry);
 			if (stringlength + j > 1024)
 				break;
-			str = strconcat(str, entry);
+			str += entry;
 			stringlength += j;
 		}
 
 		// send the layout
-		entry = va("client %i %i %i %i %i %i ", x, y, sorted[i]->s.number - 1, cl_ent->client->resp.score, cl_ent->client->ping, ((level.framenum - cl_ent->client->resp.enterframe) / 600));
-		j = strlen(entry);
+		mutable_string entry = format("client {} {} {} {} {} {} ", x, y, sorted[i]->number - 1, cl_ent->client->resp.score, cl_ent->client->ping, ((level.framenum - cl_ent->client->resp.enterframe) / 600));
+		size_t j = strlen(entry);
 
 		if (stringlength + j > 1024)
 			break;
 
-		str = strconcat(str, entry);
+		str += entry;
 		stringlength += j;
 
 		i++;
 	}
 
-	gi.WriteByte(svc_layout);
-	gi.WriteString(str);
+	gi.ConstructMessage(svc_layout, str).unicast(ent, reliable);
 }
 
 /*
@@ -111,7 +100,7 @@ void MoveClientToIntermission(entity &ent)
 	if (deathmatch || coop)
 #endif
 		ent.client->showscores = true;
-	ent.s.origin = level.intermission_origin;
+	ent.origin = level.intermission_origin;
 	ent.client->ps.pmove.set_origin(level.intermission_origin);
 	ent.client->ps.viewangles = level.intermission_angle;
 	ent.client->ps.pmove.pm_type = PM_FREEZE;
@@ -129,8 +118,6 @@ void MoveClientToIntermission(entity &ent)
 
 #ifdef THE_RECKONING
 	ent.client->quadfire_framenum = 0;
-	ent.client->trap_blew_up = false;
-	ent.client->trap_framenum = 0;
 #endif
 
 #ifdef GROUND_ZERO
@@ -141,12 +128,12 @@ void MoveClientToIntermission(entity &ent)
 #endif
 
 	ent.viewheight = 0;
-	ent.s.modelindex = MODEL_NONE;
-	ent.s.modelindex2 = MODEL_NONE;
-	ent.s.modelindex3 = MODEL_NONE;
-	ent.s.modelindex4 = MODEL_NONE;
-	ent.s.effects = EF_NONE;
-	ent.s.sound = SOUND_NONE;
+	ent.modelindex = MODEL_NONE;
+	ent.modelindex2 = MODEL_NONE;
+	ent.modelindex3 = MODEL_NONE;
+	ent.modelindex4 = MODEL_NONE;
+	ent.effects = EF_NONE;
+	ent.sound = SOUND_NONE;
 	ent.solid = SOLID_NOT;
 
 	gi.linkentity(ent);
@@ -154,13 +141,8 @@ void MoveClientToIntermission(entity &ent)
 	// add the layout
 #ifdef SINGLE_PLAYER
 	if (deathmatch || coop)
-	{
 #endif
 		DeathmatchScoreboardMessage(ent, world);
-		gi.unicast(ent, true);
-#ifdef SINGLE_PLAYER
-	}
-#endif
 }
 
 void BeginIntermission(entity &targ)
@@ -237,8 +219,8 @@ void BeginIntermission(entity &targ)
 		}
 	}
 
-	level.intermission_origin = ent->s.origin;
-	level.intermission_angle = ent->s.angles;
+	level.intermission_origin = ent->origin;
+	level.intermission_angle = ent->angles;
 
 	// move all clients to the intermission point
 	for (entity &cl : entity_range(1, game.maxclients))
@@ -254,10 +236,9 @@ Draw instead of help message.
 Note that it isn't that hard to overflow the MESSAGE_LIMIT!
 ==================
 */
-static void DeathmatchScoreboard(entity &ent)
+inline void DeathmatchScoreboard(entity &ent)
 {
 	DeathmatchScoreboardMessage(ent, ent.enemy);
-	gi.unicast(ent, true);
 }
 
 void Cmd_Score_f(entity &ent)
@@ -301,26 +282,22 @@ static void HelpComputer(entity &ent)
 	stringlit sk = skills[clamp((int32_t) skill, 0, 3)];
 
 	// send the layout
-	string str = va("xv 32 yv 8 picn help "             // background
-		"xv 202 yv 12 string2 \"%s\" "      // skill
-		"xv 0 yv 24 cstring2 \"%s\" "       // level name
-		"xv 0 yv 54 cstring2 \"%s\" "       // help 1
-		"xv 0 yv 110 cstring2 \"%s\" ",     // help 2
-		sk,
-		level.level_name.ptr(),
-		game.helpmessage1.ptr(),
-		game.helpmessage2.ptr());
-
-	str = va("%sxv 50 yv 164 string2 \" kills     goals    secrets\" "
-		"xv 50 yv 172 string2 \"%3i/%3i     %i/%i       %i/%i\" ",
-		str.ptr(),
-		level.killed_monsters, level.total_monsters,
-		level.found_goals, level.total_goals,
-		level.found_secrets, level.total_secrets);
-
-	gi.WriteByte(svc_layout);
-	gi.WriteString(str);
-	gi.unicast(ent, true);
+	gi.ConstructMessage(svc_layout,
+			format("xv 32 yv 8 picn help "             // background
+			"xv 202 yv 12 string2 \"{}\" "      // skill
+			"xv 0 yv 24 cstring2 \"{}\" "       // level name
+			"xv 0 yv 54 cstring2 \"{}\" "       // help 1
+			"xv 0 yv 110 cstring2 \"{}\" "     // help 2
+			"xv 50 yv 164 string2 \" kills     goals    secrets\" " // kills/goals/secrets
+			"xv 50 yv 172 string2 \"{:3}/{:3}     {}/{}       {}/{}\"",
+			sk,
+			level.level_name,
+			game.helpmessage1,
+			game.helpmessage2,
+			level.killed_monsters, level.total_monsters,
+			level.found_goals, level.total_goals,
+			level.found_secrets, level.total_secrets))
+		.unicast(ent, true);
 }
 #endif
 
@@ -389,7 +366,7 @@ void G_SetStats(entity &ent)
 		{
 			// ran out of cells for power armor
 			ent.flags &= ~FL_POWER_ARMOR;
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/power2.wav"), 1, ATTN_NORM, 0);
+			gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/power2.wav"));
 			power_armor_type = ITEM_NONE;
 		}
 	}
@@ -551,7 +528,7 @@ void G_SetSpectatorStats(entity &ent)
 		ent.client->ps.stats[STAT_LAYOUTS] |= 2;
 
 	if (ent.client->chase_target.has_value() && ent.client->chase_target->inuse)
-		ent.client->ps.stats[STAT_CHASE] = CS_PLAYERSKINS + (ent.client->chase_target->s.number - 1);
+		ent.client->ps.stats[STAT_CHASE] = CS_PLAYERSKINS + (ent.client->chase_target->number - 1);
 	else
 		ent.client->ps.stats[STAT_CHASE] = 0;
 }

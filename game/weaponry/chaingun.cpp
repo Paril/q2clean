@@ -9,6 +9,8 @@
 #include "game/game.h"
 #include "chaingun.h"
 
+constexpr means_of_death MOD_CHAINGUN { .other_kill_fmt = "{0} was cut in half by {3}'s chaingun.\n" };
+
 static void Chaingun_Fire(entity &ent)
 {
 	vector	start = vec3_origin;
@@ -28,7 +30,7 @@ static void Chaingun_Fire(entity &ent)
 #endif
 
 	if (ent.client->ps.gunframe == 5)
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/chngnu1a.wav"), 1, ATTN_IDLE, 0);
+		gi.sound(ent, gi.soundindex("weapons/chngnu1a.wav"), ATTN_IDLE);
 
 	if ((ent.client->ps.gunframe == 14) && !(ent.client->buttons & BUTTON_ATTACK))
 	{
@@ -45,7 +47,7 @@ static void Chaingun_Fire(entity &ent)
 	if (ent.client->ps.gunframe == 22)
 	{
 		ent.client->weapon_sound = SOUND_NONE;
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/chngnd1a.wav"), 1, ATTN_IDLE, 0);
+		gi.sound(ent, gi.soundindex("weapons/chngnd1a.wav"), ATTN_IDLE);
 	}
 	else
 		ent.client->weapon_sound = gi.soundindex("weapons/chngnl1a.wav");
@@ -53,12 +55,12 @@ static void Chaingun_Fire(entity &ent)
 	ent.client->anim_priority = ANIM_ATTACK;
 	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
 	{
-		ent.s.frame = FRAME_crattak1 - (ent.client->ps.gunframe & 1);
+		ent.frame = FRAME_crattak1 - (ent.client->ps.gunframe & 1);
 		ent.client->anim_end = FRAME_crattak9;
 	}
 	else
 	{
-		ent.s.frame = FRAME_attack1 - (ent.client->ps.gunframe & 1);
+		ent.frame = FRAME_attack1 - (ent.client->ps.gunframe & 1);
 		ent.client->anim_end = FRAME_attack8;
 	}
 
@@ -83,7 +85,7 @@ static void Chaingun_Fire(entity &ent)
 	{
 		if (level.framenum >= ent.pain_debounce_framenum)
 		{
-			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
 			ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
 		}
 		NoAmmoWeaponChange(ent);
@@ -106,16 +108,13 @@ static void Chaingun_Fire(entity &ent)
 		r = random(3.f, 11.f);
 		u = random(-4.f, 4.f);
 		offset = { 0, r, u + ent.viewheight - 8 };
-		start = P_ProjectSource(ent, ent.s.origin, offset, forward, right);
+		start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
 		fire_bullet(ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_CHAINGUN);
 	}
 
 	// send muzzle flash
-	gi.WriteByte(svc_muzzleflash);
-	gi.WriteShort((int16_t) ent.s.number);
-	gi.WriteByte((uint8_t) ((MZ_CHAINGUN1 + shots - 1) | is_silenced));
-	gi.multicast(ent.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_muzzleflash, ent, (muzzleflash) (MZ_CHAINGUN1 + shots - 1) | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 #ifdef SINGLE_PLAYER
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -127,5 +126,5 @@ static void Chaingun_Fire(entity &ent)
 
 void Weapon_Chaingun(entity &ent)
 {
-	Weapon_Generic(ent, 4, 31, 61, 64, G_IsAnyFrame<38, 43, 51, 61>, G_IsAnyFrame<5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21>, Chaingun_Fire);
+	Weapon_Generic(ent, 4, 31, 61, 64, G_FrameIsOneOf<38, 43, 51, 61>, G_FrameIsBetween<5, 21>, Chaingun_Fire);
 }

@@ -9,6 +9,7 @@
 #include "game/misc.h"
 #include "game/spawn.h"
 #include "lib/gi.h"
+#include "lib/math/random.h"
 #include "game/monster/flash.h"
 #include "game/util.h"
 #include "game/spawn.h"
@@ -23,15 +24,13 @@ constexpr monster_muzzleflash MZ2_fixbot_BLASTER_1 = MZ2_HOVER_BLASTER_1;
 
 static sound_index	sound_pain1;
 static sound_index	sound_die;
-static sound_index	sound_weld1;
-static sound_index	sound_weld2;
-static sound_index	sound_weld3;
+static sound_index	sound_weld[3];
 
 static entityref fixbot_FindDeadMonster(entity &self)
 {
 	entityref ent, best;
 
-	while ((ent = findradius(ent, self.s.origin, 1024)).has_value())
+	while ((ent = findradius(ent, self.origin, 1024)).has_value())
 	{
 		if (ent == self)
 			continue;
@@ -78,9 +77,9 @@ static bool fixbot_search(entity &self)
 static void ai_move2(entity &self, float dist)
 {
 	if (dist)
-		M_walkmove (self, self.s.angles[YAW], dist);
+		M_walkmove (self, self.angles[YAW], dist);
 
-	vector v = self.goalentity->s.origin - self.s.origin;
+	vector v = self.goalentity->origin - self.origin;
 	self.ideal_yaw = vectoyaw(v);	
 	M_ChangeYaw (self);
 };
@@ -101,7 +100,7 @@ constexpr mframe_t fixbot_frames_weld [] =
 };
 constexpr mmove_t fixbot_move_weld = { FRAME_weldmiddle_01, FRAME_weldmiddle_07, fixbot_frames_weld };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_weld);
+REGISTER_STATIC_SAVABLE(fixbot_move_weld);
 
 constexpr mframe_t fixbot_frames_weld_end [] =
 {
@@ -115,7 +114,7 @@ constexpr mframe_t fixbot_frames_weld_end [] =
 };
 constexpr mmove_t fixbot_move_weld_end = { FRAME_weldend_01, FRAME_weldend_07, fixbot_frames_weld_end };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_weld_end);
+REGISTER_STATIC_SAVABLE(fixbot_move_weld_end);
 
 constexpr mframe_t fixbot_frames_stand [] =
 {
@@ -142,13 +141,13 @@ constexpr mframe_t fixbot_frames_stand [] =
 };
 constexpr mmove_t fixbot_move_stand = { FRAME_ambient_01, FRAME_ambient_19, fixbot_frames_stand };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_stand);
+REGISTER_STATIC_SAVABLE(fixbot_move_stand);
 
 static void weldstate(entity &self)
 {
-	if (self.s.frame == FRAME_weldstart_10)
+	if (self.frame == FRAME_weldstart_10)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_weld);
-	else if (self.s.frame == FRAME_weldmiddle_07)
+	else if (self.frame == FRAME_weldmiddle_07)
 	{
 		if (self.goalentity->health < 0) 
 		{
@@ -180,7 +179,7 @@ constexpr mframe_t fixbot_frames_weld_start [] =
 };
 constexpr mmove_t fixbot_move_weld_start = { FRAME_weldstart_01, FRAME_weldstart_10, fixbot_frames_weld_start };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_weld_start);
+REGISTER_STATIC_SAVABLE(fixbot_move_weld_start);
 
 static entity_type ET_BOT_GOAL("bot_goal");
 
@@ -189,7 +188,7 @@ static void use_scanner(entity &self)
 	entityref	ent;
 	float   radius = 1024;
 
-	while ((ent = findradius(ent, self.s.origin, radius)).has_value())
+	while ((ent = findradius(ent, self.origin, radius)).has_value())
 	{
 		if (ent->health >= 100)
 		{
@@ -206,7 +205,7 @@ static void use_scanner(entity &self)
 					
 					self.goalentity = self.enemy = ent;
 					
-					vector vec = self.s.origin - self.goalentity->s.origin;
+					vector vec = self.origin - self.goalentity->origin;
 					float len = VectorNormalize (vec);
 
 					if (len < 32)
@@ -220,7 +219,7 @@ static void use_scanner(entity &self)
 		}
 	}
 
-	vector vec = self.s.origin - self.goalentity->s.origin;
+	vector vec = self.origin - self.goalentity->origin;
 	float len = VectorLength (vec);
 
 	if (len < 32)
@@ -237,7 +236,7 @@ static void use_scanner(entity &self)
 		return;
 	}
 
-	vec = self.s.origin - self.s.old_origin;
+	vec = self.origin - self.old_origin;
 	len = VectorLength (vec);
 
 	if (len)
@@ -266,7 +265,7 @@ constexpr mframe_t fixbot_frames_forward [] =
 };
 constexpr mmove_t fixbot_move_forward = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_forward };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_forward);
+REGISTER_STATIC_SAVABLE(fixbot_move_forward);
 
 static void ai_facing(entity &self, float)
 {
@@ -274,7 +273,7 @@ static void ai_facing(entity &self, float)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_forward);
 	else
 	{
-		vector v = self.goalentity->s.origin - self.s.origin;
+		vector v = self.goalentity->origin - self.origin;
 		self.ideal_yaw = vectoyaw(v);	
 		M_ChangeYaw (self);
 	}
@@ -286,7 +285,7 @@ constexpr mframe_t fixbot_frames_turn [] =
 };
 constexpr mmove_t fixbot_move_turn = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_turn };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_turn);
+REGISTER_STATIC_SAVABLE(fixbot_move_turn);
 
 static void roam_goal(entity &self)
 {
@@ -301,7 +300,7 @@ static void roam_goal(entity &self)
 
 	for (int i = 0; i < 12; i++) 
 	{
-		vector dang = self.s.angles;
+		vector dang = self.angles;
 
 		if (i < 6)
 			dang[YAW] += 30 * i;
@@ -310,11 +309,11 @@ static void roam_goal(entity &self)
 
 		vector forward;
 		AngleVectors (dang, &forward, nullptr, nullptr);
-		vector end = self.s.origin + (forward * 8192);
+		vector end = self.origin + (forward * 8192);
 
-		trace tr = gi.traceline (self.s.origin, end, self, MASK_SHOT);
+		trace tr = gi.traceline (self.origin, end, self, MASK_SHOT);
 
-		vector vec = self.s.origin - tr.endpos;
+		vector vec = self.origin - tr.endpos;
 		float len = VectorNormalize (vec);
 		
 		if (len > oldlen)
@@ -324,7 +323,7 @@ static void roam_goal(entity &self)
 		}
 	}
 	
-	ent.s.origin = whichvec;
+	ent.origin = whichvec;
 	self.goalentity = self.enemy = ent;
 	
 	self.monsterinfo.currentmove = &SAVABLE(fixbot_move_turn);
@@ -339,7 +338,7 @@ constexpr mframe_t fixbot_frames_roamgoal [] =
 };
 constexpr mmove_t fixbot_move_roamgoal = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_roamgoal };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_roamgoal);
+REGISTER_STATIC_SAVABLE(fixbot_move_roamgoal);
 
 constexpr mframe_t fixbot_frames_stand2 [] =
 {
@@ -366,7 +365,7 @@ constexpr mframe_t fixbot_frames_stand2 [] =
 };
 constexpr mmove_t fixbot_move_stand2 = { FRAME_ambient_01, FRAME_ambient_19, fixbot_frames_stand2 };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_stand2);
+REGISTER_STATIC_SAVABLE(fixbot_move_stand2);
 
 static void fly_vertical2(entity &self);
 
@@ -438,7 +437,7 @@ constexpr mframe_t fixbot_frames_landing [] =
 };
 constexpr mmove_t fixbot_move_landing = { FRAME_landing_01, FRAME_landing_58, fixbot_frames_landing };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_landing);
+REGISTER_STATIC_SAVABLE(fixbot_move_landing);
 
 inline void landing_goal(entity &self) 
 {
@@ -454,12 +453,12 @@ inline void landing_goal(entity &self)
 	};
 	
 	vector forward, up;
-	AngleVectors (self.s.angles, &forward, nullptr, &up);
-	vector end = self.s.origin + (forward * 32) + (up * -8192); // Paril: this wasn't right in vanilla
+	AngleVectors (self.angles, &forward, nullptr, &up);
+	vector end = self.origin + (forward * 32) + (up * -8192); // Paril: this wasn't right in vanilla
 
-	trace tr = gi.trace (self.s.origin, ent.bounds, end, self, MASK_MONSTERSOLID);
+	trace tr = gi.trace (self.origin, ent.bounds, end, self, MASK_MONSTERSOLID);
 
-	ent.s.origin = tr.endpos;
+	ent.origin = tr.endpos;
 	
 	self.goalentity = self.enemy = ent;
 	self.monsterinfo.currentmove = &SAVABLE(fixbot_move_landing);
@@ -489,7 +488,7 @@ constexpr mframe_t fixbot_frames_takeoff [] =
 };
 constexpr mmove_t fixbot_move_takeoff = { FRAME_takeoff_01, FRAME_takeoff_16, fixbot_frames_takeoff };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_takeoff);
+REGISTER_STATIC_SAVABLE(fixbot_move_takeoff);
 
 inline void takeoff_goal(entity &self)
 {
@@ -505,12 +504,12 @@ inline void takeoff_goal(entity &self)
 	};
 
 	vector forward, up;
-	AngleVectors (self.s.angles, &forward, nullptr, &up);
-	vector end = self.s.origin + (forward * 32) + (up * 128); // Paril: this wasn't right in vanilla
+	AngleVectors (self.angles, &forward, nullptr, &up);
+	vector end = self.origin + (forward * 32) + (up * 128); // Paril: this wasn't right in vanilla
 
-	trace tr = gi.trace (self.s.origin, ent.bounds, end, self, MASK_MONSTERSOLID);
+	trace tr = gi.trace (self.origin, ent.bounds, end, self, MASK_MONSTERSOLID);
 
-	ent.s.origin = tr.endpos;
+	ent.origin = tr.endpos;
 	
 	self.goalentity = self.enemy = ent;
 	self.monsterinfo.currentmove = &SAVABLE(fixbot_move_takeoff);
@@ -552,7 +551,7 @@ static void change_to_roam(entity &self)
 
 static void fly_vertical2(entity &self)
 {
-	vector v = self.goalentity->s.origin - self.s.origin;
+	vector v = self.goalentity->origin - self.origin;
 	float len = VectorLength (v);
 	self.ideal_yaw = vectoyaw(v);	
 	M_ChangeYaw (self);
@@ -575,10 +574,10 @@ static void fly_vertical2(entity &self)
 */ 
 static void blastoff(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread)
 {
-	hspread += (self.s.frame - FRAME_takeoff_01);
-	vspread += (self.s.frame - FRAME_takeoff_01);
+	hspread += (self.frame - FRAME_takeoff_01);
+	vspread += (self.frame - FRAME_takeoff_01);
 
-	trace	tr = gi.traceline (self.s.origin, start, self, MASK_SHOT);
+	trace	tr = gi.traceline (self.origin, start, self, MASK_SHOT);
 
 	vector	water_start = vec3_origin;
 	bool	water = false;
@@ -609,7 +608,7 @@ static void blastoff(entity &self, vector start, vector aimdir, int32_t damage, 
 		// see if we hit water
 		if (tr.contents & MASK_WATER)
 		{
-			int		color;
+			splash_type	color;
 
 			water = true;
 			water_start = tr.endpos;
@@ -631,15 +630,7 @@ static void blastoff(entity &self, vector start, vector aimdir, int32_t damage, 
 					color = SPLASH_UNKNOWN;
 
 				if (color != SPLASH_UNKNOWN)
-				{
-					gi.WriteByte (svc_temp_entity);
-					gi.WriteByte (TE_SPLASH);
-					gi.WriteByte (8);
-					gi.WritePosition (tr.endpos);
-					gi.WriteDir (tr.normal);
-					gi.WriteByte (color);
-					gi.multicast (tr.endpos, MULTICAST_PVS);
-				}
+					gi.ConstructMessage(svc_temp_entity, TE_SPLASH, uint8_t { 8 }, tr.endpos, vecdir { tr.normal }, color).multicast (tr.endpos, MULTICAST_PVS);
 
 				// change bullet's course when it enters water
 				dir = end - start;
@@ -661,15 +652,9 @@ static void blastoff(entity &self, vector start, vector aimdir, int32_t damage, 
 	if (tr.fraction < 1.0 && !(tr.surface.flags & SURF_SKY))
 	{
 		if (tr.ent.takedamage)
-			T_Damage (tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, DAMAGE_BULLET, MOD_BLASTOFF);
+			T_Damage (tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, { .sparks = TE_BULLET_SPARKS });
 		else if (strncmp (tr.surface.name, "sky", 3) != 0)
-		{
-			gi.WriteByte (svc_temp_entity);
-			gi.WriteByte (te_impact);
-			gi.WritePosition (tr.endpos);
-			gi.WriteDir (tr.normal);
-			gi.multicast (tr.endpos, MULTICAST_PVS);
-		}
+			gi.ConstructMessage(svc_temp_entity, te_impact, tr.endpos, vecdir { tr.normal }).multicast (tr.endpos, MULTICAST_PVS);
 	}
 
 	// if went through water, determine where the end and make a bubble trail
@@ -686,21 +671,17 @@ static void blastoff(entity &self, vector start, vector aimdir, int32_t damage, 
 		pos = water_start + tr.endpos;
 		pos *= 0.5f;
 
-		gi.WriteByte (svc_temp_entity);
-		gi.WriteByte (TE_BUBBLETRAIL);
-		gi.WritePosition (water_start);
-		gi.WritePosition (tr.endpos);
-		gi.multicast (pos, MULTICAST_PVS);
+		gi.ConstructMessage(svc_temp_entity, TE_BUBBLETRAIL, water_start, tr.endpos).multicast(pos, MULTICAST_PVS);
 	}
 }
 
 static void fly_vertical(entity &self)
 {
-	vector v = self.goalentity->s.origin - self.s.origin;
+	vector v = self.goalentity->origin - self.origin;
 	self.ideal_yaw = vectoyaw(v);	
 	M_ChangeYaw (self);
 	
-	if (self.s.frame == FRAME_landing_58 || self.s.frame == FRAME_takeoff_16)
+	if (self.frame == FRAME_landing_58 || self.frame == FRAME_takeoff_16)
 	{
 		self.goalentity->nextthink = level.framenum + 1;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
@@ -709,12 +690,12 @@ static void fly_vertical(entity &self)
 	}
 
 	// kick up some particles
-	vector tempvec = self.s.angles;
+	vector tempvec = self.angles;
 	tempvec[PITCH] += 90;
 
 	vector forward;
 	AngleVectors (tempvec, &forward, nullptr, nullptr);
-	vector start = self.s.origin;
+	vector start = self.origin;
 	
 	for (int32_t i = 0; i < 10; i++)
 		blastoff (self, start, forward, 2, 1, TE_SHOTGUN, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD);
@@ -729,28 +710,13 @@ static void fixbot_fire_welder(entity &self)
 		return;
 
 	vector forward, right;
-	AngleVectors (self.s.angles, &forward, &right, nullptr);
-	vector start = G_ProjectSource (self.s.origin, { 24.f, -0.8f, -10.0f }, forward, right);
+	AngleVectors (self.angles, &forward, &right, nullptr);
+	vector start = G_ProjectSource (self.origin, { 24.f, -0.8f, -10.0f }, forward, right);
 
-	gi.WriteByte (svc_temp_entity);
-	gi.WriteByte (TE_WELDING_SPARKS);
-	gi.WriteByte (10);
-	gi.WritePosition (start);
-	gi.WriteDir (vec3_origin);
-	gi.WriteByte (0xe0 + (Q_rand() & 7));
-	gi.multicast (self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_WELDING_SPARKS, uint8_t { 10 }, start, vecdir { vec3_origin }, uint8_t { 0xe0 + (Q_rand() & 7) }).multicast (self.origin, MULTICAST_PVS);
 
 	if (random() > 0.8)
-	{
-		float r = random();
-
-		if (r < 0.33)
-			gi.sound (self, CHAN_VOICE, sound_weld1, 1, ATTN_IDLE, 0);
-		else if (r < 0.66)
-			gi.sound (self, CHAN_VOICE, sound_weld2, 1, ATTN_IDLE, 0);
-		else
-			gi.sound (self, CHAN_VOICE, sound_weld3, 1, ATTN_IDLE, 0);
-	}
+		gi.sound (self, CHAN_VOICE, random_of(sound_weld), ATTN_IDLE);
 }
 
 static void fixbot_stand(entity &self)
@@ -758,7 +724,7 @@ static void fixbot_stand(entity &self)
 	self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(fixbot_stand);
+REGISTER_STATIC_SAVABLE(fixbot_stand);
 
 /*
 	
@@ -769,7 +735,7 @@ constexpr mframe_t fixbot_frames_run [] =
 };
 constexpr mmove_t fixbot_move_run = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_run };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_run);
+REGISTER_STATIC_SAVABLE(fixbot_move_run);
 
 static void fixbot_run(entity &self)
 {
@@ -779,7 +745,7 @@ static void fixbot_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(fixbot_run);
+REGISTER_STATIC_SAVABLE(fixbot_run);
 
 /* findout what this is */
 constexpr mframe_t fixbot_frames_paina [] =
@@ -793,7 +759,7 @@ constexpr mframe_t fixbot_frames_paina [] =
 };
 constexpr mmove_t fixbot_move_paina = { FRAME_paina_01, FRAME_paina_06, fixbot_frames_paina, fixbot_run };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_paina);
+REGISTER_STATIC_SAVABLE(fixbot_move_paina);
 
 /* findout what this is */
 constexpr mframe_t fixbot_frames_painb [] =
@@ -809,7 +775,7 @@ constexpr mframe_t fixbot_frames_painb [] =
 };
 constexpr mmove_t fixbot_move_painb = { FRAME_painb_01, FRAME_painb_08, fixbot_frames_painb, fixbot_run };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_painb);
+REGISTER_STATIC_SAVABLE(fixbot_move_painb);
 
 /*
 	backup from pain
@@ -822,7 +788,7 @@ constexpr mframe_t fixbot_frames_pain3 [] =
 };
 constexpr mmove_t fixbot_move_pain3 = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_pain3, fixbot_run };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_pain3);
+REGISTER_STATIC_SAVABLE(fixbot_move_pain3);
 
 /*
 	
@@ -833,15 +799,15 @@ constexpr mframe_t fixbot_frames_walk [] =
 };
 constexpr mmove_t fixbot_move_walk = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_walk };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_walk);
+REGISTER_STATIC_SAVABLE(fixbot_move_walk);
 
 static bool check_telefrag(entity &self)
 {
 	vector up;
-	AngleVectors (self.enemy->s.angles, nullptr, nullptr, &up);
+	AngleVectors (self.enemy->angles, nullptr, nullptr, &up);
 
-	vector start = self.enemy->s.origin + (up * 48); // Paril: this was broken in vanilla
-	trace tr = gi.trace (self.enemy->s.origin, self.enemy->bounds, start, self, MASK_MONSTERSOLID);
+	vector start = self.enemy->origin + (up * 48); // Paril: this was broken in vanilla
+	trace tr = gi.trace (self.enemy->origin, self.enemy->bounds, start, self, MASK_MONSTERSOLID);
 
 	if (tr.ent.takedamage)
 	{
@@ -862,22 +828,22 @@ static void fixbot_fire_laser(entity &self)
 		return;
 	}
 
-	gi.sound(self, CHAN_AUTO, gi.soundindex("misc/lasfly.wav"), 1, ATTN_STATIC, 0);
+	gi.sound(self, gi.soundindex("misc/lasfly.wav"), ATTN_STATIC);
 
-	vector start = self.s.origin;
-	vector end = self.enemy->s.origin;
+	vector start = self.origin;
+	vector end = self.enemy->origin;
 	vector dir = end - start;
 	vector angles = vectoangles (dir);
 	
 	entity &ent = G_Spawn ();
-	ent.s.origin = self.s.origin;
+	ent.origin = self.origin;
 
 	vector forward;
 	AngleVectors (angles, &forward, nullptr, nullptr);
-	ent.s.angles = angles;
-	start = ent.s.origin + (forward * 16);
+	ent.angles = angles;
+	start = ent.origin + (forward * 16);
 	
-	ent.s.origin = start;
+	ent.origin = start;
 	ent.enemy = self.enemy;
 	ent.owner = self;
 	ent.dmg = -1;
@@ -899,7 +865,7 @@ static void fixbot_fire_laser(entity &self)
 			self.enemy->owner = self;
 			ED_CallSpawn (self.enemy);
 			self.enemy->owner = 0;
-			self.s.origin[2] += 1;
+			self.origin[2] += 1;
 		
 			self.enemy->monsterinfo.aiflags &= ~AI_RESURRECTING;
 
@@ -922,7 +888,7 @@ constexpr mframe_t fixbot_frames_laserattack [] =
 };
 constexpr mmove_t fixbot_move_laserattack = { FRAME_shoot_01, FRAME_shoot_06, fixbot_frames_laserattack };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_laserattack);
+REGISTER_STATIC_SAVABLE(fixbot_move_laserattack);
 
 static void fixbot_fire_blaster(entity &self)
 {
@@ -930,10 +896,10 @@ static void fixbot_fire_blaster(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_run);	
 
 	vector forward, right;
-	AngleVectors (self.s.angles, &forward, &right, nullptr);
+	AngleVectors (self.angles, &forward, &right, nullptr);
 
-	vector start = G_ProjectSource (self.s.origin, monster_flash_offset[MZ2_fixbot_BLASTER_1], forward, right);
-	vector end = self.enemy->s.origin;
+	vector start = G_ProjectSource (self.origin, monster_flash_offset[MZ2_fixbot_BLASTER_1], forward, right);
+	vector end = self.enemy->origin;
 	end[2] += self.enemy->viewheight;
 	vector dir = end - start;
 
@@ -983,7 +949,7 @@ constexpr mframe_t fixbot_frames_attack2 [] =
 };
 constexpr mmove_t fixbot_move_attack2 = { FRAME_charging_01, FRAME_charging_31, fixbot_frames_attack2, fixbot_run };
 
-static REGISTER_SAVABLE_DATA(fixbot_move_attack2);
+REGISTER_STATIC_SAVABLE(fixbot_move_attack2);
 
 static void fixbot_attack(entity &self)
 {
@@ -991,7 +957,7 @@ static void fixbot_attack(entity &self)
 	{
 		if (!visible (self, self.goalentity))
 			return;
-		vector vec = self.s.origin - self.enemy->s.origin;
+		vector vec = self.origin - self.enemy->origin;
 		float len = VectorLength(vec);
 
 		if (len <= 128)
@@ -1001,22 +967,13 @@ static void fixbot_attack(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_attack2);
 }
 
-static REGISTER_SAVABLE_FUNCTION(fixbot_attack);
-
-//
-constexpr mframe_t fixbot_frames_start_attack [] =
-{
-	{ ai_charge }
-};
-constexpr mmove_t fixbot_move_start_attack = { FRAME_freeze_01, FRAME_freeze_01, fixbot_frames_start_attack, fixbot_attack };
-
-static REGISTER_SAVABLE_DATA(fixbot_move_start_attack);
+REGISTER_STATIC_SAVABLE(fixbot_attack);
 
 static void fixbot_walk(entity &self)
 {
 	if (self.goalentity->type == ET_OBJECT_REPAIR)
 	{
-		vector vec = self.s.origin - self.goalentity->s.origin;
+		vector vec = self.origin - self.goalentity->origin;
 		float len = VectorLength (vec);
 
 		if (len < 32)
@@ -1029,15 +986,15 @@ static void fixbot_walk(entity &self)
 	self.monsterinfo.currentmove = &SAVABLE(fixbot_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(fixbot_walk);
+REGISTER_STATIC_SAVABLE(fixbot_walk);
 
-static void fixbot_pain(entity &self, entity &, float, int32_t damage)
+static void fixbot_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t damage)
 {
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + (int)(3 * BASE_FRAMERATE);
-	gi.sound (self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
+	self.pain_debounce_framenum = level.framenum + (gtime)(3 * BASE_FRAMERATE);
+	gi.sound (self, CHAN_VOICE, sound_pain1);
 
 	if (damage <= 10)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_pain3);
@@ -1047,15 +1004,15 @@ static void fixbot_pain(entity &self, entity &, float, int32_t damage)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_paina);
 }
 
-static REGISTER_SAVABLE_FUNCTION(fixbot_pain);
+REGISTER_STATIC_SAVABLE(fixbot_reacttodamage);
 
 static void fixbot_die(entity &self, entity &, entity &, int32_t, vector)
 {
-	gi.sound (self, CHAN_VOICE, sound_die, 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_VOICE, sound_die);
 	BecomeExplosion1(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(fixbot_die);
+REGISTER_STATIC_SAVABLE(fixbot_die);
 
 /*QUAKED monster_fixbot (1 .5 0) (-32 -32 -24) (32 32 24) Ambush Trigger_Spawn Fixit Takeoff Landing
 */
@@ -1070,11 +1027,11 @@ static void SP_monster_fixbot(entity &self)
 	sound_pain1 = gi.soundindex ("flyer/flypain1.wav");
 	sound_die = gi.soundindex ("flyer/flydeth1.wav");
 
-	sound_weld1 = gi.soundindex ("misc/welder1.wav");
-	sound_weld2 = gi.soundindex ("misc/welder2.wav");
-	sound_weld3 = gi.soundindex ("misc/welder3.wav");
+	sound_weld[1] = gi.soundindex ("misc/welder1.wav");
+	sound_weld[2] = gi.soundindex ("misc/welder2.wav");
+	sound_weld[3] = gi.soundindex ("misc/welder3.wav");
 
-	self.s.modelindex = gi.modelindex ("models/monsters/fixbot/tris.md2");
+	self.modelindex = gi.modelindex ("models/monsters/fixbot/tris.md2");
 	
 	self.bounds = {
 		.mins = { -32, -32, -24 },
@@ -1086,14 +1043,15 @@ static void SP_monster_fixbot(entity &self)
 
 	self.health = 150;
 	self.mass = 150;
+	self.bleed_style = BLEED_MECHANICAL;
 
-	self.pain = SAVABLE(fixbot_pain);
 	self.die = SAVABLE(fixbot_die);
 
 	self.monsterinfo.stand = SAVABLE(fixbot_stand);
 	self.monsterinfo.walk = SAVABLE(fixbot_walk);
 	self.monsterinfo.run = SAVABLE(fixbot_run);
 	self.monsterinfo.attack = SAVABLE(fixbot_attack);
+	self.monsterinfo.reacttodamage = SAVABLE(fixbot_reacttodamage);
 	
 	gi.linkentity (self);
 
@@ -1103,6 +1061,6 @@ static void SP_monster_fixbot(entity &self)
 	flymonster_start (self);
 }
 
-static REGISTER_ENTITY(MONSTER_FIXBOT, monster_fixbot);
+REGISTER_ENTITY(MONSTER_FIXBOT, monster_fixbot);
 
 #endif

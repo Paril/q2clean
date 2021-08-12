@@ -17,11 +17,11 @@ void ClipGibVelocity(entity &ent);
 
 void gib_touch(entity &self, entity &other, vector normal, const surface &surf);
 
-DECLARE_SAVABLE_FUNCTION(gib_touch);
+DECLARE_SAVABLE(gib_touch);
 
 void gib_die(entity &self, entity &inflictor, entity &attacker, int32_t damage, vector point);
 
-DECLARE_SAVABLE_FUNCTION(gib_die);
+DECLARE_SAVABLE(gib_die);
 
 // gib types
 enum gib_type : uint8_t
@@ -40,11 +40,11 @@ void ThrowDebris(entity &self, stringlit modelname, float speed, vector origin);
 
 void misc_viper_use(entity &self, entity &other, entity &cactivator);
 
-DECLARE_SAVABLE_FUNCTION(misc_viper_use);
+DECLARE_SAVABLE(misc_viper_use);
 
 void misc_strogg_ship_use(entity &self, entity &other, entity &cactivator);
 
-DECLARE_SAVABLE_FUNCTION(misc_strogg_ship_use);
+DECLARE_SAVABLE(misc_strogg_ship_use);
 
 void SP_misc_teleporter_dest(entity &ent);
 

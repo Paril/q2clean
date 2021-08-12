@@ -10,20 +10,16 @@
 #include "lib/gi.h"
 #include "ionripper.h"
 
+constexpr means_of_death MOD_RIPPER { .other_kill_fmt = "{0} was ripped to shreds by {3}'s ripper gun.\n" };
+
 static void ionripper_sparks(entity &self)
 {
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte(TE_WELDING_SPARKS);
-	gi.WriteByte(0);
-	gi.WritePosition(self.s.origin);
-	gi.WriteDir(vec3_origin);
-	gi.WriteByte(0xe4 + (Q_rand() & 3));
-	gi.multicast(self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_WELDING_SPARKS, uint8_t { 0 }, self.origin, vecdir { vec3_origin }, uint8_t { 0xe4 + (Q_rand() & 3) }).multicast(self.origin, MULTICAST_PVS);
 
 	G_FreeEdict(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(ionripper_sparks);
+REGISTER_STATIC_SAVABLE(ionripper_sparks);
 
 static void ionripper_touch(entity &self, entity &other, vector normal, const surface &surf)
 {
@@ -38,36 +34,36 @@ static void ionripper_touch(entity &self, entity &other, vector normal, const su
 #if defined(SINGLE_PLAYER)
 
 	if (self.owner->is_client())
-		PlayerNoise(self.owner, self.s.origin, PNOISE_IMPACT);
+		PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
 	if (other.takedamage)
 	{
-		T_Damage(other, self, self.owner, self.velocity, self.s.origin, normal, self.dmg, 1, DAMAGE_ENERGY, MOD_RIPPER);
+		T_Damage(other, self, self.owner, self.velocity, self.origin, normal, self.dmg, 1, { DAMAGE_ENERGY }, MOD_RIPPER);
 		G_FreeEdict(self);
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(ionripper_touch);
+REGISTER_STATIC_SAVABLE(ionripper_touch);
 
 void fire_ionripper(entity &self, vector start, vector dir, int32_t damage, int32_t speed, entity_effects effect)
 {
 	VectorNormalize(dir);
 
 	entity &ion = G_Spawn();
-	ion.s.origin = ion.s.old_origin = start;
-	ion.s.angles = vectoangles(dir);
+	ion.origin = ion.old_origin = start;
+	ion.angles = vectoangles(dir);
 	ion.velocity = dir * speed;
 
 	ion.movetype = MOVETYPE_WALLBOUNCE;
 	ion.clipmask = MASK_SHOT;
 	ion.solid = SOLID_BBOX;
-	ion.s.effects |= effect;
+	ion.effects |= effect;
 
-	ion.s.renderfx |= RF_FULLBRIGHT;
+	ion.renderfx |= RF_FULLBRIGHT;
 
-	ion.s.modelindex = gi.modelindex("models/objects/boomrang/tris.md2");
-	ion.s.sound = gi.soundindex("misc/lasfly.wav");
+	ion.modelindex = gi.modelindex("models/objects/boomrang/tris.md2");
+	ion.sound = gi.soundindex("misc/lasfly.wav");
 	ion.owner = self;
 	ion.touch = SAVABLE(ionripper_touch);
 	ion.nextthink = level.framenum + 3 * BASE_FRAMERATE;
@@ -78,13 +74,13 @@ void fire_ionripper(entity &self, vector start, vector dir, int32_t damage, int3
 
 #ifdef SINGLE_PLAYER
 	if (self.is_client())
-		check_dodge(self, ion.s.origin, dir, speed);
+		check_dodge(self, ion.origin, dir, speed);
 #endif
 
-	trace tr = gi.traceline(self.s.origin, ion.s.origin, ion, MASK_SHOT);
+	trace tr = gi.traceline(self.origin, ion.origin, ion, MASK_SHOT);
 	if (tr.fraction < 1.0)
 	{
-		ion.s.origin += dir * -10;
+		ion.origin += dir * -10;
 		ion.touch(ion, tr.ent, vec3_origin, null_surface);
 	}
 }

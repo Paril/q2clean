@@ -146,8 +146,8 @@ static void abortHeal(entity &self, bool change_frame, bool gib, bool mark)
 		else
 			hurt = 500;
 
-		T_Damage (self.enemy, self, self, vec3_origin, self.enemy->s.origin,
-					pain_normal, hurt, 0, DAMAGE_NONE, MOD_UNKNOWN);
+		T_Damage (self.enemy, self, self, vec3_origin, self.enemy->origin,
+			pain_normal, hurt, 0, { DAMAGE_NONE });
 	}
 	// clean up self
 
@@ -171,7 +171,7 @@ static entityref medic_FindDeadMonster(entity &self)
 		radius = MEDIC_MAX_HEAL_DISTANCE;
 #endif
 
-	while ((ent = findradius(ent, self.s.origin, radius)).has_value())
+	while ((ent = findradius(ent, self.origin, radius)).has_value())
 	{
 		if (ent == self)
 			continue;
@@ -201,7 +201,7 @@ static entityref medic_FindDeadMonster(entity &self)
 		if (!visible(self, ent))
 			continue;
 #ifdef ROGUE_AI
-		if (VectorDistance(self.s.origin, ent->s.origin) <= MEDIC_MIN_DISTANCE)
+		if (VectorDistance(self.origin, ent->origin) <= MEDIC_MIN_DISTANCE)
 			continue;
 #endif
 		if (!best.has_value() || ent->max_health > best->max_health)
@@ -218,12 +218,11 @@ static entityref medic_FindDeadMonster(entity &self)
 
 static void medic_idle(entity &self)
 {
+	gi.sound (self, CHAN_VOICE,
 #ifdef GROUND_ZERO
-	if (self.mass > 400)
-		gi.sound (self, CHAN_VOICE, commander_sound_idle1, 1, ATTN_IDLE, 0);
-	else
+		(self.mass > 400) ? commander_sound_idle1 :
 #endif
-		gi.sound(self, CHAN_VOICE, sound_idle1, 1, ATTN_IDLE, 0);
+		sound_idle1, ATTN_IDLE);
 
 #ifdef ROGUE_AI
 	if (!self.oldenemy.has_value())
@@ -250,16 +249,15 @@ static void medic_idle(entity &self)
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_idle);
+REGISTER_STATIC_SAVABLE(medic_idle);
 
 static void medic_search(entity &self)
 {
+	gi.sound(self, CHAN_VOICE,
 #ifdef GROUND_ZERO
-	if (self.mass > 400)
-		gi.sound (self, CHAN_VOICE, commander_sound_search, 1, ATTN_IDLE, 0);
-	else
+		(self.mass > 400) ? commander_sound_search :
 #endif
-		gi.sound(self, CHAN_VOICE, sound_search, 1, ATTN_IDLE, 0);
+		sound_search, ATTN_IDLE);
 
 	if (!self.oldenemy.has_value())
 	{
@@ -280,19 +278,18 @@ static void medic_search(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_search);
+REGISTER_STATIC_SAVABLE(medic_search);
 
 static void medic_sight(entity &self, entity &)
 {
+	gi.sound (self, CHAN_VOICE,
 #ifdef GROUND_ZERO
-	if (self.mass > 400)
-		gi.sound (self, CHAN_VOICE, commander_sound_sight, 1, ATTN_NORM, 0);
-	else
+		(self.mass > 400) ? commander_sound_sight :
 #endif
-		gi.sound(self, CHAN_VOICE, sound_sight, 1, ATTN_NORM, 0);
+		sound_sight);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_sight);
+REGISTER_STATIC_SAVABLE(medic_sight);
 
 constexpr mframe_t medic_frames_stand[] = {
 	{ ai_stand, 0, medic_idle },
@@ -388,14 +385,14 @@ constexpr mframe_t medic_frames_stand[] = {
 };
 constexpr mmove_t medic_move_stand = { FRAME_wait1, FRAME_wait90, medic_frames_stand };
 
-static REGISTER_SAVABLE_DATA(medic_move_stand);
+REGISTER_STATIC_SAVABLE(medic_move_stand);
 
 static void medic_stand(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(medic_move_stand);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_stand);
+REGISTER_STATIC_SAVABLE(medic_stand);
 
 constexpr mframe_t medic_frames_walk[] = {
 	{ ai_walk, 6.2f },
@@ -413,14 +410,14 @@ constexpr mframe_t medic_frames_walk[] = {
 };
 constexpr mmove_t medic_move_walk = { FRAME_walk1, FRAME_walk12, medic_frames_walk };
 
-static REGISTER_SAVABLE_DATA(medic_move_walk);
+REGISTER_STATIC_SAVABLE(medic_move_walk);
 
 static void medic_walk(entity &self)
 {
 	self.monsterinfo.currentmove = &SAVABLE(medic_move_walk);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_walk);
+REGISTER_STATIC_SAVABLE(medic_walk);
 
 constexpr mframe_t medic_frames_run [] = {
 	{ ai_run, 18 },
@@ -437,7 +434,7 @@ constexpr mframe_t medic_frames_run [] = {
 };
 constexpr mmove_t medic_move_run = { FRAME_run1, FRAME_run6, medic_frames_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_run);
+REGISTER_STATIC_SAVABLE(medic_move_run);
 
 static void medic_run(entity &self)
 {
@@ -470,7 +467,7 @@ static void medic_run(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(medic_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_run);
+REGISTER_STATIC_SAVABLE(medic_run);
 
 constexpr mframe_t medic_frames_pain1[] = {
 	{ ai_move },
@@ -484,7 +481,7 @@ constexpr mframe_t medic_frames_pain1[] = {
 };
 constexpr mmove_t medic_move_pain1 = { FRAME_paina1, FRAME_paina8, medic_frames_pain1, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_pain1);
+REGISTER_STATIC_SAVABLE(medic_move_pain1);
 
 constexpr mframe_t medic_frames_pain2[] = {
 	{ ai_move },
@@ -505,24 +502,12 @@ constexpr mframe_t medic_frames_pain2[] = {
 };
 constexpr mmove_t medic_move_pain2 = { FRAME_painb1, FRAME_painb15, medic_frames_pain2, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_pain2);
+REGISTER_STATIC_SAVABLE(medic_move_pain2);
 
-static void medic_pain(entity &self, entity &, float, int32_t damage [[maybe_unused]])
+static void medic_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t damage [[maybe_unused]])
 {
 #ifdef ROGUE_AI
 	monster_done_dodge (self);
-#endif
-
-	if (self.health < (self.max_health / 2))
-#ifdef GROUND_ZERO
-	{
-		if (self.mass > 400)
-			self.s.skinnum = 3;
-		else
-#endif
-			self.s.skinnum = 1;
-#ifdef GROUND_ZERO
-	}
 #endif
 
 	if (level.framenum < self.pain_debounce_framenum)
@@ -542,13 +527,13 @@ static void medic_pain(entity &self, entity &, float, int32_t damage [[maybe_unu
 	{
 		if (damage < 35)
 		{
-			gi.sound (self, CHAN_VOICE, commander_sound_pain1, 1, ATTN_NORM, 0);
+			gi.sound (self, CHAN_VOICE, commander_sound_pain1);
 			return;
 		}
 
 		self.monsterinfo.aiflags &= ~(AI_MANUAL_STEERING | AI_HOLD_FRAME);
 
-		gi.sound (self, CHAN_VOICE, commander_sound_pain2, 1, ATTN_NORM, 0);
+		gi.sound (self, CHAN_VOICE, commander_sound_pain2);
 
 		if (random() < min(damage * 0.005f, 0.5f))		// no more than 50% chance of big pain
 			self.monsterinfo.currentmove = &SAVABLE(medic_move_pain2);
@@ -560,12 +545,12 @@ static void medic_pain(entity &self, entity &, float, int32_t damage [[maybe_unu
 	if (random() < 0.5f)
 	{
 		self.monsterinfo.currentmove = &SAVABLE(medic_move_pain1);
-		gi.sound(self, CHAN_VOICE, sound_pain1, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain1);
 	}
 	else
 	{
 		self.monsterinfo.currentmove = &SAVABLE(medic_move_pain2);
-		gi.sound(self, CHAN_VOICE, sound_pain2, 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, sound_pain2);
 	}
 
 #ifdef ROGUE_AI
@@ -574,7 +559,7 @@ static void medic_pain(entity &self, entity &, float, int32_t damage [[maybe_unu
 #endif
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_pain);
+REGISTER_STATIC_SAVABLE(medic_reacttodamage);
 
 static void medic_fire_blaster(entity &self)
 {
@@ -588,15 +573,15 @@ static void medic_fire_blaster(entity &self)
 	if (!self.enemy.has_value() || !self.enemy->inuse)
 		return;
 
-	if ((self.s.frame == FRAME_attack9) || (self.s.frame == FRAME_attack12))
+	if ((self.frame == FRAME_attack9) || (self.frame == FRAME_attack12))
 		effect = EF_BLASTER;
-	else if ((self.s.frame == FRAME_attack19) || (self.s.frame == FRAME_attack22) || (self.s.frame == FRAME_attack25) || (self.s.frame == FRAME_attack28))
+	else if ((self.frame == FRAME_attack19) || (self.frame == FRAME_attack22) || (self.frame == FRAME_attack25) || (self.frame == FRAME_attack28))
 		effect = EF_HYPERBLASTER;
 
-	AngleVectors(self.s.angles, &forward, &right, nullptr);
-	start = G_ProjectSource(self.s.origin, monster_flash_offset[MZ2_MEDIC_BLASTER_1], forward, right);
+	AngleVectors(self.angles, &forward, &right, nullptr);
+	start = G_ProjectSource(self.origin, monster_flash_offset[MZ2_MEDIC_BLASTER_1], forward, right);
 
-	end = self.enemy->s.origin;
+	end = self.enemy->origin;
 	end[2] += self.enemy->viewheight;
 	dir = end - start;
 
@@ -658,7 +643,7 @@ constexpr mframe_t medic_frames_death[] = {
 };
 constexpr mmove_t medic_move_death = { FRAME_death1, FRAME_death30, medic_frames_death, medic_dead };
 
-static REGISTER_SAVABLE_DATA(medic_move_death);
+REGISTER_STATIC_SAVABLE(medic_move_death);
 
 static void medic_die(entity &self, entity &, entity &, int32_t damage, vector)
 {
@@ -673,7 +658,7 @@ static void medic_die(entity &self, entity &, entity &, int32_t damage, vector)
 // check for gib
 	if (self.health <= self.gib_health)
 	{
-		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_VOICE, gi.soundindex("misc/udeath.wav"));
 		for (n = 0; n < 2; n++)
 			ThrowGib(self, "models/objects/gibs/bone/tris.md2", damage, GIB_ORGANIC);
 		for (n = 0; n < 4; n++)
@@ -687,19 +672,18 @@ static void medic_die(entity &self, entity &, entity &, int32_t damage, vector)
 		return;
 
 // regular death
+	gi.sound(self, CHAN_VOICE,
 #ifdef GROUND_ZERO
-	if (self.mass > 400)
-		gi.sound (self, CHAN_VOICE, commander_sound_die, 1, ATTN_NORM, 0);
-	else
+		(self.mass > 400) ? commander_sound_die :
 #endif
-		gi.sound(self, CHAN_VOICE, sound_die, 1, ATTN_NORM, 0);
+		sound_die);
 	self.deadflag = DEAD_DEAD;
 	self.takedamage = true;
 
 	self.monsterinfo.currentmove = &SAVABLE(medic_move_death);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_die);
+REGISTER_STATIC_SAVABLE(medic_die);
 
 #ifdef ROGUE_AI
 #define medic_duck_down monster_duck_down
@@ -759,7 +743,7 @@ constexpr mframe_t medic_frames_duck[] = {
 };
 constexpr mmove_t medic_move_duck = { FRAME_duck1, FRAME_duck16, medic_frames_duck, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_duck);
+REGISTER_STATIC_SAVABLE(medic_move_duck);
 
 #ifndef ROGUE_AI
 static void medic_dodge(entity &self, entity &attacker, float)
@@ -773,7 +757,7 @@ static void medic_dodge(entity &self, entity &attacker, float)
 	self.monsterinfo.currentmove = &SAVABLE(medic_move_duck);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_dodge);
+REGISTER_STATIC_SAVABLE(medic_dodge);
 #endif
 
 constexpr mframe_t medic_frames_attackHyperBlaster[] = {
@@ -796,7 +780,7 @@ constexpr mframe_t medic_frames_attackHyperBlaster[] = {
 };
 constexpr mmove_t medic_move_attackHyperBlaster = { FRAME_attack15, FRAME_attack30, medic_frames_attackHyperBlaster, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_attackHyperBlaster);
+REGISTER_STATIC_SAVABLE(medic_move_attackHyperBlaster);
 
 static void medic_continue(entity &self)
 {
@@ -823,29 +807,28 @@ constexpr mframe_t medic_frames_attackBlaster [] = {
 };
 constexpr mmove_t medic_move_attackBlaster = { FRAME_attack1, FRAME_attack14, medic_frames_attackBlaster, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_attackBlaster);
+REGISTER_STATIC_SAVABLE(medic_move_attackBlaster);
 
 static void medic_hook_launch(entity &self)
 {
+	gi.sound(self, CHAN_WEAPON,
 #ifdef GROUND_ZERO
-	if (self.mass > 400)
-		gi.sound (self, CHAN_WEAPON, commander_sound_hook_launch, 1, ATTN_NORM, 0);
-	else
+		(self.mass > 400) ? commander_sound_hook_launch :
 #endif
-		gi.sound(self, CHAN_WEAPON, sound_hook_launch, 1, ATTN_NORM, 0);
+		sound_hook_launch);
 }
 
 constexpr vector medic_cable_offsets[] = {
-	{ 45.0,  -9.2, 15.5 },
-	{ 48.4,  -9.7, 15.2 },
-	{ 47.8,  -9.8, 15.8 },
-	{ 47.3,  -9.3, 14.3 },
-	{ 45.4, -10.1, 13.1 },
-	{ 41.9, -12.7, 12.0 },
-	{ 37.8, -15.8, 11.2 },
-	{ 34.3, -18.4, 10.7 },
-	{ 32.7, -19.7, 10.4 },
-	{ 32.7, -19.7, 10.4 }
+	{ 45.0f,  -9.2f, 15.5f },
+	{ 48.4f,  -9.7f, 15.2f },
+	{ 47.8f,  -9.8f, 15.8f },
+	{ 47.3f,  -9.3f, 14.3f },
+	{ 45.4f, -10.1f, 13.1f },
+	{ 41.9f, -12.7f, 12.0f },
+	{ 37.8f, -15.8f, 11.2f },
+	{ 34.3f, -18.4f, 10.7f },
+	{ 32.7f, -19.7f, 10.4f },
+	{ 32.7f, -19.7f, 10.4f }
 };
 
 static void medic_cable_attack(entity &self)
@@ -855,7 +838,7 @@ static void medic_cable_attack(entity &self)
 	float   distance;
 
 #ifdef ROGUE_AI
-	if (!self.enemy.has_value() || !self.enemy->inuse || (self.enemy->s.effects & EF_GIB) || self.enemy->is_client() || self.enemy->health > 0)
+	if (!self.enemy.has_value() || !self.enemy->inuse || (self.enemy->effects & EF_GIB) || self.enemy->is_client() || self.enemy->health > 0)
 	{
 		abortHeal (self, true, false, false);
 		return;
@@ -865,12 +848,12 @@ static void medic_cable_attack(entity &self)
 		return;
 #endif
 
-	AngleVectors(self.s.angles, &f, &r, nullptr);
-	offset = medic_cable_offsets[self.s.frame - FRAME_attack42];
-	start = G_ProjectSource(self.s.origin, offset, f, r);
+	AngleVectors(self.angles, &f, &r, nullptr);
+	offset = medic_cable_offsets[self.frame - FRAME_attack42];
+	start = G_ProjectSource(self.origin, offset, f, r);
 
 	// check for max distance
-	dir = start - self.enemy->s.origin;
+	dir = start - self.enemy->origin;
 	distance = VectorLength(dir);
 
 #ifdef ROGUE_AI
@@ -893,7 +876,7 @@ static void medic_cable_attack(entity &self)
 		return;
 #endif
 
-	trace tr = gi.traceline(start, self.enemy->s.origin, self, MASK_SOLID);
+	trace tr = gi.traceline(start, self.enemy->origin, self, MASK_SOLID);
 
 	if (tr.fraction != 1.0f && tr.ent != self.enemy)
 #ifdef ROGUE_AI
@@ -918,20 +901,19 @@ static void medic_cable_attack(entity &self)
 	}
 #endif
 
-	if (self.s.frame == FRAME_attack43)
+	if (self.frame == FRAME_attack43)
 	{
 		self.enemy->takedamage = false;
 		M_SetEffects (self.enemy);
 
+		gi.sound(self.enemy, CHAN_AUTO,
 #ifdef GROUND_ZERO
-		if (self.mass > 400)
-			gi.sound (self.enemy, CHAN_AUTO, commander_sound_hook_hit, 1, ATTN_NORM, 0);
-		else
+			(self.mass > 400) ? commander_sound_hook_hit :
 #endif
-			gi.sound(self.enemy, CHAN_AUTO, sound_hook_hit, 1, ATTN_NORM, 0);
+			sound_hook_hit);
 		self.enemy->monsterinfo.aiflags |= AI_RESURRECTING;
 	}
-	else if (self.s.frame == FRAME_attack50)
+	else if (self.frame == FRAME_attack50)
 	{
 		self.enemy->spawnflags = NO_SPAWNFLAGS;
 		self.enemy->monsterinfo.aiflags = AI_NONE;
@@ -949,7 +931,7 @@ static void medic_cable_attack(entity &self)
 		vector cmaxs = self.enemy->bounds.maxs;
 		cmaxs[2] += 48;   // compensate for change when they die
 
-		tr = gi.trace (self.enemy->s.origin, { .mins = self.enemy->absbounds.mins, .maxs = cmaxs }, self.enemy->s.origin, self.enemy, MASK_MONSTERSOLID);
+		tr = gi.trace (self.enemy->origin, { .mins = self.enemy->absbounds.mins, .maxs = cmaxs }, self.enemy->origin, self.enemy, MASK_MONSTERSOLID);
 
 		if (tr.startsolid || tr.allsolid)
 		{
@@ -968,11 +950,7 @@ static void medic_cable_attack(entity &self)
 
 			st.classname = FindClassnameFromEntityType(self.enemy->type);
 
-			int32_t skinnum = self.enemy->s.skinnum;
-
 			ED_CallSpawn(self.enemy);
-
-			self.enemy->s.skinnum = skinnum;
 
 #ifndef ROGUE_AI
 			self.enemy->owner = 0;
@@ -989,7 +967,7 @@ static void medic_cable_attack(entity &self)
 			self.enemy->monsterinfo.aiflags &= ~AI_RESURRECTING;
 			self.enemy->monsterinfo.aiflags |= AI_DO_NOT_COUNT;
 			// turn off flies
-			self.enemy->s.effects &= ~EF_FLIES;
+			self.enemy->effects &= ~EF_FLIES;
 			self.enemy->monsterinfo.healer = 0;
 
 			if (self.oldenemy.has_value() && self.oldenemy->inuse && self.oldenemy->health > 0)
@@ -1028,42 +1006,30 @@ static void medic_cable_attack(entity &self)
 		}
 #endif
 	}
-	else if (self.s.frame == FRAME_attack44)
+	else if (self.frame == FRAME_attack44)
+		gi.sound(self, CHAN_WEAPON,
 #ifdef GROUND_ZERO
-	{
-		// PMM - medic commander sounds
-		if (self.mass > 400)
-			gi.sound (self, CHAN_WEAPON, commander_sound_hook_heal, 1, ATTN_NORM, 0);
-		else
+			(self.mass > 400) ? commander_sound_hook_heal :
 #endif
-			gi.sound(self, CHAN_WEAPON, sound_hook_heal, 1, ATTN_NORM, 0);
-#ifdef GROUND_ZERO
-	}
-#endif
+			sound_hook_heal);
 
 	// adjust start for beam origin being in middle of a segment
 	start = start + (8 * f);
 
 	// adjust end z for end spot since the monster is currently dead
-	end = self.enemy->s.origin;
+	end = self.enemy->origin;
 	end[2] = self.enemy->absbounds.mins[2] + self.enemy->size[2] / 2;
 
-	gi.WriteByte(svc_temp_entity);
-	gi.WriteByte(TE_MEDIC_CABLE_ATTACK);
-	gi.WriteShort(self.s.number);
-	gi.WritePosition(start);
-	gi.WritePosition(end);
-	gi.multicast(self.s.origin, MULTICAST_PVS);
+	gi.ConstructMessage(svc_temp_entity, TE_MEDIC_CABLE_ATTACK, self, start, end).multicast(self.origin, MULTICAST_PVS);
 }
 
 static void medic_hook_retract(entity &self)
 {
+	gi.sound(self, CHAN_WEAPON,
 #ifdef GROUND_ZERO
-	if (self.mass > 400)
-		gi.sound (self, CHAN_WEAPON, commander_sound_hook_retract, 1, ATTN_NORM, 0);
-	else
+		(self.mass > 400) ? commander_sound_hook_retract :
 #endif
-		gi.sound(self, CHAN_WEAPON, sound_hook_retract, 1, ATTN_NORM, 0);
+		sound_hook_retract);
 
 #ifdef ROGUE_AI
 	self.monsterinfo.aiflags &= ~AI_MEDIC;
@@ -1129,12 +1095,12 @@ constexpr mframe_t medic_frames_attackCable[] = {
 };
 constexpr mmove_t medic_move_attackCable = { FRAME_attack33, FRAME_attack60, medic_frames_attackCable, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_attackCable);
+REGISTER_STATIC_SAVABLE(medic_move_attackCable);
 
 #ifdef GROUND_ZERO
 static void medic_start_spawn(entity &self)
 {
-	gi.sound (self, CHAN_WEAPON, commander_sound_spawn, 1, ATTN_NORM, 0);
+	gi.sound (self, CHAN_WEAPON, commander_sound_spawn);
 	self.monsterinfo.nextframe = FRAME_attack48;
 }
 
@@ -1175,7 +1141,7 @@ static void medic_determine_spawn(entity &self)
 		summonStr = 0;
 
 	self.monsterinfo.summon_type = summonStr;
-	AngleVectors (self.s.angles, &f, &r, nullptr);
+	AngleVectors (self.angles, &f, &r, nullptr);
 
 // this yields either 1, 3, or 5
 	if (summonStr)
@@ -1188,7 +1154,7 @@ static void medic_determine_spawn(entity &self)
 		inc = count + (count%2); // 0, 2, 2, 4, 4
 		offset = reinforcement_position[count];
 
-		startpoint = G_ProjectSource (self.s.origin, offset, f, r);
+		startpoint = G_ProjectSource (self.origin, offset, f, r);
 		// a little off the ground
 		startpoint[2] += 10;
 
@@ -1216,7 +1182,7 @@ static void medic_determine_spawn(entity &self)
 			offset[0] *= -1;
 			offset[1] *= -1;
 
-			startpoint = G_ProjectSource (self.s.origin, offset, f, r);
+			startpoint = G_ProjectSource (self.origin, offset, f, r);
 			// a little off the ground
 			startpoint[2] += 10;
 
@@ -1236,7 +1202,7 @@ static void medic_determine_spawn(entity &self)
 		if (num_success)
 		{
 			self.monsterinfo.aiflags |= AI_MANUAL_STEERING;
-			self.ideal_yaw = anglemod(self.s.angles[YAW]) + 180;
+			self.ideal_yaw = anglemod(self.angles[YAW]) + 180;
 			if (self.ideal_yaw > 360.0f)
 				self.ideal_yaw -= 360.0f;
 		}
@@ -1258,7 +1224,7 @@ static void medic_spawngrows(entity &self)
 	// if we've been directed to turn around
 	if (self.monsterinfo.aiflags & AI_MANUAL_STEERING)
 	{
-		current_yaw = anglemod(self.s.angles[YAW]);
+		current_yaw = anglemod(self.angles[YAW]);
 		if (fabs(current_yaw - self.ideal_yaw) > 0.1)
 		{
 			self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -1272,7 +1238,7 @@ static void medic_spawngrows(entity &self)
 
 	int32_t summonStr = self.monsterinfo.summon_type;
 
-	AngleVectors (self.s.angles, &f, &r, nullptr);
+	AngleVectors (self.angles, &f, &r, nullptr);
 
 	if (summonStr)
 		num_summoned = (summonStr - 1) + (summonStr % 2);
@@ -1284,7 +1250,7 @@ static void medic_spawngrows(entity &self)
 		inc = count + (count%2); // 0, 2, 2, 4, 4
 		offset = reinforcement_position[count];
 
-		startpoint = G_ProjectSource (self.s.origin, offset, f, r);
+		startpoint = G_ProjectSource (self.origin, offset, f, r);
 		// a little off the ground
 		startpoint[2] += 10;
 
@@ -1322,7 +1288,7 @@ static void medic_finish_spawn(entity &self)
 	}
 	int32_t summonStr = self.monsterinfo.summon_type;
 
-	AngleVectors (self.s.angles, &f, &r, nullptr);
+	AngleVectors (self.angles, &f, &r, nullptr);
 
 	if (summonStr)
 		num_summoned = (summonStr - 1) + (summonStr % 2);
@@ -1334,7 +1300,7 @@ static void medic_finish_spawn(entity &self)
 		inc = count + (count%2); // 0, 2, 2, 4, 4
 		offset = reinforcement_position[count];
 
-		startpoint = G_ProjectSource (self.s.origin, offset, f, r);
+		startpoint = G_ProjectSource (self.origin, offset, f, r);
 
 		// a little off the ground
 		startpoint[2] += 10;
@@ -1343,7 +1309,7 @@ static void medic_finish_spawn(entity &self)
 		if (FindSpawnPoint (startpoint, reinforcement_mins[summonStr-inc], reinforcement_maxs[summonStr-inc], spawnpoint, 32))
 		{
 			if (CheckSpawnPoint (spawnpoint, reinforcement_mins[summonStr-inc], reinforcement_maxs[summonStr-inc]))
-				ent = CreateGroundMonster (spawnpoint, self.s.angles,
+				ent = CreateGroundMonster (spawnpoint, self.angles,
 					reinforcement_mins[summonStr-inc], reinforcement_maxs[summonStr-inc],
 					reinforcements[summonStr-inc], 256);
 		}
@@ -1434,7 +1400,7 @@ constexpr mframe_t medic_frames_callReinforcements [] =
 };
 constexpr mmove_t medic_move_callReinforcements = { FRAME_attack33, FRAME_attack60, medic_frames_callReinforcements, medic_run };
 
-static REGISTER_SAVABLE_DATA(medic_move_callReinforcements);
+REGISTER_STATIC_SAVABLE(medic_move_callReinforcements);
 
 #endif
 static void medic_attack(entity &self)
@@ -1444,8 +1410,6 @@ static void medic_attack(entity &self)
 
 #endif
 #ifdef GROUND_ZERO
-	range_t enemy_range = range(self, self.enemy);
-
 	// signal from checkattack to spawn
 	if (self.monsterinfo.aiflags & AI_BLOCKED)
 	{
@@ -1475,7 +1439,7 @@ static void medic_attack(entity &self)
 			return;
 		}
 
-		if ((self.mass > 400) && (r > 0.2) && (enemy_range != RANGE_MELEE) && (self.monsterinfo.monster_slots > 2))
+		if ((self.mass > 400) && (r > 0.2) && (range(self, self.enemy) != RANGE_MELEE) && (self.monsterinfo.monster_slots > 2))
 			self.monsterinfo.currentmove = &SAVABLE(medic_move_callReinforcements);
 		else
 #endif
@@ -1483,7 +1447,7 @@ static void medic_attack(entity &self)
 	}
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_attack);
+REGISTER_STATIC_SAVABLE(medic_attack);
 
 static bool medic_checkattack(entity &self)
 {
@@ -1505,7 +1469,7 @@ static bool medic_checkattack(entity &self)
 			return false;
 		}
 	
-		if (VectorDistance(self.s.origin, self.enemy->s.origin) < MEDIC_MAX_HEAL_DISTANCE + 10)
+		if (VectorDistance(self.origin, self.enemy->origin) < MEDIC_MAX_HEAL_DISTANCE + 10)
 		{
 #endif
 			medic_attack(self);
@@ -1529,7 +1493,7 @@ static bool medic_checkattack(entity &self)
 
 	// give a LARGE bias to spawning things when we have room
 	// use AI_BLOCKED as a signal to attack to spawn
-	if ((random() < 0.8) && (self.monsterinfo.monster_slots > 5) && (VectorDistance(self.s.origin, self.enemy->s.origin) > 150))
+	if ((random() < 0.8) && (self.monsterinfo.monster_slots > 5) && (VectorDistance(self.origin, self.enemy->origin) > 150))
 	{
 		self.monsterinfo.aiflags |= AI_BLOCKED;
 		self.monsterinfo.attack_state = AS_MISSILE;
@@ -1549,7 +1513,7 @@ static bool medic_checkattack(entity &self)
 	return M_CheckAttack(self);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_checkattack);
+REGISTER_STATIC_SAVABLE(medic_checkattack);
 
 #ifdef GROUND_ZERO
 static void MedicCommanderCache()
@@ -1607,7 +1571,7 @@ static void medic_duck(entity &self, float eta)
 	self.monsterinfo.currentmove = &SAVABLE(medic_move_duck);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_duck);
+REGISTER_STATIC_SAVABLE(medic_duck);
 
 static void medic_sidestep(entity &self)
 {
@@ -1631,7 +1595,7 @@ static void medic_sidestep(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(medic_move_run);
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_sidestep);
+REGISTER_STATIC_SAVABLE(medic_sidestep);
 
 static bool medic_blocked(entity &self, float dist)
 {
@@ -1644,7 +1608,7 @@ static bool medic_blocked(entity &self, float dist)
 	return false;
 }
 
-static REGISTER_SAVABLE_FUNCTION(medic_blocked);
+REGISTER_STATIC_SAVABLE(medic_blocked);
 #endif
 
 /*QUAKED monster_medic (1 .5 0) (-16 -16 -24) (16 16 32) Ambush Trigger_Spawn Sight
@@ -1659,7 +1623,7 @@ static void SP_monster_medic(entity &self)
 
 	self.movetype = MOVETYPE_STEP;
 	self.solid = SOLID_BBOX;
-	self.s.modelindex = gi.modelindex("models/monsters/medic/tris.md2");
+	self.modelindex = gi.modelindex("models/monsters/medic/tris.md2");
 	self.bounds = {
 		.mins = { -24, -24, -24 },
 		.maxs = { 24, 24, 32 }
@@ -1733,7 +1697,7 @@ static void SP_monster_medic(entity &self)
 	}
 #endif
 
-	self.pain = SAVABLE(medic_pain);
+	self.pain = SAVABLE(monster_pain);
 	self.die = SAVABLE(medic_die);
 
 	self.monsterinfo.stand = SAVABLE(medic_stand);
@@ -1744,6 +1708,7 @@ static void SP_monster_medic(entity &self)
 	self.monsterinfo.idle = SAVABLE(medic_idle);
 	self.monsterinfo.search = SAVABLE(medic_search);
 	self.monsterinfo.checkattack = SAVABLE(medic_checkattack);
+	self.monsterinfo.reacttodamage = SAVABLE(medic_reacttodamage);
 
 	gi.linkentity(self);
 
@@ -1759,7 +1724,7 @@ REGISTER_ENTITY(MONSTER_MEDIC, monster_medic);
 static void SP_monster_medic_commander(entity &self)
 {
 	SP_monster_medic(self);
-	self.s.skinnum = 2;
+	self.skinnum = 2;
 }
 
 REGISTER_ENTITY_INHERIT(MONSTER_MEDIC_COMMANDER, monster_medic_commander, ET_MONSTER_MEDIC);

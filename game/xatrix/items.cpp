@@ -31,7 +31,7 @@ void Use_QuadFire(entity &ent, const gitem_t &it)
 	else
 		ent.client->quadfire_framenum = level.framenum + timeout;
 
-	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/quadfire1.wav"), 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/quadfire1.wav"));
 }
 
 #endif

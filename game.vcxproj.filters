@@ -428,9 +428,6 @@
     <ClCompile Include="lib\math\random.cpp">
       <Filter>lib\math</Filter>
     </ClCompile>
-    <ClCompile Include="lib\string\format.cpp">
-      <Filter>lib\string</Filter>
-    </ClCompile>
     <ClCompile Include="lib\protocol.cpp">
       <Filter>lib</Filter>
     </ClCompile>

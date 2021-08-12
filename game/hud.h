@@ -7,7 +7,7 @@
 DeathmatchScoreboardMessage
 ==================
 */
-void DeathmatchScoreboardMessage(entity &ent, entityref killer);
+void DeathmatchScoreboardMessage(entity &ent, entityref killer, bool reliable = true);
 
 void MoveClientToIntermission(entity &ent);
 
