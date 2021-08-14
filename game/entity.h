@@ -196,9 +196,9 @@ enum ai_attack_state : int
 };
 
 #ifdef ROGUE_AI
-using mdodgefunc = void(*)(entity &, entity &, float, trace &);
+using mdodgefunc = void(*)(entity &, entity &, gtimef, trace &);
 using mblockedfunc = bool(*)(entity &, float);
-using mduckfunc = void(*)(entity &, float);
+using mduckfunc = void(*)(entity &, gtimef);
 using munduckfunc = void(*)(entity &);
 using msidestepfunc = void(*)(entity &);
 #else
@@ -237,7 +237,7 @@ struct moveinfo
 	float	decel;
 	float	distance;
 
-	float	wait;
+	gtimef	wait;
 
 	// state data
 
@@ -466,9 +466,9 @@ public:
 	float	volume;
 	sound_attn	attenuation;
 
-	float	wait;
-	float	delay;
-	float	rand;
+	gtimef	wait;
+	gtimef	delay;
+	gtimef	rand;
 
 	gtime	last_sound_framenum;
 

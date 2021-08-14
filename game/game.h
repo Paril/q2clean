@@ -138,7 +138,7 @@ struct spawn_temp
 	int32_t	distance;
 	int32_t	height;
 	string	noise;
-	float	pausetime;
+	gtimef	pausetime;
 	string	item;
 	string	gravity;
 	
@@ -163,7 +163,7 @@ extern spawn_temp st;
 struct level_locals
 {
 	gtime	framenum;
-	float	time;
+	gtimef	time;
 
 	string	level_name;  // the descriptive name (Outer Base, etc)
 	string	mapname;     // the server name (base1, etc)

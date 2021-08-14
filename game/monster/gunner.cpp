@@ -267,7 +267,7 @@ static void gunner_reacttodamage(entity &self, entity &, entity &, int32_t, int3
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 
 	if (Q_rand() & 1)
 		gi.sound(self, CHAN_VOICE, sound_pain);
@@ -303,7 +303,7 @@ static void gunner_dead(entity &self)
 	};
 	self.movetype = MOVETYPE_TOSS;
 	self.svflags |= SVF_DEADMONSTER;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	gi.linkentity(self);
 }
 
@@ -370,7 +370,7 @@ static void gunner_duck_down(entity &self)
 #ifdef ROGUE_AI
 	self.bounds.maxs[2] = self.monsterinfo.base_height - 32;
 	if (self.monsterinfo.duck_wait_framenum < level.framenum)
-		self.monsterinfo.duck_wait_framenum = level.framenum + 1 * BASE_FRAMERATE;
+		self.monsterinfo.duck_wait_framenum = level.framenum + 1s;
 #else
 	self.maxs.z -= 32;
 	self.monsterinfo.pause_framenum = level.framenum + 1 * BASE_FRAMERATE;
@@ -702,15 +702,15 @@ static void gunner_attack(entity &self)
 		float chance = 0.1f;
 		
 		// setup shot probabilities
-		if (self.monsterinfo.blind_fire_framedelay < (gtime)(1.0 * BASE_FRAMERATE))
+		if (self.monsterinfo.blind_fire_framedelay < 1s)
 			chance = 1.0f;
-		else if (self.monsterinfo.blind_fire_framedelay < (gtime)(7.5 * BASE_FRAMERATE))
+		else if (self.monsterinfo.blind_fire_framedelay < 7.5s)
 			chance = 0.4f;
 
 		float r = random();
 
 		// minimum of 2 seconds, plus 0-3, after the shots are done
-		self.monsterinfo.blind_fire_framedelay += (gtime)(random(4.1f, 7.1f) * BASE_FRAMERATE);
+		self.monsterinfo.blind_fire_framedelay += duration_cast<gtime>(random(4.1s, 7.1s));
 
 		// don't shoot at the origin
 		if (!self.monsterinfo.blind_fire_target)
@@ -727,7 +727,7 @@ static void gunner_attack(entity &self)
 		{
 			// if the check passes, go for the attack
 			self.monsterinfo.currentmove = &SAVABLE(gunner_move_attack_grenade);
-			self.monsterinfo.attack_finished = level.framenum + (gtime)(random(2.f) * BASE_FRAMERATE);
+			self.monsterinfo.attack_finished = level.framenum + random(2s);
 		}
 
 		// turn off blindfire flag
@@ -865,7 +865,7 @@ static bool gunner_blocked (entity &self, float dist)
 REGISTER_STATIC_SAVABLE(gunner_blocked);
 
 // PMM - new duck code
-static void gunner_duck (entity &self, float eta)
+static void gunner_duck (entity &self, gtimef eta)
 {
 	if ((self.monsterinfo.currentmove == &gunner_move_jump2) ||
 		(self.monsterinfo.currentmove == &gunner_move_jump))
@@ -886,9 +886,9 @@ static void gunner_duck (entity &self, float eta)
 
 	if (!skill)
 		// PMM - stupid dodge
-		self.monsterinfo.duck_wait_framenum = level.framenum + (gtime)((eta + 1) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
 	else
-		self.monsterinfo.duck_wait_framenum = level.framenum + (gtime)((eta + (0.1f * (3 - skill))) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
 
 	// has to be done immediately otherwise he can get stuck
 	gunner_duck_down(self);

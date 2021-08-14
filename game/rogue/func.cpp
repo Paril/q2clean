@@ -88,7 +88,7 @@ static void fd_secret_move3(entity &self)
 {
 	if (!(self.spawnflags & SEC_OPEN_ONCE))
 	{
-		self.nextthink = level.framenum + (gtime)(self.wait * BASE_FRAMERATE);
+		self.nextthink = duration_cast<gtime>(level.framenum + self.wait);
 		self.think = SAVABLE(fd_secret_move4);
 	}
 }
@@ -110,7 +110,7 @@ REGISTER_STATIC_SAVABLE(fd_secret_move6);
 // Wait 1 second...
 static void fd_secret_move5(entity &self)
 {
-	self.nextthink = level.framenum + (gtime)(1.0 * BASE_FRAMERATE);
+	self.nextthink = level.framenum + 1s;
 	self.think = SAVABLE(fd_secret_move6);
 }
 
@@ -257,8 +257,8 @@ static void SP_func_door_secret2(entity &ent)
 		ent.takedamage = true;
 		ent.die = SAVABLE(fd_secret_killed);
 	}
-	if (!ent.wait)
-		ent.wait = 5.f;          // 5 seconds before closing
+	if (ent.wait == gtime::zero())
+		ent.wait = 5s;          // 5 seconds before closing
 
 	gi.linkentity(ent);
 }
@@ -275,28 +275,28 @@ REGISTER_STATIC_SAVABLE(force_wall_think);
 
 static void force_wall_think(entity &self)
 {
-	if (!self.wait)
+	if (self.wait == gtime::zero())
 		gi.ConstructMessage(svc_temp_entity, TE_FORCEWALL, self.pos1, self.pos2, (uint8_t) self.style).multicast(self.offset, MULTICAST_PVS);
 
 	self.think = SAVABLE(force_wall_think);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 static void force_wall_use(entity &self, entity &, entity &)
 {
-	if (!self.wait)
+	if (self.wait == gtime::zero())
 	{
-		self.wait = 1.f;
+		self.wait = 1s;
 		self.think = nullptr;
-		self.nextthink = 0;
+		self.nextthink = gtime::zero();
 		self.solid = SOLID_NOT;
 		gi.linkentity(self);
 	}
 	else
 	{
-		self.wait = 0;
+		self.wait = gtime::zero();
 		self.think = SAVABLE(force_wall_think);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		self.solid = SOLID_BSP;
 		KillBox(self);		// Is this appropriate?
 		gi.linkentity (self);
@@ -341,13 +341,13 @@ static void SP_func_force_wall(entity &ent)
 		ent.style = 208;
 
 	ent.movetype = MOVETYPE_NONE;
-	ent.wait = 1.f;
+	ent.wait = 1s;
 
 	if (ent.spawnflags & FWALL_START_ON)
 	{
 		ent.solid = SOLID_BSP;
 		ent.think = SAVABLE(force_wall_think);
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 1_hz;
 	}
 	else
 		ent.solid = SOLID_NOT;
@@ -382,7 +382,7 @@ void plat2_spawn_danger_area(entity &ent)
 	vector cmaxs = ent.bounds.maxs;
 	cmaxs[2] = ent.bounds.mins[2] + 64.f;
 
-	SpawnBadArea(ent.bounds.mins, cmaxs, 0, ent);
+	SpawnBadArea(ent.bounds.mins, cmaxs, gtime::zero(), ent);
 }
 
 void plat2_kill_danger_area(entity &ent)
@@ -411,21 +411,21 @@ static void plat2_hit_top(entity &ent)
 		if (!(ent.spawnflags & PLAT2_TOGGLE))
 		{
 			ent.think = SAVABLE(plat2_go_down);
-			ent.nextthink = level.framenum + (gtime)(5.0 * BASE_FRAMERATE);
+			ent.nextthink = level.framenum + 5s;
 		}
 
 #ifdef SINGLE_PLAYER
 		if (!deathmatch)
-			ent.last_move_framenum = level.framenum - (gtime)(2.0 * BASE_FRAMERATE);
+			ent.last_move_framenum = level.framenum - 2s;
 		else
 #endif
-			ent.last_move_framenum = level.framenum - (gtime)(1.0 * BASE_FRAMERATE);
+			ent.last_move_framenum = level.framenum - 1s;
 	}
 	else if (!(ent.spawnflags & PLAT2_TOP) && !(ent.spawnflags & PLAT2_TOGGLE))
 	{
 		ent.plat2flags = PLAT2_NONE;
 		ent.think = SAVABLE(plat2_go_down);
-		ent.nextthink = level.framenum + (gtime)(2.0 * BASE_FRAMERATE);
+		ent.nextthink = level.framenum + 2s;
 		ent.last_move_framenum = level.framenum;
 	}
 	else
@@ -456,21 +456,21 @@ static void plat2_hit_bottom(entity &ent)
 		if (!(ent.spawnflags & PLAT2_TOGGLE))
 		{
 			ent.think = SAVABLE(plat2_go_up);
-			ent.nextthink = level.framenum + (gtime)(5.0 * BASE_FRAMERATE);
+			ent.nextthink = level.framenum + 5s;
 		}
 #ifdef SINGLE_PLAYER
 
 		if (!deathmatch)
-			ent.last_move_framenum = level.framenum - (gtime)(2.0 * BASE_FRAMERATE);
+			ent.last_move_framenum = level.framenum - 2s;
 		else
 #endif
-			ent.last_move_framenum = level.framenum - (gtime)(1.0 * BASE_FRAMERATE);
+			ent.last_move_framenum = level.framenum - 1s;
 	}
 	else if ((ent.spawnflags & PLAT2_TOP) && !(ent.spawnflags & PLAT2_TOGGLE))
 	{
 		ent.plat2flags = PLAT2_NONE;
 		ent.think = SAVABLE(plat2_go_up);
-		ent.nextthink = level.framenum + (gtime)(2.0 * BASE_FRAMERATE);
+		ent.nextthink = level.framenum + 2s;
 		ent.last_move_framenum = level.framenum;
 	}
 	else
@@ -525,7 +525,7 @@ static void plat2_operate(entity &trigger, entity &other)
 	if (ent.plat2flags & PLAT2_MOVING)
 		return;
 
-	if ((ent.last_move_framenum + (2 * BASE_FRAMERATE)) > level.framenum)
+	if ((ent.last_move_framenum + 2s) > level.framenum)
 		return;
 
 	float platCenter = (trigger.absbounds.mins[2] + trigger.absbounds.maxs[2]) / 2;
@@ -556,20 +556,20 @@ static void plat2_operate(entity &trigger, entity &other)
 	ent.plat2flags = PLAT2_MOVING;
 
 #ifdef SINGLE_PLAYER
-	float pauseTime;
+	gtime pauseTime;
 
 	if (!deathmatch)
-		pauseTime = 0.5f;
+		pauseTime = 500ms;
 	else
-		pauseTime = 0.3f;
+		pauseTime = 300ms;
 #else
-	float pauseTime = 0.3f;
+	gtime pauseTime = 300ms;
 #endif
 
 	if (ent.moveinfo.state != otherState)
 	{
 		ent.plat2flags |= PLAT2_CALLED;
-		pauseTime = 0.1f;
+		pauseTime = 100ms;
 	}
 
 	ent.last_move_framenum = level.framenum;
@@ -579,7 +579,7 @@ static void plat2_operate(entity &trigger, entity &other)
 	else
 		ent.think = SAVABLE(plat2_go_down);
 
-	ent.nextthink = level.framenum + (gtime)(pauseTime * BASE_FRAMERATE);
+	ent.nextthink = level.framenum + pauseTime;
 }
 
 static void Touch_Plat_Center2(entity &ent, entity &other, vector, const surface &)
@@ -627,7 +627,7 @@ static void Use_Plat2(entity &ent, entity &, entity &cactivator)
 { 
 	if (ent.moveinfo.state > STATE_BOTTOM)
 		return;
-	if ((ent.last_move_framenum + (2 * BASE_FRAMERATE)) > level.framenum)
+	if ((ent.last_move_framenum + 2s) > level.framenum)
 		return;
 
 	for (entity &trigger : entity_range(game.maxclients + 1, num_entities - 1))

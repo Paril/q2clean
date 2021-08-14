@@ -21,7 +21,7 @@ bool Pickup_Adrenaline(entity &ent, entity &other)
 #else
 	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.item->quantity);
+		SetRespawn(ent, seconds(ent.item->quantity));
 
 	return true;
 }
@@ -35,7 +35,7 @@ bool Pickup_AncientHead(entity &ent, entity &other)
 #else
 	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.item->quantity);
+		SetRespawn(ent, seconds(ent.item->quantity));
 
 	return true;
 }
@@ -54,7 +54,7 @@ void MegaHealth_think(entity &self)
 #endif
 		)
 	{
-		self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+		self.nextthink = level.framenum + 1s;
 		self.owner->health -= 1;
 		return;
 	}
@@ -64,7 +64,7 @@ void MegaHealth_think(entity &self)
 #else
 	if (!(self.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(self, 20);
+		SetRespawn(self, 20s);
 	else
 		G_FreeEdict(self);
 }
@@ -101,7 +101,7 @@ bool Pickup_Health(entity &ent, entity &other)
 		)
 	{
 		ent.think = SAVABLE(MegaHealth_think);
-		ent.nextthink = level.framenum + 5 * BASE_FRAMERATE;
+		ent.nextthink = level.framenum + 5s;
 		ent.owner = other;
 		ent.flags |= FL_RESPAWN;
 		ent.svflags |= SVF_NOCLIENT;
@@ -112,7 +112,7 @@ bool Pickup_Health(entity &ent, entity &other)
 #else
 	else if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, 30);
+		SetRespawn(ent, 30s);
 
 	return true;
 }

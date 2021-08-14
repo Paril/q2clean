@@ -139,6 +139,18 @@ static bool deserialize(const string &input, T &output)
 	return endptr;
 }
 
+template<typename T> requires std::is_same_v<T, gtimef>
+static bool deserialize(const string &input, T &output)
+{
+	float v;
+
+	if (!deserialize<float>(input, v))
+		return false;
+
+	output = gtimef(v);
+	return true;
+}
+
 static bool deserialize(const string &input, vector &output)
 {
 	char *endptr = (char *)input.ptr();

@@ -18,14 +18,14 @@ static void target_mal_laser_on(entity &self)
 		self.activator = self;
 	self.spawnflags |= LASER_BZZT | LASER_ON;
 	self.svflags &= ~SVF_NOCLIENT;
-	self.nextthink = level.framenum + (gtime)((self.wait + self.delay) * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.wait + self.delay);
 }
 
 static void target_mal_laser_off(entity &self)
 {
 	self.spawnflags &= ~LASER_ON;
 	self.svflags |= SVF_NOCLIENT;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 }
 
 static void target_mal_laser_use(entity &self, entity &, entity &cactivator)
@@ -42,7 +42,7 @@ REGISTER_STATIC_SAVABLE(target_mal_laser_use);
 static void mal_laser_think(entity &self)
 {
 	target_laser_think (self);
-	self.nextthink = level.framenum + (gtime)((self.wait + 0.1) * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.wait + 0.1s);
 	self.spawnflags |= LASER_BZZT;
 }
 
@@ -75,18 +75,18 @@ static void SP_target_mal_laser(entity &self)
 
 	G_SetMovedir (self.angles, self.movedir);
 	
-	if (!self.delay)
-		self.delay = 0.1f;
+	if (self.delay == gtimef::zero())
+		self.delay = 0.1s;
 
-	if (!self.wait)
-		self.wait = 0.1f;
+	if (self.wait == gtimef::zero())
+		self.wait = 0.1s;
 
 	if (!self.dmg)
 		self.dmg = 5;
 
 	self.bounds = bbox::sized(8.f);
 	
-	self.nextthink = level.framenum + (gtime)(self.delay * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.delay);
 	self.think = SAVABLE(mal_laser_think);
 
 	self.use = SAVABLE(target_mal_laser_use);

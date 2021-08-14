@@ -141,7 +141,7 @@ void fire_blaster(entity &self, vector start, vector dir, int32_t damage, int32_
 	bolt.sound = gi.soundindex("misc/lasfly.wav");
 	bolt.owner = self;
 	bolt.touch = SAVABLE(blaster_touch);
-	bolt.nextthink = level.framenum + 2 * BASE_FRAMERATE;
+	bolt.nextthink = level.framenum + 2s;
 	bolt.think = SAVABLE(G_FreeEdict);
 	bolt.dmg = damage;
 	if (hyper)

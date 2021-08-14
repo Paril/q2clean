@@ -4,6 +4,8 @@
 #include "entity_types.h"
 
 #ifdef SINGLE_PLAYER
+#include "game_types.h"
+
 bool FindTarget(entity &self);
 
 enum range_t : uint8_t
@@ -97,7 +99,7 @@ Distance is for slight position adjustments needed by the animations
 */
 void ai_turn(entity &self, float dist);
 
-void AttackFinished(entity &self, float time);
+void AttackFinished(entity &self, gtimef time);
 
 void HuntTarget(entity &self);
 
@@ -148,7 +150,7 @@ void ai_run(entity &self, float dist);
 #ifdef ROGUE_AI
 // this determines how long to wait after a duck to duck again.  this needs to be longer than
 // the time after the monster_duck_up in all of the animation sequences
-constexpr float DUCK_INTERVAL	= 0.5f;
+constexpr gtime DUCK_INTERVAL	= 500ms;
 #endif
 
 #ifdef GROUND_ZERO

@@ -1,22 +1,15 @@
 #pragma once 
 
 #include <cmath>
+#include <utility>
 
 // specialized templates for certain math-like algorithms/operations
 
 // returns the lowest of a or b
-template<typename T>
-[[nodiscard]] constexpr const T &min(const T &a, const T &b)
-{
-	return a < b ? a : b;
-}
+using std::min;
 
 // returns the highest of a or b
-template<typename T>
-[[nodiscard]] constexpr const T &max(const T &a, const T &b)
-{
-	return a > b ? a : b;
-}
+using std::max;
 
 // clamp value between min and max (min <= value <= max)
 template<typename T>

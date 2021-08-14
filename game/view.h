@@ -4,7 +4,7 @@
 #include "game.h"
 
 // view pitching times
-constexpr float DAMAGE_TIME = 0.5f;
+constexpr gtimef DAMAGE_TIME = 500ms;
 
 /*
 =================

@@ -66,7 +66,7 @@ void fire_ionripper(entity &self, vector start, vector dir, int32_t damage, int3
 	ion.sound = gi.soundindex("misc/lasfly.wav");
 	ion.owner = self;
 	ion.touch = SAVABLE(ionripper_touch);
-	ion.nextthink = level.framenum + 3 * BASE_FRAMERATE;
+	ion.nextthink = level.framenum + 3s;
 	ion.think = SAVABLE(ionripper_sparks);
 	ion.dmg = damage;
 	ion.dmg_radius = 100.f;

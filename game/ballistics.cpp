@@ -16,7 +16,7 @@ void check_dodge(entity &self, vector start, vector dir, int32_t speed)
 	if (!tr.ent.is_world() && (tr.ent.svflags & SVF_MONSTER) && (tr.ent.health > 0) && tr.ent.monsterinfo.dodge && infront(tr.ent, self))
 	{
 		vector v = tr.endpos - start;
-		float eta = (VectorLength(v) - tr.ent.bounds.maxs.x) / speed;
+		gtimef eta { (VectorLength(v) - tr.ent.bounds.maxs.x) / speed };
 
 		tr.ent.monsterinfo.dodge(tr.ent, self, eta
 #ifdef ROGUE_AI

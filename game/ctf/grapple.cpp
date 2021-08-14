@@ -201,7 +201,7 @@ void GrapplePull(entity &self)
 			else if (self.pain_debounce_framenum < level.framenum)
 			{
 				gi.sound(self.owner, CHAN_WEAPON, gi.soundindex("world/turbine1.wav"), volume);
-				self.pain_debounce_framenum = level.framenum + (gtime) (0.5 * BASE_FRAMERATE);
+				self.pain_debounce_framenum = level.framenum + 500ms;
 			}
 #endif
 		}

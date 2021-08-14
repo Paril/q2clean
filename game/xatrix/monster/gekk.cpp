@@ -232,7 +232,7 @@ static void gekk_jump_takeoff(entity &self)
 
 	self.groundentity = null_entity;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.monsterinfo.attack_finished = level.framenum + 3 * BASE_FRAMERATE;
+	self.monsterinfo.attack_finished = level.framenum + 3s;
 	self.touch = SAVABLE(gekk_jump_touch);
 }
 
@@ -258,7 +258,7 @@ static void gekk_jump_takeoff2(entity &self)
 
 	self.groundentity = null_entity;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.monsterinfo.attack_finished = level.framenum + 3 * BASE_FRAMERATE;
+	self.monsterinfo.attack_finished = level.framenum + 3s;
 	self.touch = SAVABLE(gekk_jump_touch);
 }
 
@@ -273,7 +273,7 @@ static void gekk_check_landing(entity &self)
 	if (self.groundentity != null_entity)
 	{
 		gi.sound (self, CHAN_WEAPON, sound_thud);
-		self.monsterinfo.attack_finished = 0;
+		self.monsterinfo.attack_finished = gtime::zero();
 		self.monsterinfo.aiflags &= ~AI_DUCKED;
 		self.velocity = vec3_origin;
 		return;
@@ -478,13 +478,13 @@ static void ai_stand2(entity &self, float dist)
 
 		if (!(self.spawnflags & 1) && (self.monsterinfo.idle) && (level.framenum > self.monsterinfo.idle_framenum))
 		{
-			if (self.monsterinfo.idle_framenum)
+			if (self.monsterinfo.idle_framenum != gtime::zero())
 			{
 				self.monsterinfo.idle (self);
-				self.monsterinfo.idle_framenum = level.framenum + (int32_t)(random(15.f, 30.f) * BASE_FRAMETIME);
+				self.monsterinfo.idle_framenum = level.framenum + random(15s, 30s);
 			}
 			else
-				self.monsterinfo.idle_framenum = level.framenum + (int32_t)(random(15.f) * BASE_FRAMETIME);
+				self.monsterinfo.idle_framenum = level.framenum + random(15s);
 		}
 	}
 	else
@@ -1061,7 +1061,7 @@ static void gekk_reacttodamage(entity &self, entity &, entity &, int32_t, int32_
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 
 	gi.sound (self, CHAN_VOICE, sound_pain1);
 
@@ -1096,7 +1096,7 @@ static void gekk_dead(entity &self)
 	};
 	self.movetype = MOVETYPE_TOSS;
 	self.svflags |= SVF_DEADMONSTER;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	gi.linkentity (self);
 }
 
@@ -1339,9 +1339,9 @@ constexpr mmove_t gekk_move_rduck = { FRAME_rduck_01, FRAME_rduck_13, gekk_frame
 REGISTER_STATIC_SAVABLE(gekk_move_rduck);
 
 #ifdef GROUND_ZERO
-static void gekk_dodge(entity &self, entity &attacker, float eta, trace &)
+static void gekk_dodge(entity &self, entity &attacker, gtimef eta, trace &)
 #else
-static void gekk_dodge(entity &self, entity &attacker, float eta)
+static void gekk_dodge(entity &self, entity &attacker, gtimef eta)
 #endif
 {
 	if (random() > 0.25)
@@ -1365,7 +1365,7 @@ static void gekk_dodge(entity &self, entity &attacker, float eta)
 		return;
 	}
 
-	self.monsterinfo.pause_framenum = level.framenum + (gtime)((eta + 0.3) * BASE_FRAMERATE);
+	self.monsterinfo.pause_framenum = duration_cast<gtime>(level.framenum + eta + 0.3s);
 
 	if (skill == 1)
 	{

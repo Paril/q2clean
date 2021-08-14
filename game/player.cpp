@@ -118,7 +118,7 @@ static void SP_info_player_start(entity &self [[maybe_unused]])
 	{
 		// invoke one of our gross, ugly, disgusting hacks
 		self.think = SAVABLE(SP_CreateCoopSpots);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 	}
 #endif
 }
@@ -172,7 +172,7 @@ static void SP_info_player_coop(entity &self)
 	{
 		// invoke one of our gross, ugly, disgusting hacks
 		self.think = SAVABLE(SP_FixCoopSpots);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 	}
 }
 
@@ -222,10 +222,10 @@ static void TossClientWeapon(entity &self)
 		)
 		it = nullptr;
 
-	const bool quad = (dmflags & DF_QUAD_DROP) && (self.client->quad_framenum > (level.framenum + 10));
+	const bool quad = (dmflags & DF_QUAD_DROP) && (self.client->quad_framenum > (level.framenum + 1s));
 		
 #ifdef THE_RECKONING
-	const bool quadfire = (dmflags & DF_QUADFIRE_DROP) && (self.client->quadfire_framenum > (level.framenum + 10));
+	const bool quadfire = (dmflags & DF_QUADFIRE_DROP) && (self.client->quadfire_framenum > (level.framenum + 1s));
 #endif
 
 	float spread;
@@ -328,7 +328,7 @@ void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damag
 
 	if (!self.deadflag)
 	{
-		self.client->respawn_framenum = (gtime)(level.framenum + 1.0f * BASE_FRAMERATE);
+		self.client->respawn_framenum = level.framenum + 1s;
 		LookAtKiller(self, inflictor, attacker);
 		self.client->ps.pmove.pm_type = PM_DEAD;
 
@@ -376,17 +376,17 @@ void player_die(entity &self, entity &inflictor, entity &attacker, int32_t damag
 	}
 
 	// remove powerups
-	self.client->quad_framenum = 0;
-	self.client->invincible_framenum = 0;
-	self.client->breather_framenum = 0;
-	self.client->enviro_framenum = 0;
+	self.client->quad_framenum = gtime::zero();
+	self.client->invincible_framenum = gtime::zero();
+	self.client->breather_framenum = gtime::zero();
+	self.client->enviro_framenum = gtime::zero();
 #ifdef THE_RECKONING
-	self.client->quadfire_framenum = 0;
+	self.client->quadfire_framenum = gtime::zero();
 #endif
 	self.flags &= ~FL_POWER_ARMOR;
 	
 #ifdef GROUND_ZERO
-	self.client->double_framenum = 0;
+	self.client->double_framenum = gtime::zero();
 #endif
 
 	if (self.health <= self.gib_health)
@@ -1104,7 +1104,7 @@ void PutClientInServer(entity &ent)
 	ent.mass = 200;
 	ent.solid = SOLID_BBOX;
 	ent.deadflag = DEAD_NO;
-	ent.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
+	ent.air_finished_framenum = level.framenum + 12s;
 	ent.clipmask = MASK_PLAYERSOLID;
 	ent.die = SAVABLE(player_die);
 	ent.waterlevel = WATER_NONE;
@@ -1211,7 +1211,7 @@ void ClientBegin(entity &ent)
 	}
 #endif
 
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 		MoveClientToIntermission(ent);
 	else if (game.maxclients > 1)
 	{
@@ -1429,13 +1429,13 @@ void ClientThink(entity &ent, const usercmd &ucmd)
 {
 	level.current_entity = ent;
 
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 	{
 		ent.client->ps.pmove.pm_type = PM_FREEZE;
-		// can exit intermission after five seconds
-		if (level.framenum > level.intermission_framenum + 5.0f * BASE_FRAMERATE
-			&& (ucmd.buttons & BUTTON_ANY))
+
+		if ((level.framenum > level.intermission_framenum + 5s) && (ucmd.buttons & BUTTON_ANY))
 			level.exitintermission = true;
+
 		return;
 	}
 
@@ -1613,7 +1613,7 @@ any other entities in the world.
 */
 void ClientBeginServerFrame(entity &ent)
 {
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 		return;
 
 	if (
@@ -1621,7 +1621,7 @@ void ClientBeginServerFrame(entity &ent)
 		deathmatch &&
 #endif
 		ent.client->pers.spectator != ent.client->resp.spectator &&
-		(level.framenum - ent.client->respawn_framenum) >= 5 * BASE_FRAMERATE)
+		(level.framenum - ent.client->respawn_framenum) >= 5s)
 	{
 		spectator_respawn(ent);
 		return;

@@ -32,7 +32,7 @@ void InitTrigger(entity &self)
 // the wait time has passed, so set back up for another activation
 static void multi_wait(entity &ent)
 {
-	ent.nextthink = 0;
+	ent.nextthink = gtime::zero();
 }
 
 REGISTER_STATIC_SAVABLE(multi_wait);
@@ -42,22 +42,22 @@ REGISTER_STATIC_SAVABLE(multi_wait);
 // so wait for the delay time before firing
 static void multi_trigger(entity &ent)
 {
-	if (ent.nextthink)
+	if (ent.nextthink != gtime::zero())
 		return;     // already been triggered
 
 	G_UseTargets(ent, ent.activator);
 
-	if (ent.wait > 0)
+	if (ent.wait.count() > 0)
 	{
 		ent.think = SAVABLE(multi_wait);
-		ent.nextthink = level.framenum + (gtime)(ent.wait * BASE_FRAMERATE);
+		ent.nextthink = duration_cast<gtime>(level.framenum + ent.wait);
 	}
 	else
 	{
 		// we can't just remove (self) here, because this is a touch function
 		// called while looping through area links...
 		ent.touch = nullptr;
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 1_hz;
 		ent.think = SAVABLE(G_FreeEdict);
 	}
 }
@@ -144,8 +144,8 @@ static void SP_trigger_multiple(entity &ent)
 	else if (ent.sounds == 3)
 		ent.noise_index = gi.soundindex("misc/trigger1.wav");
 
-	if (!ent.wait)
-		ent.wait = 0.2f;
+	if (ent.wait == gtimef::zero())
+		ent.wait = 0.2s;
 	ent.touch = SAVABLE(Touch_Multi);
 	ent.movetype = MOVETYPE_NONE;
 	ent.svflags |= SVF_NOCLIENT;
@@ -201,7 +201,7 @@ static void SP_trigger_once(entity &ent)
 		gi.dprintfmt("{}: fixed TRIGGERED flag\n", ent);
 	}
 
-	ent.wait = -1.f;
+	ent.wait = -1s;
 	SP_trigger_multiple(ent);
 }
 
@@ -249,7 +249,7 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 	{
 		if (level.framenum < self.touch_debounce_framenum)
 			return;
-		self.touch_debounce_framenum = level.framenum + (int)(5.0f * BASE_FRAMERATE);
+		self.touch_debounce_framenum = level.framenum + 5s;
 		gi.centerprintfmt(cactivator, "You need the {}", self.item->pickup_name);
 		gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/keytry.wav"));
 		return;
@@ -375,7 +375,7 @@ REGISTER_STATIC_SAVABLE(trigger_counter_use);
 
 static void SP_trigger_counter(entity &self)
 {
-	self.wait = -1.f;
+	self.wait = -1s;
 	if (!self.count)
 		self.count = 2;
 
@@ -398,8 +398,8 @@ This trigger will always fire.  It is activated by the world.
 static void SP_trigger_always(entity &ent)
 {
 	// we must have some delay to make sure our use targets are present
-	if (ent.delay < 0.2f)
-		ent.delay = 0.2f;
+	if (ent.delay < 0.2s)
+		ent.delay = 0.2s;
 	G_UseTargets(ent, ent);
 }
 
@@ -439,7 +439,7 @@ static void trigger_push_touch(entity &self, entity &other, vector, const surfac
 #endif
 				other.fly_sound_debounce_framenum < level.framenum)
 			{
-				other.fly_sound_debounce_framenum = level.framenum + (gtime)(1.5f * BASE_FRAMERATE);
+				other.fly_sound_debounce_framenum = duration_cast<gtime>(level.framenum + 1.5s);
 				gi.sound(other, CHAN_AUTO, windsound);
 			}
 		}
@@ -485,12 +485,12 @@ REGISTER_STATIC_SAVABLE(trigger_push_active);
 static void trigger_push_inactive(entity &self)
 {
 	if (self.delay > level.time)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 	else
 	{
 		self.touch = SAVABLE(trigger_push_touch);
 		self.think = SAVABLE(trigger_push_active);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		self.delay = self.nextthink + self.wait;  
 	}
 }
@@ -501,14 +501,14 @@ static void trigger_push_active(entity &self)
 {
 	if (self.delay > level.time)
 	{
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		trigger_effect (self);
 	}
 	else
 	{
 		self.touch = nullptr;
 		self.think = SAVABLE(trigger_push_inactive);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		self.delay = self.nextthink + self.wait;  
 	}
 }
@@ -538,11 +538,11 @@ static void SP_trigger_push(entity &self)
 #endif
 	if (self.spawnflags & 2)
 	{
-		if (!self.wait)
-			self.wait = 10.f;
+		if (self.wait == gtime::zero())
+			self.wait = 10s;
   
 		self.think = SAVABLE(trigger_push_active);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		self.delay = self.nextthink + self.wait;
 	}
 #endif
@@ -607,12 +607,12 @@ static void hurt_touch(entity &self, entity &other, vector, const surface &)
 		return;
 
 	if (self.spawnflags & HURT_SLOW)
-		self.timestamp = level.framenum + 1 * BASE_FRAMERATE;
+		self.timestamp = level.framenum + 1s;
 	else
-		self.timestamp = level.framenum + 1;
+		self.timestamp = level.framenum + 100ms;
 
 	if (!(self.spawnflags & HURT_SILENT))
-		if ((level.framenum % 10) == 0)
+		if ((level.framenum % 1000ms) == gtime::zero())
 			gi.sound(other, CHAN_AUTO, self.noise_index);
 
 	damage_flags dflags;

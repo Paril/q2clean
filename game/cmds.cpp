@@ -642,7 +642,7 @@ static void Cmd_Kill_f(entity &ent)
 {
 	if (ent.solid == SOLID_NOT)
 		return;
-	if ((level.framenum - ent.client->respawn_framenum) < 5 * BASE_FRAMERATE)
+	if ((level.framenum - ent.client->respawn_framenum) < 500ms)
 		return;
 
 	T_Damage(ent, ent, ent, vec3_origin, ent.origin, vec3_origin, ent.health, 0, { DAMAGE_NO_PROTECTION }, MOD_SUICIDE);
@@ -761,7 +761,7 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 	{
 		if (level.time < ent.client->flood_locktill)
 		{
-			gi.cprintfmt(ent, PRINT_HIGH, "You can't talk for {} more seconds\n", (int32_t) (ent.client->flood_locktill - level.time));
+			gi.cprintfmt(ent, PRINT_HIGH, "You can't talk for {} more seconds\n", (int32_t) (ent.client->flood_locktill - level.time).count());
 			return;
 		}
 
@@ -770,9 +770,9 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 		if (i < 0)
 			i = (int32_t) (ent.client->flood_when.size() + i);
 
-		if (ent.client->flood_when[i] && level.time - ent.client->flood_when[i] < flood_persecond)
+		if (ent.client->flood_when[i] != gtimef::zero() && level.time - ent.client->flood_when[i] < seconds((int32_t) flood_persecond))
 		{
-			ent.client->flood_locktill = level.time + flood_waitdelay;
+			ent.client->flood_locktill = level.time + seconds((int32_t) flood_waitdelay);
 			gi.cprintfmt(ent, PRINT_CHAT, "You can't talk for {} more seconds.\n", (int32_t) flood_waitdelay);
 			return;
 		}
@@ -905,7 +905,7 @@ void ClientCommand(entity &ent)
 		Cmd_Score_f (ent);
 	else if (cmd == "help")
 		Cmd_Help_f (ent);
-	else if (level.intermission_framenum)
+	else if (level.intermission_framenum != gtime::zero())
 		return;
 
 	// in-game commands only

@@ -230,7 +230,7 @@ static void infantry_reacttodamage(entity &self, entity &, entity &, int32_t, in
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 
 	if (skill == 3)
 		return;     // no pain anims in nightmare
@@ -503,7 +503,7 @@ REGISTER_STATIC_SAVABLE(infantry_dodge);
 #if defined(THE_RECKONING) || defined(GROUND_ZERO)
 static void infantry_set_firetime(entity &self)
 {
-	self.monsterinfo.pause_framenum = level.framenum + (Q_rand() & 15) + 5;
+	self.monsterinfo.pause_framenum = level.framenum + random(150ms) + 500ms;
 }
 
 static void infantry_cock_gun(entity &self)
@@ -696,7 +696,7 @@ static bool infantry_blocked(entity &self, float dist)
 
 REGISTER_STATIC_SAVABLE(infantry_blocked);
 
-static void infantry_duck(entity &self, float eta)
+static void infantry_duck(entity &self, gtimef eta)
 {
 	// if we're jumping, don't dodge
 	if ((self.monsterinfo.currentmove == &infantry_move_jump) ||
@@ -718,9 +718,9 @@ static void infantry_duck(entity &self, float eta)
 
 	if (!skill)
 		// PMM - stupid dodge
-		self.monsterinfo.duck_wait_framenum = level.framenum + (int) ((eta + 1) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
 	else
-		self.monsterinfo.duck_wait_framenum = level.framenum + (int) ((eta + (0.1 * (3 - skill))) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
 
 	// has to be done immediately otherwise he can get stuck
 	monster_duck_down(self);

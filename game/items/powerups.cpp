@@ -41,7 +41,7 @@ bool Pickup_Bandolier(entity &ent, entity &other)
 #else
 	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.item->quantity);
+		SetRespawn(ent, seconds(ent.item->quantity));
 
 	return true;
 }
@@ -81,7 +81,7 @@ bool Pickup_Pack(entity &ent, entity &other)
 #else
 	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, ent.item->quantity);
+		SetRespawn(ent, seconds(ent.item->quantity));
 
 	return true;
 }
@@ -95,13 +95,13 @@ void Use_Quad(entity &ent, const gitem_t &it)
 
 	gtime timeout;
 
-	if (quad_drop_timeout_hack)
+	if (quad_drop_timeout_hack != gtime::zero())
 	{
 		timeout = quad_drop_timeout_hack;
-		quad_drop_timeout_hack = 0;
+		quad_drop_timeout_hack = gtime::zero();
 	}
 	else
-		timeout = 300;
+		timeout = 30s;
 
 	if (ent.client->quad_framenum > level.framenum)
 		ent.client->quad_framenum += timeout;
@@ -117,9 +117,9 @@ void Use_Breather(entity &ent, const gitem_t &it)
 	ValidateSelectedItem(ent);
 
 	if (ent.client->breather_framenum > level.framenum)
-		ent.client->breather_framenum += 300;
+		ent.client->breather_framenum += 30s;
 	else
-		ent.client->breather_framenum = level.framenum + 300;
+		ent.client->breather_framenum = level.framenum + 30s;
 }
 
 void Use_Envirosuit(entity &ent, const gitem_t &it)
@@ -128,9 +128,9 @@ void Use_Envirosuit(entity &ent, const gitem_t &it)
 	ValidateSelectedItem(ent);
 
 	if (ent.client->enviro_framenum > level.framenum)
-		ent.client->enviro_framenum += 300;
+		ent.client->enviro_framenum += 30s;
 	else
-		ent.client->enviro_framenum = level.framenum + 300;
+		ent.client->enviro_framenum = level.framenum + 30s;
 }
 
 void Use_Invulnerability(entity &ent, const gitem_t &it)
@@ -139,9 +139,9 @@ void Use_Invulnerability(entity &ent, const gitem_t &it)
 	ValidateSelectedItem(ent);
 
 	if (ent.client->invincible_framenum > level.framenum)
-		ent.client->invincible_framenum += 300;
+		ent.client->invincible_framenum += 30s;
 	else
-		ent.client->invincible_framenum = level.framenum + 300;
+		ent.client->invincible_framenum = level.framenum + 30s;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect.wav"));
 }
@@ -168,34 +168,32 @@ bool Pickup_Powerup(entity &ent, entity &other)
 	other.client->pers.inventory[ent.item->id]++;
 
 #ifdef SINGLE_PLAYER
-	if (deathmatch)
+	if (!deathmatch)
+		return true;
+#endif
+
+	if (!(ent.spawnflags & DROPPED_ITEM))
+		SetRespawn(ent, seconds(ent.item->quantity));
+
+	if ((dmflags & DF_INSTANT_ITEMS) || ((ent.item->use == Use_Quad
+#ifdef THE_RECKONING
+		|| ent.item->use == Use_QuadFire
+#endif
+		) && (ent.spawnflags & DROPPED_PLAYER_ITEM)))
 	{
-#endif
-		if (!(ent.spawnflags & DROPPED_ITEM))
-			SetRespawn(ent, ent.item->quantity);
-
-		if ((dmflags & DF_INSTANT_ITEMS) || ((ent.item->use == Use_Quad
-#ifdef THE_RECKONING
-			|| ent.item->use == Use_QuadFire
-#endif
-			) && (ent.spawnflags & DROPPED_PLAYER_ITEM)))
+		if (ent.spawnflags & DROPPED_PLAYER_ITEM)
 		{
-			if (ent.spawnflags & DROPPED_PLAYER_ITEM)
-			{
-				if (ent.item->use == Use_Quad)
-					quad_drop_timeout_hack = ent.nextthink - level.framenum;
+			if (ent.item->use == Use_Quad)
+				quad_drop_timeout_hack = ent.nextthink - level.framenum;
 #ifdef THE_RECKONING
-				else if (ent.item->use == Use_QuadFire)
-					quad_fire_drop_timeout_hack = ent.nextthink - level.framenum;
+			else if (ent.item->use == Use_QuadFire)
+				quad_fire_drop_timeout_hack = ent.nextthink - level.framenum;
 #endif
-			}
-
-			if (ent.item->use)
-				ent.item->use(other, ent.item);
 		}
-#ifdef SINGLE_PLAYER
+
+		if (ent.item->use)
+			ent.item->use(other, ent.item);
 	}
-#endif
 
 	return true;
 }

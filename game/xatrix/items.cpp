@@ -16,15 +16,15 @@ void Use_QuadFire(entity &ent, const gitem_t &it)
 	ent.client->pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	int timeout;
+	gtime timeout;
 
-	if (quad_fire_drop_timeout_hack)
+	if (quad_fire_drop_timeout_hack != gtime::zero())
 	{
 		timeout = quad_fire_drop_timeout_hack;
-		quad_fire_drop_timeout_hack = 0;
+		quad_fire_drop_timeout_hack = gtime::zero();
 	}
 	else
-		timeout = 300;
+		timeout = 30s;
 
 	if (ent.client->quadfire_framenum > level.framenum)
 		ent.client->quadfire_framenum += timeout;

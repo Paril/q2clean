@@ -82,7 +82,7 @@ REGISTER_STATIC_SAVABLE(Grenade_Touch);
 
 entity_type ET_GRENADE("grenade");
 
-void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float timer, float damage_radius)
+void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, gtimef timer, float damage_radius)
 {
 	vector	dir;
 	vector	forward, right, up;
@@ -106,7 +106,7 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	grenade.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
 	grenade.owner = self;
 	grenade.touch = SAVABLE(Grenade_Touch);
-	grenade.nextthink = level.framenum + (gtime) (timer * BASE_FRAMERATE);
+	grenade.nextthink = duration_cast<gtime>(level.framenum + timer);
 	grenade.think = SAVABLE(Grenade_Explode);
 	grenade.dmg = damage;
 	grenade.dmg_radius = damage_radius;
@@ -115,7 +115,7 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	gi.linkentity(grenade);
 }
 
-void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float timer, float damage_radius, bool held)
+void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, gtimef timer, float damage_radius, bool held)
 {
 	vector	dir;
 	vector	forward, right, up;
@@ -139,7 +139,7 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	grenade.modelindex = gi.modelindex("models/objects/grenade2/tris.md2");
 	grenade.owner = self;
 	grenade.touch = SAVABLE(Grenade_Touch);
-	grenade.nextthink = level.framenum + (gtime) (timer * BASE_FRAMERATE);
+	grenade.nextthink = duration_cast<gtime>(level.framenum + timer);
 	grenade.think = SAVABLE(Grenade_Explode);
 	grenade.dmg = damage;
 	grenade.dmg_radius = damage_radius;
@@ -149,7 +149,7 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 		grenade.spawnflags |= GRENADE_IS_HELD;
 	grenade.sound = gi.soundindex("weapons/hgrenc1b.wav");
 
-	if (timer <= 0.0f)
+	if (timer <= gtimef::zero())
 		Grenade_Explode(grenade);
 	else
 	{

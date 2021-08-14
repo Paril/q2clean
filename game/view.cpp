@@ -10,7 +10,7 @@
 #include "player_frames.h"
 #include "view.h"
 
-constexpr float FALL_TIME = 0.3f;
+constexpr gtimef FALL_TIME = 0.3s;
 
 static vector forward, right, up;
 static float xyspeed, bobmove, bobfracsin;
@@ -29,7 +29,7 @@ static inline void P_WorldEffects(entity &current_player)
 
 	if (current_player.movetype == MOVETYPE_NOCLIP)
 	{
-		current_player.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE; // don't need air
+		current_player.air_finished_framenum = level.framenum + 12s; // don't need air
 		return;
 	}
 
@@ -58,7 +58,7 @@ static inline void P_WorldEffects(entity &current_player)
 		current_player.flags |= FL_INWATER;
 
 		// clear damage_debounce, so the pain sound will play immediately
-		current_player.damage_debounce_framenum = level.framenum - 1 * BASE_FRAMERATE;
+		current_player.damage_debounce_framenum = level.framenum - 1s;
 	}
 
 	//
@@ -94,7 +94,7 @@ static inline void P_WorldEffects(entity &current_player)
 			PlayerNoise(current_player, current_player.origin, PNOISE_SELF);
 		}
 #endif
-		else if (current_player.air_finished_framenum < level.framenum + 11 * BASE_FRAMERATE)
+		else if (current_player.air_finished_framenum < level.framenum + 11s)
 			// just break surface
 			gi.sound(current_player, CHAN_VOICE, gi.soundindex("player/gasp2.wav"));
 	}
@@ -107,9 +107,9 @@ static inline void P_WorldEffects(entity &current_player)
 		// breather or envirosuit give air
 		if (breather || envirosuit)
 		{
-			current_player.air_finished_framenum = level.framenum + 10 * BASE_FRAMERATE;
+			current_player.air_finished_framenum = level.framenum + 10s;
 
-			if (((current_player.client->breather_framenum - level.framenum) % 25) == 0)
+			if (((current_player.client->breather_framenum - level.framenum) % 2500ms) == gtimef::zero())
 			{
 				if (!current_player.client->breather_sound)
 					gi.sound(current_player, CHAN_AUTO, gi.soundindex("player/u_breath1.wav"));
@@ -127,10 +127,9 @@ static inline void P_WorldEffects(entity &current_player)
 		if (current_player.air_finished_framenum < level.framenum)
 		{
 			// drown!
-			if (current_player.client->next_drown_framenum < level.framenum
-				&& current_player.health > 0)
+			if (current_player.client->next_drown_framenum < level.framenum && current_player.health > 0)
 			{
-				current_player.client->next_drown_framenum = level.framenum + 1 * BASE_FRAMERATE;
+				current_player.client->next_drown_framenum = level.framenum + 1s;
 
 				// take more damage the longer underwater
 				current_player.dmg += 2;
@@ -153,7 +152,7 @@ static inline void P_WorldEffects(entity &current_player)
 	}
 	else
 	{
-		current_player.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
+		current_player.air_finished_framenum = level.framenum + 12s;
 		current_player.dmg = 2;
 	}
 
@@ -172,7 +171,7 @@ static inline void P_WorldEffects(entity &current_player)
 					gi.sound(current_player, CHAN_VOICE, gi.soundindex("player/burn1.wav"));
 				else
 					gi.sound(current_player, CHAN_VOICE, gi.soundindex("player/burn2.wav"));
-				current_player.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
+				current_player.pain_debounce_framenum = level.framenum + 1s;
 			}
 
 			if (envirosuit) // take 1/3 damage with envirosuit
@@ -236,7 +235,7 @@ static inline void P_FallingDamage(entity &ent)
 
 #ifdef HOOK_CODE
 	// never take damage if just release grapple or on grapple
-	if ((level.framenum - ent.client->grapplereleaseframenum) <= (2 * BASE_FRAMERATE) ||
+	if ((level.framenum - ent.client->grapplereleaseframenum) <= 2s ||
 		(ent.client->grapple.has_value() &&
 			ent.client->grapplestate > GRAPPLE_STATE_FLY))
 		return;
@@ -354,7 +353,7 @@ static void P_DamageFeedback(entity &player)
 	if ((level.framenum > player.pain_debounce_framenum) && !(player.flags & FL_GODMODE) && (player.client->invincible_framenum <= level.framenum))
 	{
 		r = 1 + (Q_rand() & 1);
-		player.pain_debounce_framenum = (gtime) (level.framenum + 0.7f * BASE_FRAMERATE);
+		player.pain_debounce_framenum = level.framenum + 700ms;
 		if (player.health < 25)
 			l = 25;
 		else if (player.health < 50)
@@ -665,9 +664,9 @@ static inline void SV_CalcBlend(entity &ent)
 	if (ent.client->quad_framenum > level.framenum)
 	{
 		remaining = ent.client->quad_framenum - level.framenum;
-		if (remaining == 30)    // beginning to fade
+		if (remaining == 3s)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage2.wav"));
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			SV_AddBlend(quad_blend, 0.08f, ent.client->ps.blend);
 	}
 #ifdef THE_RECKONING
@@ -675,9 +674,9 @@ static inline void SV_CalcBlend(entity &ent)
 	else if (ent.client->quadfire_framenum > level.framenum)
 	{
 		remaining = ent.client->quadfire_framenum - level.framenum;
-		if (remaining == 30)	// beginning to fade
+		if (remaining == 3s)	// beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/quadfire2.wav"));
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			SV_AddBlend(quadfire_blend, 0.08f, ent.client->ps.blend);
 	}
 #endif
@@ -685,48 +684,48 @@ static inline void SV_CalcBlend(entity &ent)
 	else if (ent.client->double_framenum > level.framenum)
 	{
 		remaining = ent.client->double_framenum - level.framenum;
-		if (remaining == 30)	// beginning to fade
+		if (remaining == 3s)	// beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage2.wav"));
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			SV_AddBlend(double_blend, 0.08f, ent.client->ps.blend);
 	}
 #endif
 	else if (ent.client->invincible_framenum > level.framenum)
 	{
 		remaining = ent.client->invincible_framenum - level.framenum;
-		if (remaining == 30)    // beginning to fade
+		if (remaining == 3s)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect2.wav"));
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			SV_AddBlend(invul_blend, 0.08f, ent.client->ps.blend);
 	}
 	else if (ent.client->enviro_framenum > level.framenum)
 	{
 		remaining = ent.client->enviro_framenum - level.framenum;
-		if (remaining == 30)    // beginning to fade
+		if (remaining == 3s)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"));
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			SV_AddBlend(enviro_blend, 0.08f, ent.client->ps.blend);
 	}
 	else if (ent.client->breather_framenum > level.framenum)
 	{
 		remaining = ent.client->breather_framenum - level.framenum;
-		if (remaining == 30)    // beginning to fade
+		if (remaining == 3s)    // beginning to fade
 			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"));
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			SV_AddBlend(breather_blend, 0.04f, ent.client->ps.blend);
 	}
 
 #ifdef GROUND_ZERO
 	if (ent.client->nuke_framenum > level.framenum)
 	{
-		float brightness = (ent.client->nuke_framenum - level.framenum) / 20.0f;
+		float brightness = (ent.client->nuke_framenum - level.framenum) / 2s;
 		SV_AddBlend(nuke_blend, brightness, ent.client->ps.blend);
 	}
 
 	if (ent.client->ir_framenum > level.framenum)
 	{
 		remaining = ent.client->ir_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 		{
 			ent.client->ps.rdflags |= RDF_IRGOGGLES;
 			SV_AddBlend(ir_blend, 0.2f, ent.client->ps.blend);
@@ -783,7 +782,7 @@ static inline void G_SetClientEffects(entity &ent)
 	ent.effects = EF_NONE;
 	ent.renderfx = RF_IR_VISIBLE;
 
-	if (ent.health <= 0 || level.intermission_framenum)
+	if (ent.health <= 0 || level.intermission_framenum != gtime::zero())
 		return;
 
 	if (ent.powerarmor_framenum > level.framenum)
@@ -801,7 +800,7 @@ static inline void G_SetClientEffects(entity &ent)
 	if (ent.client->quad_framenum > level.framenum)
 	{
 		remaining = ent.client->quad_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			ent.effects |= EF_QUAD;
 	}
 
@@ -810,7 +809,7 @@ static inline void G_SetClientEffects(entity &ent)
 	if (ent.client->quadfire_framenum > level.framenum)
 	{
 		remaining = ent.client->quadfire_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			ent.effects |= EF_QUAD;
 	}
 #endif
@@ -819,7 +818,7 @@ static inline void G_SetClientEffects(entity &ent)
 	if (ent.client->double_framenum > level.framenum)
 	{
 		remaining = ent.client->double_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			ent.effects |= EF_DOUBLE;
 	}
 
@@ -830,7 +829,7 @@ static inline void G_SetClientEffects(entity &ent)
 	if (ent.client->invincible_framenum > level.framenum)
 	{
 		remaining = ent.client->invincible_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4))
+		if (remaining > 3s || (remaining % 800ms) >= 400ms)
 			ent.effects |= EF_PENT;
 	}
 
@@ -861,7 +860,7 @@ static inline void G_SetClientSound(entity &ent)
 	}
 
 	// help beep (no more than three times)
-	if (ent.client->pers.helpchanged && ent.client->pers.helpchanged <= 3 && !(level.framenum & 63))
+	if (ent.client->pers.helpchanged && ent.client->pers.helpchanged <= 3 && (level.framenum % 6400) == gtime::zero())
 	{
 		ent.client->pers.helpchanged++;
 		gi.sound(ent, CHAN_VOICE, gi.soundindex("misc/pc_up.wav"), ATTN_STATIC);
@@ -1012,7 +1011,7 @@ void ClientEndServerFrame(entity &ent)
 	// If the end of unit layout is displayed, don't give
 	// the player any normal movement attributes
 	//
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 	{
 		// FIXME: add view drifting here?
 		ent.client->ps.blend[3] = 0.f;
@@ -1110,7 +1109,7 @@ void ClientEndServerFrame(entity &ent)
 	ent.client->kick_origin = ent.client->kick_angles = vec3_origin;
 
 	// if the scoreboard is up, update it
-	if (ent.client->showscores && !(level.framenum & 31))
+	if (ent.client->showscores && (level.framenum % 3200) == gtime::zero())
 #ifdef PMENU
 		if (!ent.client.menu.open)
 #endif

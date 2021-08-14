@@ -76,26 +76,26 @@ static void Move_Final(entity &ent)
 		return;
 	}
 
-	ent.velocity = ent.moveinfo.dir * (ent.moveinfo.remaining_distance / FRAMETIME);
+	ent.velocity = ent.moveinfo.dir * (ent.moveinfo.remaining_distance / FRAMETIME.count());
 
 	ent.think = SAVABLE(Move_Done);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(Move_Final);
 
 static void Move_Begin(entity &ent)
 {
-	if ((ent.moveinfo.speed * FRAMETIME) >= ent.moveinfo.remaining_distance)
+	if ((ent.moveinfo.speed * FRAMETIME.count()) >= ent.moveinfo.remaining_distance)
 	{
 		Move_Final(ent);
 		return;
 	}
 
 	ent.velocity = ent.moveinfo.dir * ent.moveinfo.speed;
-	float frames = floor((ent.moveinfo.remaining_distance / ent.moveinfo.speed) / FRAMETIME);
-	ent.moveinfo.remaining_distance -= frames * ent.moveinfo.speed * FRAMETIME;
-	ent.nextthink = level.framenum + (gtime)frames;
+	float num_frames = floor((ent.moveinfo.remaining_distance / ent.moveinfo.speed) / FRAMETIME.count());
+	ent.moveinfo.remaining_distance -= num_frames * ent.moveinfo.speed * FRAMETIME.count();
+	ent.nextthink = level.framenum + frames((int32_t) num_frames);
 	ent.think = SAVABLE(Move_Final);
 }
 
@@ -120,7 +120,7 @@ void Move_Calc(entity &ent, vector dest, savable<ethinkfunc> func)
 			Move_Begin(ent);
 		else
 		{
-			ent.nextthink = level.framenum + 1;
+			ent.nextthink = level.framenum + 1_hz;
 			ent.think = SAVABLE(Move_Begin);
 		}
 	}
@@ -131,7 +131,7 @@ void Move_Calc(entity &ent, vector dest, savable<ethinkfunc> func)
 		
 		ent.moveinfo.current_speed = 0;
 		ent.think = SAVABLE(Think_AccelMove);
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 1_hz;
 	}
 }
 
@@ -162,10 +162,10 @@ static void AngleMove_Final(entity &ent)
 		return;
 	}
 
-	ent.avelocity = move * (1.0f / FRAMETIME);
+	ent.avelocity = move * BASE_FRAMERATE;
 
 	ent.think = SAVABLE(AngleMove_Done);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(AngleMove_Final);
@@ -179,7 +179,6 @@ static void AngleMove_Begin(entity &ent)
 	vector	destdelta;
 	float	len;
 	float	traveltime;
-	float	frames;
 
 #ifdef GROUND_ZERO
 	// accelerate as needed
@@ -203,13 +202,11 @@ static void AngleMove_Begin(entity &ent)
 	// divide by speed to get time to reach dest
 	traveltime = len / ent.moveinfo.speed;
 
-	if (traveltime < FRAMETIME)
+	if (traveltime < FRAMETIME.count())
 	{
 		AngleMove_Final(ent);
 		return;
 	}
-
-	frames = floor(traveltime / FRAMETIME);
 
 	// scale the destdelta vector by the time spent traveling to get velocity
 	ent.avelocity = destdelta * (1.0f / traveltime);
@@ -220,13 +217,13 @@ static void AngleMove_Begin(entity &ent)
 	{
 #endif
 		// set nextthink to trigger a think when dest is reached
-		ent.nextthink = level.framenum + (gtime) frames;
+		ent.nextthink = level.framenum + frames((int32_t) floor(traveltime / FRAMETIME.count()));
 		ent.think = SAVABLE(AngleMove_Final);
 #ifdef GROUND_ZERO
 	}
 	else
 	{
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 1_hz;
 		ent.think = SAVABLE(AngleMove_Begin);
 	}
 #endif
@@ -247,7 +244,7 @@ static void AngleMove_Calc(entity &ent, savable<ethinkfunc> func)
 		AngleMove_Begin(ent);
 	else
 	{
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 1_hz;
 		ent.think = SAVABLE(AngleMove_Begin);
 	}
 }
@@ -360,7 +357,7 @@ static void Think_AccelMove(entity &ent)
 	}
 
 	ent.velocity = ent.moveinfo.dir * (ent.moveinfo.current_speed * 10);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.think = SAVABLE(Think_AccelMove);
 }
 
@@ -379,7 +376,7 @@ static void plat_hit_top(entity &ent)
 	ent.moveinfo.state = STATE_TOP;
 
 	ent.think = SAVABLE(plat_go_down);
-	ent.nextthink = level.framenum + 3 * BASE_FRAMERATE;
+	ent.nextthink = level.framenum + 3s;
 }
 
 REGISTER_STATIC_SAVABLE(plat_hit_top);
@@ -498,7 +495,7 @@ static void Touch_Plat_Center(entity &ent, entity &other, vector, const surface 
 	if (plat.moveinfo.state == STATE_BOTTOM)
 		plat_go_up(plat);
 	else if (plat.moveinfo.state == STATE_TOP)
-		plat.nextthink = level.framenum + 1 * BASE_FRAMERATE;   // the player is still on the plat, so delay going down
+		plat.nextthink = level.framenum + 1s;   // the player is still on the plat, so delay going down
 }
 
 REGISTER_STATIC_SAVABLE(Touch_Plat_Center);
@@ -673,7 +670,7 @@ static void rotating_accel(entity &self)
 		current_speed += self.accel;
 		self.avelocity = self.movedir * current_speed;
 		self.think = SAVABLE(rotating_accel);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 	}
 }
 static void rotating_decel(entity &self);
@@ -696,7 +693,7 @@ static void rotating_decel(entity &self)
 		current_speed -= self.decel;
 		self.avelocity = self.movedir * current_speed;
 		self.think = SAVABLE(rotating_decel);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 	}
 }
 #endif
@@ -871,9 +868,9 @@ static void button_wait(entity &self)
 
 	G_UseTargets(self, self.activator);
 	self.frame = 1;
-	if (self.moveinfo.wait >= 0)
+	if (self.moveinfo.wait >= gtimef::zero())
 	{
-		self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
+		self.nextthink = duration_cast<gtime>(level.framenum + self.moveinfo.wait);
 		self.think = SAVABLE(button_return);
 	}
 }
@@ -940,8 +937,8 @@ static void SP_func_button(entity &ent)
 	if (!ent.decel)
 		ent.decel = ent.speed;
 
-	if (!ent.wait)
-		ent.wait = 3.f;
+	if (ent.wait == gtimef::zero())
+		ent.wait = 3s;
 	if (!st.lip)
 		st.lip = 4;
 
@@ -1044,10 +1041,10 @@ static void door_hit_top(entity &self)
 	if (self.spawnflags & DOOR_TOGGLE)
 		return;
 
-	if (self.moveinfo.wait >= 0)
+	if (self.moveinfo.wait >= gtimef::zero())
 	{
 		self.think = SAVABLE(door_go_down);
-		self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
+		self.nextthink = duration_cast<gtime>(level.framenum + self.moveinfo.wait);
 	}
 }
 
@@ -1097,8 +1094,8 @@ static void door_go_up(entity &self, entity &cactivator)
 	if (self.moveinfo.state == STATE_TOP)
 	{
 		// reset top wait time
-		if (self.moveinfo.wait >= 0)
-			self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
+		if (self.moveinfo.wait >= gtimef::zero())
+			self.nextthink = duration_cast<gtime>(level.framenum + self.moveinfo.wait);
 		return;
 	}
 
@@ -1133,8 +1130,8 @@ static void smart_water_go_up(entity &self)
 
 	if (self.moveinfo.state == STATE_TOP)
 	{	// reset top wait time
-		if (self.moveinfo.wait >= 0)
-			self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
+		if (self.moveinfo.wait >= gtimef::zero())
+			self.nextthink = duration_cast<gtime>(level.framenum + self.moveinfo.wait);
 		return;
 	}
 
@@ -1143,7 +1140,7 @@ static void smart_water_go_up(entity &self)
 		if(self.absbounds.maxs[2] >= self.health)
 		{
 			self.velocity = vec3_origin;
-			self.nextthink = 0;
+			self.nextthink = gtime::zero();
 			self.moveinfo.state = STATE_TOP;
 			return;
 		}
@@ -1204,7 +1201,7 @@ static void smart_water_go_up(entity &self)
 	}
 
 	self.think = SAVABLE(smart_water_go_up);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 #endif
 
@@ -1265,7 +1262,7 @@ static void Touch_DoorTrigger(entity &self, entity &other, vector, const surface
 	if (level.framenum < self.touch_debounce_framenum)
 		return;
 
-	self.touch_debounce_framenum = level.framenum + (gtime)(1.0f * BASE_FRAMERATE);
+	self.touch_debounce_framenum = level.framenum + 1s;
 	door_use(self.owner, other, other);
 }
 
@@ -1357,7 +1354,7 @@ static void door_blocked(entity &self, entity &other)
 
 	// if a door has a negative wait, it would never come back if blocked,
 	// so let it just squash the object to death real fast
-	if (self.moveinfo.wait >= 0)
+	if (self.moveinfo.wait >= gtimef::zero())
 	{
 		if (self.moveinfo.state == STATE_DOWN)
 			for (entityref ent = self.teammaster; ent.has_value(); ent = ent->teamchain)
@@ -1390,7 +1387,7 @@ static void door_touch(entity &self, entity &other, vector, const surface &)
 
 	if (level.framenum < self.touch_debounce_framenum)
 		return;
-	self.touch_debounce_framenum = level.framenum + (gtime)(5.0f * BASE_FRAMERATE);
+	self.touch_debounce_framenum = level.framenum + 5s;
 
 	gi.centerprint(other, self.message);
 	gi.sound(other, gi.soundindex("misc/talk1.wav"));
@@ -1427,8 +1424,8 @@ static void SP_func_door(entity &ent)
 	if (!ent.decel)
 		ent.decel = ent.speed;
 
-	if (!ent.wait)
-		ent.wait = 3.f;
+	if (ent.wait == gtimef::zero())
+		ent.wait = 3s;
 	if (!st.lip)
 		st.lip = 8;
 	if (!ent.dmg)
@@ -1485,7 +1482,7 @@ static void SP_func_door(entity &ent)
 
 	gi.linkentity(ent);
 
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	if (ent.health || ent.targetname)
 		ent.think = SAVABLE(Think_CalcMoveSpeed);
 	else
@@ -1541,7 +1538,7 @@ static void Door_Activate(entity &self, entity &, entity &)
 		self.think = SAVABLE(Think_CalcMoveSpeed);
 	else
 		self.think = SAVABLE(Think_SpawnDoorTrigger);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 
 }
 
@@ -1589,8 +1586,8 @@ static void SP_func_door_rotating(entity &ent)
 	if (!ent.decel)
 		ent.decel = ent.speed;
 
-	if (!ent.wait)
-		ent.wait = 3.f;
+	if (ent.wait == gtimef::zero())
+		ent.wait = 3s;
 	if (!ent.dmg)
 		ent.dmg = 2;
 
@@ -1642,7 +1639,7 @@ static void SP_func_door_rotating(entity &ent)
 
 	gi.linkentity(ent);
 
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	if (ent.health || ent.targetname)
 		ent.think = SAVABLE(Think_CalcMoveSpeed);
 	else
@@ -1654,7 +1651,7 @@ static void SP_func_door_rotating(entity &ent)
 		ent.takedamage = false;
 		ent.die = nullptr;
 		ent.think = nullptr;
-		ent.nextthink = 0;
+		ent.nextthink = gtime::zero();
 		ent.use = SAVABLE(Door_Activate);
 	}
 #endif
@@ -1755,13 +1752,13 @@ static void SP_func_water(entity &self)
 	}
 #endif
 
-	if (!self.wait)
-		self.wait = -1.f;
+	if (self.wait == gtimef::zero())
+		self.wait = -1s;
 	self.moveinfo.wait = self.wait;
 
 	self.use = SAVABLE(door_use);
 
-	if (self.wait == -1)
+	if (self.wait == -1s)
 		self.spawnflags |= DOOR_TOGGLE;
 
 	gi.linkentity(self);
@@ -1801,7 +1798,7 @@ static void train_blocked(entity &self, entity &other)
 
 	if (!self.dmg)
 		return;
-	self.touch_debounce_framenum = level.framenum + (gtime)(0.5f * BASE_FRAMERATE);
+	self.touch_debounce_framenum = level.framenum + 500ms;
 	T_Damage(other, self, self, vec3_origin, other.origin, vec3_origin, self.dmg, 1, { DAMAGE_NONE }, MOD_CRUSH);
 }
 
@@ -1822,11 +1819,11 @@ static void train_wait(entity &self)
 			return;
 	}
 
-	if (self.moveinfo.wait)
+	if (self.moveinfo.wait != gtimef::zero())
 	{
-		if (self.moveinfo.wait > 0)
+		if (self.moveinfo.wait > gtimef::zero())
 		{
-			self.nextthink = level.framenum + (gtime)(self.moveinfo.wait * BASE_FRAMERATE);
+			self.nextthink = duration_cast<gtime>(level.framenum + self.moveinfo.wait);
 			self.think = SAVABLE(train_next);
 		}
 		else if (self.spawnflags & TRAIN_TOGGLE)
@@ -1838,7 +1835,7 @@ static void train_wait(entity &self)
 #endif
 			self.spawnflags &= ~TRAIN_START_ON;
 			self.velocity = vec3_origin;
-			self.nextthink = 0;
+			self.nextthink = gtime::zero();
 		}
 
 		if (!(self.flags & FL_TEAMSLAVE))
@@ -1994,7 +1991,7 @@ void func_train_find(entity &self)
 
 	if (self.spawnflags & TRAIN_START_ON)
 	{
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		self.think = SAVABLE(train_next);
 		self.activator = self;
 	}
@@ -2012,7 +2009,7 @@ void train_use(entity &self, entity &, entity &cactivator)
 			return;
 		self.spawnflags &= ~TRAIN_START_ON;
 		self.velocity = vec3_origin;
-		self.nextthink = 0;
+		self.nextthink = gtime::zero();
 	}
 	else if (self.target_ent.has_value())
 		train_resume(self);
@@ -2055,7 +2052,7 @@ static void SP_func_train(entity &self)
 	{
 		// start trains on the second frame, to make sure their targets have had
 		// a chance to spawn
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 		self.think = SAVABLE(func_train_find);
 	}
 	else
@@ -2068,7 +2065,7 @@ REGISTER_ENTITY(FUNC_TRAIN, func_train);
 */
 static void trigger_elevator_use(entity &self, entity &other, entity &)
 {
-	if (self.movetarget->nextthink)
+	if (self.movetarget->nextthink != gtime::zero())
 		return;
 
 	if (!other.pathtarget)
@@ -2122,7 +2119,7 @@ REGISTER_STATIC_SAVABLE(trigger_elevator_init);
 static void SP_trigger_elevator(entity &self)
 {
 	self.think = SAVABLE(trigger_elevator_init);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 static REGISTER_ENTITY(TRIGGER_ELEVATOR, trigger_elevator);
@@ -2144,7 +2141,7 @@ These can used but not touched.
 static void func_timer_think(entity &self)
 {
 	G_UseTargets(self, self.activator);
-	self.nextthink = level.framenum + (gtime)((self.wait + random(-self.rand, self.rand)) * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.wait + random(-self.rand, self.rand));
 }
 
 REGISTER_STATIC_SAVABLE(func_timer_think);
@@ -2154,15 +2151,15 @@ static void func_timer_use(entity &self, entity &, entity &cactivator)
 	self.activator = cactivator;
 
 	// if on, turn it off
-	if (self.nextthink)
+	if (self.nextthink != gtime::zero())
 	{
-		self.nextthink = 0;
+		self.nextthink = gtime::zero();
 		return;
 	}
 
 	// turn it on
-	if (self.delay)
-		self.nextthink = level.framenum + (gtime)(self.delay * BASE_FRAMERATE);
+	if (self.delay != gtimef::zero())
+		self.nextthink = duration_cast<gtime>(level.framenum + self.delay);
 	else
 		func_timer_think(self);
 }
@@ -2173,8 +2170,8 @@ static constexpr spawn_flag TIMER_START_ON = (spawn_flag) 1;
 
 static void SP_func_timer(entity &self)
 {
-	if (!self.wait)
-		self.wait = 1.0f;
+	if (self.wait == gtimef::zero())
+		self.wait = 1s;
 
 	self.use = SAVABLE(func_timer_use);
 	self.think = SAVABLE(func_timer_think);
@@ -2187,7 +2184,7 @@ static void SP_func_timer(entity &self)
 
 	if (self.spawnflags & TIMER_START_ON)
 	{
-		self.nextthink = level.framenum + (gtime)((1.0f + st.pausetime + self.delay + self.wait + random(-self.rand, self.rand)) * BASE_FRAMERATE);
+		self.nextthink = duration_cast<gtime>(level.framenum + 1s + st.pausetime + self.delay + self.wait + random(-self.rand, self.rand));
 		self.activator = self;
 	}
 
@@ -2302,7 +2299,7 @@ REGISTER_STATIC_SAVABLE(door_secret_use);
 
 static void door_secret_move1(entity &self)
 {
-	self.nextthink = level.framenum + (gtime)(1.0f * BASE_FRAMERATE);
+	self.nextthink = level.framenum + 1s;
 	self.think = SAVABLE(door_secret_move2);
 }
 
@@ -2313,9 +2310,9 @@ static void door_secret_move2(entity &self)
 
 static void door_secret_move3(entity &self)
 {
-	if (self.wait == -1)
+	if (self.wait == -1s)
 		return;
-	self.nextthink = level.framenum + (gtime)(self.wait * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.wait);
 	self.think = SAVABLE(door_secret_move4);
 }
 
@@ -2326,7 +2323,7 @@ static void door_secret_move4(entity &self)
 
 static void door_secret_move5(entity &self)
 {
-	self.nextthink = level.framenum + (gtime)(1.0f * BASE_FRAMERATE);
+	self.nextthink = level.framenum + 1s;
 	self.think = SAVABLE(door_secret_move6);
 }
 
@@ -2360,7 +2357,7 @@ static void door_secret_blocked(entity &self, entity &other)
 	if (level.framenum < self.touch_debounce_framenum)
 		return;
 
-	self.touch_debounce_framenum = level.framenum + (gtime)(0.5f * BASE_FRAMERATE);
+	self.touch_debounce_framenum = level.framenum + 500ms;
 
 	T_Damage(other, self, self, vec3_origin, other.origin, vec3_origin, self.dmg, 1, { DAMAGE_NONE }, MOD_CRUSH);
 }
@@ -2398,8 +2395,8 @@ static void SP_func_door_secret(entity &ent)
 	if (!ent.dmg)
 		ent.dmg = 2;
 
-	if (!ent.wait)
-		ent.wait = 5.f;
+	if (ent.wait == gtimef::zero())
+		ent.wait = 5s;
 
 	ent.moveinfo.accel =
 		ent.moveinfo.decel =

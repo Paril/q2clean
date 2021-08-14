@@ -106,25 +106,24 @@ void MoveClientToIntermission(entity &ent)
 	ent.client->ps.pmove.pm_type = PM_FREEZE;
 	ent.client->ps.gunindex = MODEL_NONE;
 	ent.client->ps.blend[3] = 0;
-	ent.client->ps.rdflags &= ~RDF_UNDERWATER;
+	ent.client->ps.rdflags = RDF_NONE;
 
 	// clean up powerup info
-	ent.client->quad_framenum = 0;
-	ent.client->invincible_framenum = 0;
-	ent.client->breather_framenum = 0;
-	ent.client->enviro_framenum = 0;
+	ent.client->quad_framenum = gtime::zero();
+	ent.client->invincible_framenum = gtime::zero();
+	ent.client->breather_framenum = gtime::zero();
+	ent.client->enviro_framenum = gtime::zero();
 	ent.client->grenade_blew_up = false;
-	ent.client->grenade_framenum = 0;
+	ent.client->grenade_framenum = gtime::zero();
 
 #ifdef THE_RECKONING
-	ent.client->quadfire_framenum = 0;
+	ent.client->quadfire_framenum = gtime::zero();
 #endif
 
 #ifdef GROUND_ZERO
-	ent.client->ps.rdflags &= ~RDF_IRGOGGLES;		// PGM
-	ent.client->ir_framenum = 0;					// PGM
-	ent.client->nuke_framenum = 0;					// PMM
-	ent.client->double_framenum = 0;				// PMM
+	ent.client->ir_framenum = gtime::zero();
+	ent.client->nuke_framenum = gtime::zero();
+	ent.client->double_framenum = gtime::zero();
 #endif
 
 	ent.viewheight = 0;
@@ -147,7 +146,7 @@ void MoveClientToIntermission(entity &ent)
 
 void BeginIntermission(entity &targ)
 {
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 		return;     // already activated
 
 #ifdef CTF
@@ -372,7 +371,7 @@ void G_SetStats(entity &ent)
 	}
 
 	gitem_id index = ArmorIndex(ent);
-	if (power_armor_type && (!index || (level.framenum & 8)))
+	if (power_armor_type && (!index || (level.framenum % 1600ms) >= 800ms))
 	{
 		// flash between power armor and other armor icon
 		// Knightmare- use correct icon for power screen
@@ -409,43 +408,43 @@ void G_SetStats(entity &ent)
 	if (ent.client->quad_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_quad");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->quad_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->quad_framenum - level.framenum).count();
 	}
 #ifdef THE_RECKONING
 	// RAFAEL
 	else if (ent.client->quadfire_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_quadfire");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->quadfire_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->quadfire_framenum - level.framenum).count();
 	}
 #endif
 #ifdef GROUND_ZERO
 	else if (ent.client->double_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_double");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->double_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->double_framenum - level.framenum).count();
 	}
 #endif
 	else if (ent.client->invincible_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_invulnerability");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->invincible_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->invincible_framenum - level.framenum).count();
 	}
 	else if (ent.client->enviro_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_envirosuit");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->enviro_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->enviro_framenum - level.framenum).count();
 	}
 	else if (ent.client->breather_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->breather_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->breather_framenum - level.framenum).count();
 	}
 #ifdef GROUND_ZERO
 	else if (ent.client->ir_framenum > level.framenum)
 	{
 		ent.client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_ir");
-		ent.client->ps.stats[STAT_TIMER] = (ent.client->ir_framenum - level.framenum) / 10;
+		ent.client->ps.stats[STAT_TIMER] = duration_cast<seconds>(ent.client->ir_framenum - level.framenum).count();
 	}
 #endif
 	else
@@ -473,7 +472,7 @@ void G_SetStats(entity &ent)
 	if (deathmatch)
 	{
 #endif
-		if (ent.health <= 0 || level.intermission_framenum || ent.client->showscores)
+		if (ent.health <= 0 || level.intermission_framenum != gtime::zero() || ent.client->showscores)
 			ent.client->ps.stats[STAT_LAYOUTS] |= 1;
 		if (ent.client->showinventory && ent.health > 0)
 			ent.client->ps.stats[STAT_LAYOUTS] |= 2;
@@ -497,7 +496,7 @@ void G_SetStats(entity &ent)
 	// help icon / current weapon if not shown
 	//
 #ifdef SINGLE_PLAYER
-	if (ent.client->pers.helpchanged && (level.framenum & 8))
+	if (ent.client->pers.helpchanged && (level.framenum % 1600ms) >= 800ms)
 		ent.client->ps.stats[STAT_HELPICON] = gi.imageindex("i_help");
 	else
 #endif
@@ -522,7 +521,7 @@ void G_SetSpectatorStats(entity &ent)
 
 	// layouts are independant in spectator
 	ent.client->ps.stats[STAT_LAYOUTS] = 0;
-	if (ent.health <= 0 || level.intermission_framenum || ent.client->showscores)
+	if (ent.health <= 0 || level.intermission_framenum != gtime::zero() || ent.client->showscores)
 		ent.client->ps.stats[STAT_LAYOUTS] |= 1;
 	if (ent.client->showinventory && ent.health > 0)
 		ent.client->ps.stats[STAT_LAYOUTS] |= 2;

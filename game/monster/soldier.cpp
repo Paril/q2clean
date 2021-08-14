@@ -395,7 +395,7 @@ static void soldier_reacttodamage(entity &self, entity &, entity &, int32_t, int
 		return;
 	}
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 
 	const int32_t n = self.skinnum | 1;
 	if (n == 1)
@@ -454,7 +454,7 @@ static void soldierh_laserbeam(entity &self, monster_muzzleflash flash_index)
 
 	// RAFAEL
 	// this sound can't be called this frequent
-	if ((level.framenum % 8) == 0)
+	if ((level.framenum % 800ms) == gtime::zero())
 		gi.sound(self, CHAN_WEAPON, gi.soundindex("misc/lasfly.wav"), ATTN_STATIC);
 
 	start = self.origin;
@@ -624,11 +624,11 @@ static void soldier_fire(entity &self, int32_t flash_number)
 	} else {
 		if (!(self.monsterinfo.aiflags & AI_HOLD_FRAME))
 #ifdef ROGUE_AI
-			self.wait = (float)
+			self.wait =
 #else
 			self.monsterinfo.pause_framenum = 
 #endif
-				level.framenum + (3 + Q_rand() % 8);
+				level.framenum + 300ms + random(700ms);
 
 #ifdef THE_RECKONING
 		if (self.modelindex == soldierh_modelindex)
@@ -889,7 +889,7 @@ static void soldier_fire3(entity &self)
 
 static void soldier_attack3_refire(entity &self)
 {
-	if ((level.framenum + (gtime)(0.4f * BASE_FRAMERATE)) <
+	if ((level.framenum + 400ms) <
 #ifdef ROGUE_AI
 		self.monsterinfo.duck_wait_framenum
 #else
@@ -1013,15 +1013,15 @@ static void soldier_attack(entity &self)
 	{
 		float chance = 0.1f;
 		// setup shot probabilities
-		if (self.monsterinfo.blind_fire_framedelay < (int)(1.0 * BASE_FRAMERATE))
+		if (self.monsterinfo.blind_fire_framedelay < 1s)
 			chance = 1.0f;
-		else if (self.monsterinfo.blind_fire_framedelay < (int)(7.5 * BASE_FRAMERATE))
+		else if (self.monsterinfo.blind_fire_framedelay < 7.5s)
 			chance = 0.4f;
 
 		float r = random();
 
 		// minimum of 2 seconds, plus 0-3, after the shots are done
-		self.monsterinfo.blind_fire_framedelay += (int)(random(4.1f, 7.1f) * BASE_FRAMERATE);
+		self.monsterinfo.blind_fire_framedelay += duration_cast<gtime>(random(4.1s, 7.1s));
 
 		// don't shoot at the origin
 		if (!self.monsterinfo.blind_fire_target)
@@ -1034,7 +1034,7 @@ static void soldier_attack(entity &self)
 		// turn on manual steering to signal both manual steering and blindfire
 		self.monsterinfo.aiflags |= AI_MANUAL_STEERING;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack1);
-		self.monsterinfo.attack_finished = level.framenum + (int)(random(1.5, 2.5) * BASE_FRAMERATE);
+		self.monsterinfo.attack_finished = level.framenum + duration_cast<gtime>(random(1.5s, 2.5s));
 		return;
 	}
 
@@ -1195,7 +1195,7 @@ static void soldier_dead(entity &self)
 	};
 	self.movetype = MOVETYPE_TOSS;
 	self.svflags |= SVF_DEADMONSTER;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	gi.linkentity(self);
 }
 
@@ -1532,7 +1532,7 @@ static void soldier_sidestep (entity &self)
 
 REGISTER_STATIC_SAVABLE(soldier_sidestep);
 
-static void soldier_duck (entity &self, float eta)
+static void soldier_duck (entity &self, gtimef eta)
 {
 	float r;
 
@@ -1544,7 +1544,7 @@ static void soldier_duck (entity &self, float eta)
 		// PMM - stupid dodge
 		self.monsterinfo.nextframe = FRAME_duck01;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_duck);
-		self.monsterinfo.duck_wait_framenum = level.framenum + (gtime)((eta + 1) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
 
 #ifdef THE_RECKONING
 		soldierh_end_hyper_sound(self);
@@ -1558,13 +1558,13 @@ static void soldier_duck (entity &self, float eta)
 	{
 		self.monsterinfo.nextframe = FRAME_duck01;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_duck);
-		self.monsterinfo.duck_wait_framenum = level.framenum + (gtime)((eta + (0.1 * (3 - skill))) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
 	}
 	else
 	{
 		self.monsterinfo.nextframe = FRAME_attak301;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack3);
-		self.monsterinfo.duck_wait_framenum = level.framenum + (gtime)((eta + 1) * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
 	}
 
 #ifdef THE_RECKONING

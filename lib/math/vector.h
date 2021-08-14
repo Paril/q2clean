@@ -50,9 +50,9 @@ struct vector
 
 	// channel-wise value operators
 	template<is_numeric T>
-	constexpr vector operator*(const T &rhs) const { return { x * rhs, y * rhs, z * rhs }; }
+	constexpr vector operator*(const T &rhs) const { return { (float) (x * rhs), (float) (y * rhs), (float) (z * rhs) }; }
 	template<is_numeric T>
-	constexpr vector operator/(const T &rhs) const { return { x / rhs, y / rhs, z / rhs }; }
+	constexpr vector operator/(const T &rhs) const { return { (float) (x / rhs), (float) (y / rhs), float (z / rhs) }; }
 
 	constexpr vector operator+(const vector &rhs) const { return { x + rhs.x, y + rhs.y, z + rhs.z }; }
 	constexpr vector operator-(const vector &rhs) const { return { x - rhs.x, y - rhs.y, z - rhs.z }; }
@@ -127,9 +127,9 @@ struct vector
 };
 
 template<is_numeric T>
-constexpr vector operator*(const T &lhs, const vector &rhs) { return { lhs * rhs.x, lhs * rhs.y, lhs * rhs.z }; }
+constexpr vector operator*(const T &lhs, const vector &rhs) { return { (float) (lhs * rhs.x), (float) (lhs * rhs.y), (float) (lhs * rhs.z) }; }
 template<is_numeric T>
-constexpr vector operator/(const T &lhs, const vector &rhs) { return { lhs / rhs.x, lhs / rhs.y, lhs / rhs.z }; }
+constexpr vector operator/(const T &lhs, const vector &rhs) { return { (float) (lhs / rhs.x), (float) (lhs / rhs.y), (float) (lhs / rhs.z) }; }
 
 // the origin point (all zeroes)
 constexpr vector vec3_origin { 0, 0, 0 };

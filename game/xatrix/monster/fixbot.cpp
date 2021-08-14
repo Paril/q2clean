@@ -42,7 +42,7 @@ static entityref fixbot_FindDeadMonster(entity &self)
 			continue;
 		if (ent->health > 0)
 			continue;
-		if (ent->nextthink)
+		if (ent->nextthink != gtime::zero())
 			continue;
 		if (!visible(self, ent))
 			continue;
@@ -199,7 +199,7 @@ static void use_scanner(entity &self)
 					// remove the old one
 					if (self.goalentity->type == ET_BOT_GOAL)
 					{
-						self.goalentity->nextthink = level.framenum + 1;
+						self.goalentity->nextthink = level.framenum + 1_hz;
 						self.goalentity->think = SAVABLE(G_FreeEdict);
 					}	
 					
@@ -228,7 +228,7 @@ static void use_scanner(entity &self)
 			self.monsterinfo.currentmove = &SAVABLE(fixbot_move_weld_start);
 		else 
 		{
-			self.goalentity->nextthink = level.framenum + 1;
+			self.goalentity->nextthink = level.framenum + 1_hz;
 			self.goalentity->think = SAVABLE(G_FreeEdict);
 			self.goalentity = self.enemy = 0;
 			self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
@@ -247,7 +247,7 @@ static void use_scanner(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 	else 
 	{
-		self.goalentity->nextthink = level.framenum + 1;
+		self.goalentity->nextthink = level.framenum + 1_hz;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
 		self.goalentity = self.enemy = 0;
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
@@ -558,7 +558,7 @@ static void fly_vertical2(entity &self)
 	
 	if (len < 32)
 	{
-		self.goalentity->nextthink = level.framenum + 1;
+		self.goalentity->nextthink = level.framenum + 1_hz;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 		self.goalentity = self.enemy = 0;
@@ -683,7 +683,7 @@ static void fly_vertical(entity &self)
 	
 	if (self.frame == FRAME_landing_58 || self.frame == FRAME_takeoff_16)
 	{
-		self.goalentity->nextthink = level.framenum + 1;
+		self.goalentity->nextthink = level.framenum + 1_hz;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 		self.goalentity = self.enemy = null_entity;

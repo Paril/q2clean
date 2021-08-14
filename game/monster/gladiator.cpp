@@ -312,7 +312,7 @@ static void gladiator_reacttodamage(entity &self, entity &, entity &, int32_t, i
 		return;
 	}
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 
 	if (random() < 0.5f)
 		gi.sound(self, CHAN_VOICE, sound_pain1);
@@ -338,7 +338,7 @@ static void gladiator_dead(entity &self)
 	};
 	self.movetype = MOVETYPE_TOSS;
 	self.svflags |= SVF_DEADMONSTER;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	gi.linkentity(self);
 }
 

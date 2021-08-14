@@ -15,7 +15,6 @@ void weapon_grenade_fire(entity &ent, bool held)
 	vector	forward, right;
 	vector	start;
 	int32_t	damage = 125;
-	float	timer;
 	int32_t	speed;
 	float	radius;
 
@@ -27,14 +26,14 @@ void weapon_grenade_fire(entity &ent, bool held)
 	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	timer = (ent.client->grenade_framenum - level.framenum) * FRAMETIME;
-	speed = (int32_t) (GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER));
+	gtimef timer = (ent.client->grenade_framenum - level.framenum);
+	speed = (int32_t) (GRENADE_MINSPEED + (GRENADE_TIMER - timer).count() * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER.count()));
 	fire_grenade2(ent, start, forward, damage, speed, timer, radius, held);
 
 	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 
-	ent.client->grenade_framenum = (gtime) (level.framenum + 1.0f * BASE_FRAMERATE);
+	ent.client->grenade_framenum = level.framenum + 1s;
 
 	if (ent.deadflag || ent.modelindex != MODEL_PLAYER) // VWep animations screw up corpses
 		return;

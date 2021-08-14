@@ -62,12 +62,12 @@ gibs
 static void gib_think(entity &self)
 {
 	self.frame++;
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 100ms;
 
 	if (self.frame == 10)
 	{
 		self.think = SAVABLE(G_FreeEdict);
-		self.nextthink = level.framenum + (gtime)(random(8.f, 18.f) * BASE_FRAMERATE);
+		self.nextthink = level.framenum + random(8s, 18s);
 	}
 }
 
@@ -93,7 +93,7 @@ void gib_touch(entity &self, entity &, vector normal, const surface &)
 		{
 			self.frame++;
 			self.think = SAVABLE(gib_think);
-			self.nextthink = level.framenum + 1;
+			self.nextthink = level.framenum + 100ms;
 		}
 	}
 }
@@ -142,7 +142,7 @@ entity &ThrowGib(entity &self, stringlit gibname, int32_t damage, gib_type type)
 	gib.angles = randomv({ 360, 360, 360 });
 
 	gib.think = SAVABLE(G_FreeEdict);
-	gib.nextthink = level.framenum + (gtime)(random(10.f, 20.f) * BASE_FRAMERATE);
+	gib.nextthink = level.framenum + random(10s, 20s);
 
 	gi.linkentity(gib);
 
@@ -186,7 +186,7 @@ void ThrowHead(entity &self, stringlit gibname, int32_t damage, gib_type type)
 	self.avelocity[YAW] = random(-600.f, 600.f);
 
 	self.think = SAVABLE(G_FreeEdict);
-	self.nextthink = level.framenum + (gtime)(random(10.f, 20.f) * BASE_FRAMERATE);
+	self.nextthink = level.framenum + random(10s, 20s);
 
 	gi.linkentity(self);
 }
@@ -231,7 +231,7 @@ void ThrowClientHead(entity &self, int32_t damage)
 	else
 	{
 		self.think = nullptr;
-		self.nextthink = 0;
+		self.nextthink = gtime::zero();
 	}
 
 	gi.linkentity(self);
@@ -254,7 +254,7 @@ void ThrowDebris(entity &self, stringlit modelname, float speed, vector origin)
 	chunk.avelocity = randomv({ -600, -600, -600 }, { 600, 600, 600 });
 	chunk.angles = randomv({ 360, 360, 360 });
 	chunk.think = SAVABLE(G_FreeEdict);
-	chunk.nextthink = level.framenum + (gtime)(random(5.f, 10.f) * BASE_FRAMERATE);
+	chunk.nextthink = level.framenum + random(5s, 10s);
 	chunk.frame = 0;
 	chunk.flags = FL_NONE;
 	chunk.takedamage = true;
@@ -305,16 +305,16 @@ static void path_corner_touch(entity &self, entity &other, vector , const surfac
 	other.goalentity = other.movetarget = next;
 
 #ifdef SINGLE_PLAYER
-	if (self.wait)
+	if (self.wait != gtimef::zero())
 	{
-		other.monsterinfo.pause_framenum = level.framenum + (gtime)(self.wait * BASE_FRAMERATE);
+		other.monsterinfo.pause_framenum = duration_cast<gtime>(level.framenum + self.wait);
 		other.monsterinfo.stand(other);
 		return;
 	}
 
 	if (!other.movetarget.has_value())
 	{
-		other.monsterinfo.pause_framenum = INT_MAX;
+		other.monsterinfo.pause_framenum = gtime::max();
 		other.monsterinfo.stand(other);
 	}
 	else
@@ -371,7 +371,7 @@ static void point_combat_touch(entity &self, entity &other, vector, const surfac
 	}
 	else if ((self.spawnflags & 1) && !(other.flags & (FL_SWIM | FL_FLY)))
 	{
-		other.monsterinfo.pause_framenum = INT_MAX;
+		other.monsterinfo.pause_framenum = gtime::max();
 		other.monsterinfo.aiflags |= AI_STAND_GROUND;
 		other.monsterinfo.stand(other);
 	}
@@ -639,7 +639,7 @@ static void SP_func_object(entity &self)
 		self.solid = SOLID_BSP;
 		self.movetype = MOVETYPE_PUSH;
 		self.think = SAVABLE(func_object_release);
-		self.nextthink = level.framenum + 2;
+		self.nextthink = level.framenum + 2_hz;
 	}
 	else
 	{
@@ -885,9 +885,9 @@ static void barrel_touch(entity &self, entity &other, vector, const surface &)
 	if (!other.groundentity.has_value() || (other.groundentity == self))
 		return;
 
-	ratio = (float)other.mass / (float)self.mass;
+	ratio = (float) other.mass / (float) self.mass;
 	v = self.origin - other.origin;
-	M_walkmove(self, vectoyaw(v), 20 * ratio * FRAMETIME);
+	M_walkmove(self, vectoyaw(v), 20 * ratio * FRAMETIME.count());
 }
 
 REGISTER_STATIC_SAVABLE(barrel_touch);
@@ -956,7 +956,7 @@ REGISTER_STATIC_SAVABLE(barrel_explode);
 static void barrel_delay(entity &self, entity &, entity &attacker, int, vector)
 {
 	self.takedamage = false;
-	self.nextthink = level.framenum + 2;
+	self.nextthink = level.framenum + 20ms;
 	self.think = SAVABLE(barrel_explode);
 	self.activator = attacker;
 }
@@ -972,11 +972,11 @@ static void barrel_think(entity &self)
 {
 	// the think needs to be first since later stuff may override.
 	self.think = SAVABLE(barrel_think);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 
 	M_CatagorizePosition (self);
 	self.flags |= FL_IMMUNE_SLIME;
-	self.air_finished_framenum = level.framenum + (100 * BASE_FRAMERATE);
+	self.air_finished_framenum = level.framenum + 100s;
 	M_WorldEffects (self);
 }
 
@@ -984,7 +984,7 @@ static void barrel_start(entity &self)
 {
 	M_droptofloor(self);
 	self.think = SAVABLE(barrel_think);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(barrel_start);
@@ -1033,7 +1033,7 @@ static void SP_misc_explobox(entity &self)
 #else
 	self.think = SAVABLE(M_droptofloor);
 #endif
-	self.nextthink = level.framenum + 2;
+	self.nextthink = level.framenum + 2_hz;
 
 	gi.linkentity(self);
 }
@@ -1058,11 +1058,11 @@ REGISTER_STATIC_SAVABLE(misc_blackhole_use);
 static void misc_blackhole_think(entity &self)
 {
 	if (++self.frame < 19)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	else
 	{
 		self.frame = 0;
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -1080,7 +1080,7 @@ static void SP_misc_blackhole(entity &ent)
 	ent.renderfx = RF_TRANSLUCENT;
 	ent.use = SAVABLE(misc_blackhole_use);
 	ent.think = SAVABLE(misc_blackhole_think);
-	ent.nextthink = level.framenum + 2;
+	ent.nextthink = level.framenum + 2_hz;
 	gi.linkentity(ent);
 }
 
@@ -1092,11 +1092,11 @@ static REGISTER_ENTITY(MISC_BLACKHOLE, misc_blackhole);
 static void misc_eastertank_think(entity &self)
 {
 	if (++self.frame < 293)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	else
 	{
 		self.frame = 254;
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -1113,7 +1113,7 @@ static void SP_misc_eastertank(entity &ent)
 	ent.modelindex = gi.modelindex("models/monsters/tank/tris.md2");
 	ent.frame = 254;
 	ent.think = SAVABLE(misc_eastertank_think);
-	ent.nextthink = level.framenum + 2;
+	ent.nextthink = level.framenum + 2_hz;
 	gi.linkentity(ent);
 }
 
@@ -1124,11 +1124,11 @@ static REGISTER_ENTITY(MISC_EASTERTANK, misc_eastertank);
 static void misc_easterchick_think(entity &self)
 {
 	if (++self.frame < 247)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	else
 	{
 		self.frame = 208;
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -1145,7 +1145,7 @@ static void SP_misc_easterchick(entity &ent)
 	ent.modelindex = gi.modelindex("models/monsters/bitch/tris.md2");
 	ent.frame = 208;
 	ent.think = SAVABLE(misc_easterchick_think);
-	ent.nextthink = level.framenum + 2;
+	ent.nextthink = level.framenum + 2_hz;
 	gi.linkentity(ent);
 }
 
@@ -1156,11 +1156,11 @@ static REGISTER_ENTITY(MISC_EASTERCHICK, misc_easterchick);
 static void misc_easterchick2_think(entity &self)
 {
 	if (++self.frame < 287)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	else
 	{
 		self.frame = 248;
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -1177,7 +1177,7 @@ static void SP_misc_easterchick2(entity &ent)
 	ent.modelindex = gi.modelindex("models/monsters/bitch/tris.md2");
 	ent.frame = 248;
 	ent.think = SAVABLE(misc_easterchick2_think);
-	ent.nextthink = level.framenum + 2;
+	ent.nextthink = level.framenum + 2_hz;
 	gi.linkentity(ent);
 }
 
@@ -1190,9 +1190,9 @@ There should be a item_commander_head that has this as it's target.
 static void commander_body_think(entity &self)
 {
 	if (++self.frame < 24)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	else
-		self.nextthink = 0;
+		self.nextthink = gtime::zero();
 
 	if (self.frame == 22)
 		gi.sound(self, CHAN_BODY, gi.soundindex("tank/thud.wav"));
@@ -1203,7 +1203,7 @@ REGISTER_STATIC_SAVABLE(commander_body_think);
 static void commander_body_use(entity &self, entity &, entity &)
 {
 	self.think = SAVABLE(commander_body_think);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	gi.sound(self, CHAN_BODY, gi.soundindex("tank/pain.wav"));
 }
 
@@ -1237,7 +1237,7 @@ static void SP_monster_commander_body(entity &self)
 	gi.soundindex("tank/pain.wav");
 
 	self.think = SAVABLE(commander_body_drop);
-	self.nextthink = level.framenum + 5;
+	self.nextthink = level.framenum + 5_hz;
 }
 
 static REGISTER_ENTITY(MONSTER_COMMANDER_BODY, monster_commander_body);
@@ -1249,7 +1249,7 @@ The banner is 128 tall.
 static void misc_banner_think(entity &ent)
 {
 	ent.frame = (ent.frame + 1) % 16;
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(misc_banner_think);
@@ -1263,7 +1263,7 @@ static void SP_misc_banner(entity &ent)
 	gi.linkentity(ent);
 
 	ent.think = SAVABLE(misc_banner_think);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 }
 
 static REGISTER_ENTITY(MISC_BANNER, misc_banner);
@@ -1373,7 +1373,7 @@ static void SP_misc_viper(entity &ent)
 	};
 
 	ent.think = SAVABLE(func_train_find);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.use = SAVABLE(misc_viper_use);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.moveinfo.accel = ent.moveinfo.decel = ent.moveinfo.speed = ent.speed;
@@ -1418,7 +1418,7 @@ static void misc_viper_bomb_prethink(entity &self)
 {
 	self.groundentity = null_entity;
 
-	float diff = (self.timestamp - level.framenum) * FRAMETIME;
+	float diff = duration_cast<gtimef>(self.timestamp - level.framenum).count();
 	if (diff < -1.0f)
 		diff = -1.0f;
 
@@ -1508,7 +1508,7 @@ static void SP_misc_strogg_ship(entity &ent)
 	};
 
 	ent.think = SAVABLE(func_train_find);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.use = SAVABLE(misc_strogg_ship_use);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.moveinfo.accel = ent.moveinfo.decel = ent.moveinfo.speed = ent.speed;
@@ -1524,7 +1524,7 @@ static void misc_satellite_dish_think(entity &self)
 {
 	self.frame++;
 	if (self.frame < 38)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(misc_satellite_dish_think);
@@ -1533,7 +1533,7 @@ static void misc_satellite_dish_use(entity &self, entity &, entity &)
 {
 	self.frame = 0;
 	self.think = SAVABLE(misc_satellite_dish_think);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(misc_satellite_dish_use);
@@ -1592,7 +1592,7 @@ static void SP_misc_gib_arm(entity &ent)
 	ent.deadflag = DEAD_DEAD;
 	ent.avelocity = randomv({ 200, 200, 200 });
 	ent.think = SAVABLE(G_FreeEdict);
-	ent.nextthink = level.framenum + 30 * BASE_FRAMERATE;
+	ent.nextthink = level.framenum + 30s;
 	gi.linkentity(ent);
 }
 
@@ -1613,7 +1613,7 @@ static void SP_misc_gib_leg(entity &ent)
 	ent.deadflag = DEAD_DEAD;
 	ent.avelocity = randomv({ 200, 200, 200 });
 	ent.think = SAVABLE(G_FreeEdict);
-	ent.nextthink = level.framenum + 30 * BASE_FRAMERATE;
+	ent.nextthink = level.framenum + 30s;
 	gi.linkentity(ent);
 }
 
@@ -1634,7 +1634,7 @@ static void SP_misc_gib_head(entity &ent)
 	ent.deadflag = DEAD_DEAD;
 	ent.avelocity = randomv({ 200, 200, 200 });
 	ent.think = SAVABLE(G_FreeEdict);
-	ent.nextthink = level.framenum + 30 * BASE_FRAMERATE;
+	ent.nextthink = level.framenum + 30s;
 	gi.linkentity(ent);
 }
 
@@ -1722,12 +1722,12 @@ static void func_clock_reset(entity &self)
 	if (self.spawnflags & CLOCK_TIMER_UP)
 	{
 		self.health = 0;
-		self.wait = (float) self.count;
+		self.volume = (float) self.count;
 	}
 	else if (self.spawnflags & CLOCK_TIMER_DOWN)
 	{
 		self.health = self.count;
-		self.wait = 0;
+		self.volume = 0;
 	}
 }
 
@@ -1771,8 +1771,8 @@ static void func_clock_think(entity &self)
 	self.enemy->message = self.message;
 	self.enemy->use(self.enemy, self, self);
 
-	if (((self.spawnflags & CLOCK_TIMER_UP) && (self.health > self.wait)) ||
-		((self.spawnflags & CLOCK_TIMER_DOWN) && (self.health < self.wait)))
+	if (((self.spawnflags & CLOCK_TIMER_UP) && (self.health > self.volume)) ||
+		((self.spawnflags & CLOCK_TIMER_DOWN) && (self.health < self.volume)))
 	{
 		if (self.pathtarget)
 		{
@@ -1794,7 +1794,7 @@ static void func_clock_think(entity &self)
 			return;
 	}
 
-	self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+	self.nextthink = level.framenum + 1s;
 }
 
 REGISTER_STATIC_SAVABLE(func_clock_think);
@@ -1837,7 +1837,7 @@ static void SP_func_clock(entity &self)
 	if (self.spawnflags & CLOCK_START_OFF)
 		self.use = SAVABLE(func_clock_use);
 	else
-		self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+		self.nextthink = level.framenum + 1s;
 }
 
 static REGISTER_ENTITY(FUNC_CLOCK, func_clock);

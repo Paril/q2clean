@@ -533,7 +533,7 @@ static void flyer_reacttodamage(entity &self, entity &, entity &, int32_t, int32
 	else
 		gi.sound(self, CHAN_VOICE, sound_pain1);
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 	if (skill == 3)
 		return;     // no pain anims in nightmare
 

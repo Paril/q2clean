@@ -1,6 +1,7 @@
 #include "config.h"
 #include "game/savables.h"
 #include "game/entity_types.h"
+#include "game/game_types.h"
 #include "lib/math/vector.h"
 #include "lib/protocol.h"
 #include "itemlist.h"
@@ -16,7 +17,7 @@ constexpr spawn_flag ITEM_TARGETS_USED = (spawn_flag) 0x00040000;
 
 void DoRespawn(entity &item);
 
-void SetRespawn(entity &ent, float delay);
+void SetRespawn(entity &ent, gtimef delay);
 
 void Touch_Item(entity &ent, entity &other, vector plane, const surface &surf);
 

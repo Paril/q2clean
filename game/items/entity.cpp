@@ -59,12 +59,12 @@ void DoRespawn(entity &item)
 
 REGISTER_STATIC_SAVABLE(DoRespawn);
 
-void SetRespawn(entity &ent, float delay)
+void SetRespawn(entity &ent, gtimef delay)
 {
 	ent.flags |= FL_RESPAWN;
 	ent.svflags |= SVF_NOCLIENT;
 	ent.solid = SOLID_NOT;
-	ent.nextthink = level.framenum + (gtime) (delay * BASE_FRAMERATE);
+	ent.nextthink = duration_cast<gtime>(level.framenum + delay);
 	ent.think = SAVABLE(DoRespawn);
 	gi.linkentity(ent);
 }
@@ -88,7 +88,7 @@ void Touch_Item(entity &ent, entity &other, vector, const surface &)
 		// show icon and name on status bar
 		other.client->ps.stats[STAT_PICKUP_ICON] = gi.imageindex(ent.item->icon);
 		other.client->ps.stats[STAT_PICKUP_STRING] = CS_ITEMS + (config_string) ent.item->id;
-		other.client->pickup_msg_framenum = level.framenum + (gtime) (3.0f * BASE_FRAMERATE);
+		other.client->pickup_msg_framenum = level.framenum + 3s;
 
 		// change selected item
 		if (ent.item->use)
@@ -137,7 +137,7 @@ static void drop_make_touchable(entity &ent)
 	if (deathmatch)
 	{
 #endif
-		ent.nextthink = level.framenum + 29 * BASE_FRAMERATE;
+		ent.nextthink = level.framenum + 29s;
 		ent.think = SAVABLE(G_FreeEdict);
 #ifdef SINGLE_PLAYER
 	}
@@ -186,7 +186,7 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 	dropped.velocity.z = 300.f;
 
 	dropped.think = SAVABLE(drop_make_touchable);
-	dropped.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+	dropped.nextthink = level.framenum + 1s;
 
 	gi.linkentity(dropped);
 	return dropped;
@@ -262,7 +262,7 @@ void droptofloor(entity &ent)
 
 		if (ent == ent.teammaster)
 		{
-			ent.nextthink = level.framenum + 1;
+			ent.nextthink = level.framenum + 1_hz;
 			ent.think = SAVABLE(DoRespawn);
 		}
 	}
@@ -438,7 +438,7 @@ void SpawnItem(entity &ent, const gitem_t &it)
 #endif
 
 	ent.item = it;
-	ent.nextthink = level.framenum + 2;    // items start after other solids
+	ent.nextthink = level.framenum + 2_hz;    // items start after other solids
 	ent.think = SAVABLE(droptofloor);
 	ent.effects = it.world_model_flags;
 	ent.renderfx = RF_GLOW;

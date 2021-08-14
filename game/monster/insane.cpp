@@ -505,7 +505,7 @@ static void insane_reacttodamage(entity &self, entity &, entity &, int32_t, int3
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 
 	int32_t r = 1 + (Q_rand() & 1), l;
 
@@ -572,7 +572,7 @@ static void insane_dead(entity &self)
 		self.movetype = MOVETYPE_TOSS;
 	}
 	self.svflags |= SVF_DEADMONSTER;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	gi.linkentity(self);
 }
 

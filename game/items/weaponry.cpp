@@ -52,7 +52,7 @@ bool Pickup_Ammo(entity &ent, entity &other)
 #else
 	if (!(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)))
 #endif
-		SetRespawn(ent, 30);
+		SetRespawn(ent, 30s);
 
 	return true;
 }
@@ -115,7 +115,7 @@ bool Pickup_Weapon(entity &ent, entity &other)
 				if (dmflags & DF_WEAPONS_STAY)
 					ent.flags |= FL_RESPAWN;
 				else
-					SetRespawn(ent, 30);
+					SetRespawn(ent, 30s);
 #ifdef SINGLE_PLAYER
 			}
 			if (coop)

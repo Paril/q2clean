@@ -255,7 +255,7 @@ static void berserk_reacttodamage(entity &self, entity &, entity &, int32_t, int
 	if (level.framenum < self.pain_debounce_framenum)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3 * BASE_FRAMERATE;
+	self.pain_debounce_framenum = level.framenum + 3s;
 	gi.sound(self, CHAN_VOICE, sound_pain);
 
 	if (skill == 3)
@@ -281,7 +281,7 @@ static void berserk_dead(entity &self)
 	};
 	self.movetype = MOVETYPE_TOSS;
 	self.svflags |= SVF_DEADMONSTER;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	gi.linkentity(self);
 }
 

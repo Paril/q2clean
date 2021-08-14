@@ -242,7 +242,7 @@ bool FindSpawnPoint(vector startpoint, vector mins, vector maxs, vector &spawnpo
 // ****************************
 // SPAWNGROW stuff
 // ****************************
-constexpr float SPAWNGROW_LIFESPAN		= 0.3f;
+constexpr gtimef SPAWNGROW_LIFESPAN		= 300ms;
 
 static void spawngrow_think(entity &self)
 {
@@ -266,7 +266,7 @@ static void spawngrow_think(entity &self)
 		}
 	}
 
-	self.nextthink += 1;
+	self.nextthink = level.framenum + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(spawngrow_think);
@@ -280,22 +280,22 @@ void SpawnGrow_Spawn(vector startpos, int32_t size)
 	ent.renderfx = RF_IR_VISIBLE;
 	ent.movetype = MOVETYPE_NONE;
 
-	float lifespan = SPAWNGROW_LIFESPAN;
+	gtimef lifespan = SPAWNGROW_LIFESPAN;
 
 	if (size <= 1)
 		ent.modelindex = gi.modelindex("models/items/spawngro2/tris.md2");
 	else if (size == 2)
 	{
 		ent.modelindex = gi.modelindex("models/items/spawngro3/tris.md2");
-		lifespan = 2.f;
+		lifespan = 2s;
 	}
 	else
 		ent.modelindex = gi.modelindex("models/items/spawngro/tris.md2");
 
 	ent.think = SAVABLE(spawngrow_think);
 
-	ent.wait = level.framenum + (lifespan * BASE_FRAMERATE);
-	ent.nextthink = level.framenum + 1;
+	ent.wait = level.framenum + lifespan;
+	ent.nextthink = level.framenum + 100ms;
 	if (size != 2)
 		ent.effects |= EF_SPHERETRANS;
 	gi.linkentity (ent);
@@ -353,17 +353,17 @@ void ThrowWidowGibReal(entity &self, stringlit gibname, int32_t damage, gib_type
 	{
 		// sized gibs last longer
 		if (sized)
-			gib.nextthink = level.framenum + (gtime)(random(20.f, 35.f) * BASE_FRAMERATE);
+			gib.nextthink = level.framenum + random(20s, 35s);
 		else
-			gib.nextthink = level.framenum + (gtime)(random(5.f, 15.f) * BASE_FRAMERATE);
+			gib.nextthink = level.framenum + random(5s, 15s);
 	}
 	else
 	{
 		// sized gibs last longer
 		if (sized)
-			gib.nextthink = level.framenum + (gtime)(random(60.f, 75.f) * BASE_FRAMERATE);
+			gib.nextthink = level.framenum + random(60s, 75s);
 		else
-			gib.nextthink = level.framenum + (gtime)(random(25.f, 35.f) * BASE_FRAMERATE);
+			gib.nextthink = level.framenum + random(25s, 35s);
 	}
 
 	float vscale;
@@ -466,7 +466,7 @@ inline void ThrowMoreStuff(entity &self, vector point)
 }
 
 constexpr int32_t MAX_LEGSFRAME	= 23;
-constexpr float LEG_WAIT_TIME	= 1.f;
+constexpr gtimef LEG_WAIT_TIME	= 1s;
 
 static void widowlegs_think(entity &self)
 {
@@ -483,11 +483,11 @@ static void widowlegs_think(entity &self)
 	if (self.frame < MAX_LEGSFRAME)
 	{
 		self.frame++;
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 		return;
 	}
-	else if (self.wait == 0)
-		self.wait = level.framenum + (LEG_WAIT_TIME * BASE_FRAMERATE);
+	else if (self.wait == gtime::zero())
+		self.wait = level.framenum + LEG_WAIT_TIME;
 
 	if (level.framenum > self.wait)
 	{
@@ -513,7 +513,7 @@ static void widowlegs_think(entity &self)
 		return;
 	}
 
-	if ((level.framenum > (self.wait - (0.5 * BASE_FRAMERATE))) && (self.count == 0))
+	if ((level.framenum > (self.wait - 500ms)) && (self.count == 0))
 	{
 		self.count = 1;
 
@@ -527,7 +527,7 @@ static void widowlegs_think(entity &self)
 		gi.ConstructMessage(svc_temp_entity, TE_EXPLOSION1, start).multicast(start, MULTICAST_ALL);
 	}
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(widowlegs_think);
@@ -544,7 +544,7 @@ void Widowlegs_Spawn(vector startpos, vector cangles)
 	ent.modelindex = gi.modelindex("models/monsters/legs/tris.md2");
 	ent.think = SAVABLE(widowlegs_think);
 
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 100ms;
 	gi.linkentity (ent);
 }
 

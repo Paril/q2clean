@@ -51,7 +51,7 @@ void monster_fire_blaster(entity &self, vector start, vector dir, int damage, in
 
 void monster_fire_grenade(entity &self, vector start, vector aimdir, int damage, int speed, monster_muzzleflash flashtype)
 {
-	fire_grenade(self, start, aimdir, damage, speed, 2.5f, damage + 40);
+	fire_grenade(self, start, aimdir, damage, speed, 2.5s, damage + 40);
 
 	gi.ConstructMessage(svc_muzzleflash2, self, flashtype).multicast(start, MULTICAST_PVS);
 }
@@ -96,7 +96,7 @@ void M_FliesOn(entity &self)
 	self.effects |= EF_FLIES;
 	self.sound = gi.soundindex("infantry/inflies1.wav");
 	self.think = SAVABLE(M_FliesOff);
-	self.nextthink = level.framenum + 60 * BASE_FRAMERATE;
+	self.nextthink = level.framenum + 1min;
 }
 
 REGISTER_SAVABLE(M_FliesOn);
@@ -110,7 +110,7 @@ void M_FlyCheck(entity &self)
 		return;
 
 	self.think = SAVABLE(M_FliesOn);
-	self.nextthink = level.framenum + (gtime)random(5.f * BASE_FRAMERATE, 15.f * BASE_FRAMERATE);
+	self.nextthink = level.framenum + random(5s, 15s);
 }
 
 void M_CheckGround(entity &ent)
@@ -198,28 +198,28 @@ void M_WorldEffects(entity &ent)
 	if (ent.health > 0) {
 		if (!(ent.flags & FL_SWIM)) {
 			if (ent.waterlevel < WATER_UNDER) {
-				ent.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
+				ent.air_finished_framenum = level.framenum + 12s;
 			} else if (ent.air_finished_framenum < level.framenum) {
 				// drown!
 				if (ent.pain_debounce_framenum < level.framenum) {
-					dmg = (int32_t)(2 + 2 * ((level.framenum - ent.air_finished_framenum) / BASE_FRAMERATE));
+					dmg = (int32_t)(2 + 2 * ((level.framenum - ent.air_finished_framenum).count() / BASE_FRAMERATE));
 					if (dmg > 15)
 						dmg = 15;
 					T_Damage(ent, world, world, vec3_origin, ent.origin, vec3_origin, dmg, 0, { DAMAGE_NO_ARMOR }, MOD_WATER);
-					ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
+					ent.pain_debounce_framenum = level.framenum + 1s;
 				}
 			}
 		} else {
 			if (ent.waterlevel > WATER_NONE) {
-				ent.air_finished_framenum = level.framenum + 9 * BASE_FRAMERATE;
+				ent.air_finished_framenum = level.framenum + 9s;
 			} else if (ent.air_finished_framenum < level.framenum) {
 				// suffocate!
 				if (ent.pain_debounce_framenum < level.framenum) {
-					dmg = (int32_t)(2 + 2 * ((level.framenum - ent.air_finished_framenum) / BASE_FRAMERATE));
+					dmg = (int32_t)(2 + 2 * ((level.framenum - ent.air_finished_framenum).count() / BASE_FRAMERATE));
 					if (dmg > 15)
 						dmg = 15;
 					T_Damage(ent, world, world, vec3_origin, ent.origin, vec3_origin, dmg, 0, { DAMAGE_NO_ARMOR }, MOD_WATER);
-					ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
+					ent.pain_debounce_framenum = level.framenum + 1s;
 				}
 			}
 		}
@@ -235,13 +235,13 @@ void M_WorldEffects(entity &ent)
 
 	if ((ent.watertype & CONTENTS_LAVA) && !(ent.flags & FL_IMMUNE_LAVA)) {
 		if (ent.damage_debounce_framenum < level.framenum) {
-			ent.damage_debounce_framenum = level.framenum + (int)(0.2f * BASE_FRAMERATE);
+			ent.damage_debounce_framenum = level.framenum + 200ms;
 			T_Damage(ent, world, world, vec3_origin, ent.origin, vec3_origin, 10 * ent.waterlevel, 0, { DAMAGE_NONE }, MOD_LAVA);
 		}
 	}
 	if ((ent.watertype & CONTENTS_SLIME) && !(ent.flags & FL_IMMUNE_SLIME)) {
 		if (ent.damage_debounce_framenum < level.framenum) {
-			ent.damage_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
+			ent.damage_debounce_framenum = level.framenum + 1s;
 			T_Damage(ent, world, world, vec3_origin, ent.origin, vec3_origin, 4 * ent.waterlevel, 0, { DAMAGE_NONE }, MOD_SLIME);
 		}
 	}
@@ -260,7 +260,7 @@ void M_WorldEffects(entity &ent)
 		}
 
 		ent.flags |= FL_INWATER;
-		ent.damage_debounce_framenum = 0;
+		ent.damage_debounce_framenum = gtime::zero();
 	}
 }
 
@@ -322,8 +322,8 @@ void M_SetEffects(entity &ent)
 
 	if (ent.monsterinfo.quad_framenum > level.framenum)
 	{
-		int remaining = ent.monsterinfo.quad_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4) )
+		gtime remaining = ent.monsterinfo.quad_framenum - level.framenum;
+		if (remaining > 3s || (remaining % 8ms) >= 4ms)
 			ent.effects |= EF_QUAD;
 	}
 	else
@@ -331,8 +331,8 @@ void M_SetEffects(entity &ent)
 
 	if (ent.monsterinfo.double_framenum > level.framenum)
 	{
-		int remaining = ent.monsterinfo.double_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4) )
+		gtime remaining = ent.monsterinfo.double_framenum - level.framenum;
+		if (remaining > 3s || (remaining % 8ms) >= 4ms)
 			ent.effects |= EF_DOUBLE;
 	}
 	else
@@ -340,8 +340,8 @@ void M_SetEffects(entity &ent)
 
 	if (ent.monsterinfo.invincible_framenum > level.framenum)
 	{
-		int remaining = ent.monsterinfo.invincible_framenum - level.framenum;
-		if (remaining > 30 || (remaining & 4) )
+		gtime remaining = ent.monsterinfo.invincible_framenum - level.framenum;
+		if (remaining > 3s || (remaining % 8ms) >= 4ms)
 			ent.effects |= EF_PENT;
 	}
 	else
@@ -362,7 +362,7 @@ void cleanupHealTarget(entity &ent)
 static void M_MoveFrame(entity &self)
 {
 	const mmove_t *move = self.monsterinfo.currentmove;
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 100ms;
 
 	if ((self.monsterinfo.nextframe) && (self.monsterinfo.nextframe >= move->firstframe) && (self.monsterinfo.nextframe <= move->lastframe)) {
 		self.frame = self.monsterinfo.nextframe;
@@ -611,7 +611,7 @@ static void monster_triggered_spawn(entity &self)
 	self.solid = SOLID_BBOX;
 	self.movetype = MOVETYPE_STEP;
 	self.svflags &= ~SVF_NOCLIENT;
-	self.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
+	self.air_finished_framenum = level.framenum + 12s;
 	gi.linkentity(self);
 
 	monster_start_go(self);
@@ -649,7 +649,7 @@ static void monster_triggered_spawn_use(entity &self, entity &, entity &cactivat
 {
 	// we have a one frame delay here so we don't telefrag the guy who activated us
 	self.think = SAVABLE(monster_triggered_spawn);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	if (cactivator.is_client())
 		self.enemy = cactivator;
 	self.use = SAVABLE(monster_use);
@@ -662,7 +662,7 @@ static void monster_triggered_start(entity &self)
 	self.solid = SOLID_NOT;
 	self.movetype = MOVETYPE_NONE;
 	self.svflags |= SVF_NOCLIENT;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	self.use = SAVABLE(monster_triggered_spawn_use);
 }
 
@@ -714,11 +714,11 @@ static bool monster_start(entity &self)
 	if (!(self.monsterinfo.aiflags & AI_GOOD_GUY_MASK))
 		level.total_monsters++;
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	self.svflags |= SVF_MONSTER;
 	self.renderfx |= RF_FRAMELERP;
 	self.takedamage = true;
-	self.air_finished_framenum = level.framenum + 12 * BASE_FRAMERATE;
+	self.air_finished_framenum = level.framenum + 12s;
 	self.use = SAVABLE(monster_use);
 	self.max_health = self.health;
 	self.clipmask = MASK_MONSTERSOLID;
@@ -750,9 +750,9 @@ static bool monster_start(entity &self)
 
 #ifdef GROUND_ZERO
 	// PMM - clear these
-	self.monsterinfo.quad_framenum = 0;
-	self.monsterinfo.double_framenum = 0;
-	self.monsterinfo.invincible_framenum = 0;
+	self.monsterinfo.quad_framenum = gtime::zero();
+	self.monsterinfo.double_framenum = gtime::zero();
+	self.monsterinfo.invincible_framenum = gtime::zero();
 #endif
 
 	// call pain to set up pain skin
@@ -803,7 +803,7 @@ static void monster_start_go(entity &self)
 		{
 			gi.dprintfmt("{}: can't find target \"{}\"\n", self, self.target);
 			self.target = nullptr;
-			self.monsterinfo.pause_framenum = INT_MAX;
+			self.monsterinfo.pause_framenum = gtime::max();
 			self.monsterinfo.stand(self);
 		}
 		else if (self.movetarget->type == ET_PATH_CORNER)
@@ -816,18 +816,18 @@ static void monster_start_go(entity &self)
 		else
 		{
 			self.goalentity = self.movetarget = null_entity;
-			self.monsterinfo.pause_framenum = INT_MAX;
+			self.monsterinfo.pause_framenum = gtime::max();
 			self.monsterinfo.stand(self);
 		}
 	}
 	else
 	{
-		self.monsterinfo.pause_framenum = INT_MAX;
+		self.monsterinfo.pause_framenum = gtime::max();
 		self.monsterinfo.stand(self);
 	}
 
 	self.think = SAVABLE(monster_think);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 // temp
@@ -835,7 +835,7 @@ static entity_type ET_MONSTER_STALKER;
 
 static void walkmonster_start_go(entity &self)
 {
-	if (!(self.spawnflags & 2) && level.time < 1) {
+	if (!(self.spawnflags & 2) && level.time < 1s) {
 		M_droptofloor(self);
 
 		if (self.groundentity != null_entity)
@@ -923,7 +923,7 @@ static void stationarymonster_triggered_spawn(entity &self)
 	self.solid = SOLID_BBOX;
 	self.movetype = MOVETYPE_NONE;
 	self.svflags &= ~SVF_NOCLIENT;
-	self.air_finished_framenum = level.framenum + (12 * BASE_FRAMERATE);
+	self.air_finished_framenum = level.framenum + 12s;
 	gi.linkentity (self);
 
 	// FIXME - why doesn't this happen with real monsters?
@@ -943,7 +943,7 @@ static void stationarymonster_triggered_spawn_use(entity &self, entity &, entity
 {
 	// we have a one frame delay here so we don't telefrag the guy who activated us
 	self.think = SAVABLE(stationarymonster_triggered_spawn);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	if (cactivator.is_client())
 		self.enemy = cactivator;
 	self.use = SAVABLE(monster_use);
@@ -956,7 +956,7 @@ static void stationarymonster_triggered_start(entity &self)
 	self.solid = SOLID_NOT;
 	self.movetype = MOVETYPE_NONE;
 	self.svflags |= SVF_NOCLIENT;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 	self.use = SAVABLE(stationarymonster_triggered_spawn_use);
 }
 

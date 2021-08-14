@@ -56,7 +56,7 @@ void fire_plasma(entity &self, vector start, vector dir, int32_t damage, int32_t
 
 	plasma.owner = self;
 	plasma.touch = SAVABLE(plasma_touch);
-	plasma.nextthink = level.framenum + BASE_FRAMERATE * 8000 / speed;
+	plasma.nextthink = level.framenum + seconds(8000 / speed);
 	plasma.think = SAVABLE(G_FreeEdict);
 	plasma.dmg = damage;
 	plasma.radius_dmg = radius_damage;

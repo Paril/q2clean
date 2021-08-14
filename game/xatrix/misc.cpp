@@ -61,7 +61,7 @@ static void SP_misc_crashviper(entity &ent)
 	};
 
 	ent.think = SAVABLE(func_train_find);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.use = SAVABLE(misc_viper_use);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.moveinfo.accel = ent.moveinfo.decel = ent.moveinfo.speed = ent.speed;
@@ -92,7 +92,7 @@ static void misc_viper_missile_use(entity &self, entity &, entity &)
 	
 	monster_fire_rocket (self, start, dir, self.dmg, 500, MZ2_CHICK_ROCKET_1);
 	
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	self.think = SAVABLE(G_FreeEdict);
 }
 
@@ -144,7 +144,7 @@ static void SP_misc_transport(entity &ent)
 	};
 
 	ent.think = SAVABLE(func_train_find);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.use = SAVABLE(misc_strogg_ship_use);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.moveinfo.accel = ent.moveinfo.decel = ent.moveinfo.speed = ent.speed;
@@ -164,7 +164,7 @@ static sound_index amb4sound;
 
 static void amb4_think(entity &ent)
 {
-	ent.nextthink = level.framenum + (gtime)(2.7 * BASE_FRAMETIME);
+	ent.nextthink = duration_cast<gtime>(level.framenum + 2.7s);
 	gi.sound(ent, CHAN_VOICE, amb4sound, ATTN_NONE);
 }
 

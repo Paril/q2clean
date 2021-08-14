@@ -15,10 +15,10 @@
 
 constexpr means_of_death MOD_TESLA { .self_kill_fmt = "{0} zapped {2}.\n", .other_kill_fmt = "{0} was enlightened by {3}'s tesla mine.\n" };
 
-constexpr float TESLA_TIME_TO_LIVE				= 30.f;
+constexpr gtime TESLA_TIME_TO_LIVE				= 30s;
 constexpr int32_t TESLA_DAMAGE					= 3;		// 3
 constexpr int32_t TESLA_KNOCKBACK				= 8;
-constexpr int32_t TESLA_ACTIVATE_TIME			= 3;
+constexpr gtime TESLA_ACTIVATE_TIME				= 3s;
 constexpr int32_t TESLA_EXPLOSION_DAMAGE_MULT	= 50;		// this is the amount the damage is multiplied by for underwater explosions
 constexpr float TESLA_EXPLOSION_RADIUS			= 200.f;
 
@@ -37,7 +37,7 @@ static void tesla_remove(entity &self)
 			cur = next;
 		}
 	}
-	else if (self.air_finished_framenum)
+	else if (self.air_finished_framenum != gtime::zero())
 		gi.dprint("tesla without a field!\n");
 
 	self.owner = self.teammaster;	// Going away, set the owner correctly.
@@ -131,7 +131,7 @@ static void tesla_think_active(entity &self)
 	if(self.inuse)
 	{
 		self.think = SAVABLE(tesla_think_active);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -192,8 +192,8 @@ static void tesla_activate(entity &self)
 		self.owner = 0;
 	self.teamchain = trigger;
 	self.think = SAVABLE(tesla_think_active);
-	self.nextthink = level.framenum + 1;
-	self.air_finished_framenum = level.framenum + (gtime)(TESLA_TIME_TO_LIVE * BASE_FRAMERATE);
+	self.nextthink = level.framenum + 1_hz;
+	self.air_finished_framenum = level.framenum + TESLA_TIME_TO_LIVE;
 }
 
 REGISTER_STATIC_SAVABLE(tesla_activate);
@@ -221,7 +221,7 @@ static void tesla_think(entity &ent)
 	{
 		ent.frame = 14;
 		ent.think = SAVABLE(tesla_activate);
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 100ms;
 		return;
 	}
 
@@ -243,7 +243,7 @@ static void tesla_think(entity &ent)
 			ent.skinnum = 3;
 	}
 	ent.think = SAVABLE(tesla_think);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 100ms;
 }
 
 static void tesla_lava(entity &ent, entity &, vector normal, const surface &)
@@ -292,9 +292,9 @@ void fire_tesla(entity &self, vector start, vector aimdir, int32_t dmg_multiplie
 	tesla.owner = self;		// PGM - we don't want it owned by self YET.
 	tesla.teammaster = self;
 
-	tesla.wait = (float)(level.framenum + (gtime)(TESLA_TIME_TO_LIVE * BASE_FRAMERATE));
+	tesla.wait = level.framenum + TESLA_TIME_TO_LIVE;
 	tesla.think = SAVABLE(tesla_think);
-	tesla.nextthink = level.framenum + (TESLA_ACTIVATE_TIME * BASE_FRAMERATE);
+	tesla.nextthink = level.framenum + TESLA_ACTIVATE_TIME;
 
 	// blow up on contact with lava & slime code
 	tesla.touch = SAVABLE(tesla_lava);

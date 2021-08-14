@@ -15,8 +15,8 @@
 
 constexpr means_of_death MOD_PROX { .self_kill_fmt = "{0} forgot about {1} own mine.\n", .other_kill_fmt = "{0} got too close to {3}'s proximity mine.\n" };
 
-constexpr float PROX_TIME_TO_LIVE	= 45.f;		// 45, 30, 15, 10
-constexpr float PROX_TIME_DELAY		= 0.5f;
+constexpr gtime PROX_TIME_TO_LIVE	= 45s;		// 45, 30, 15, 10
+constexpr gtime PROX_TIME_DELAY		= 500ms;
 constexpr bbox PROX_BOUND_SIZE		= bbox::sized(96.f);
 constexpr float PROX_DAMAGE_RADIUS	= 192.f;
 constexpr int32_t PROX_HEALTH		= 20;
@@ -68,7 +68,7 @@ static void prox_die(entity &self, entity &inflictor, entity &, int32_t, vector)
 	else
 	{
 		self.think = SAVABLE(Prox_Explode);
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -92,7 +92,7 @@ static void Prox_Field_Touch(entity &ent, entity &other, vector, const surface &
 	{
 		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxwarn.wav"));
 		prox->think = SAVABLE(Prox_Explode);
-		prox->nextthink = level.framenum + (gtime)(PROX_TIME_DELAY * BASE_FRAMERATE);
+		prox->nextthink = level.framenum + PROX_TIME_DELAY;
 		return;
 	}
 
@@ -116,7 +116,7 @@ static void prox_seek(entity &ent)
 		if (ent.frame > 13)
 			ent.frame = 9;
 		ent.think = SAVABLE(prox_seek);
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -170,7 +170,7 @@ static void prox_open(entity &ent)
 		ent.wait = level.framenum + ((PROX_TIME_TO_LIVE / multiplier) * BASE_FRAMERATE);
 
 		ent.think = SAVABLE(prox_seek);
-		ent.nextthink = level.framenum + 2;
+		ent.nextthink = level.framenum + 2200ms;
 	}
 	else
 	{
@@ -179,7 +179,7 @@ static void prox_open(entity &ent)
 
 		ent.frame++;
 		ent.think = SAVABLE(prox_open);
-		ent.nextthink = level.framenum + 1;	
+		ent.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -267,7 +267,7 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 	ent.die = SAVABLE(prox_die);
 	ent.teamchain = field;
 	ent.health = PROX_HEALTH;
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.think = SAVABLE(prox_open);
 	ent.touch = nullptr;
 	ent.solid = SOLID_BBOX;

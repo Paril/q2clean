@@ -41,7 +41,7 @@ static void weapon_grenadelauncher_fire(entity &ent)
 		fire_prox(ent, start, forward, damage_multiplier, 600);
 	else
 #endif
-		fire_grenade(ent, start, forward, damage, 600, 2.5f, radius);
+		fire_grenade(ent, start, forward, damage, 600, 2.5s, radius);
 
 	gi.ConstructMessage(svc_muzzleflash, ent, MZ_GRENADE | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 

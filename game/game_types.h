@@ -2,21 +2,42 @@
 
 #include "lib/types.h"
 #include <type_traits>
+#include <chrono>
 
-// Time is stored as an unsigned 64-bit integer
-using gtimediff = int64_t;
-using gtime = uint64_t;
+using gtime = std::chrono::milliseconds;
+using gtimef = std::chrono::duration<double>;
+
+constexpr uint64_t	framerate = 10;
+// server framerate
+// server frame time, in seconds
+constexpr gtimef	frametime_s = gtimef(1.0f / framerate);
+
+using namespace std::chrono;
+using namespace std::chrono_literals;
+using std::ratio;
+
+// type to describe a single game frame
+using frames = duration<int64_t, ratio<1, framerate>>;
+
+// literal to return frame counts; generally you don't
+// want to use this.
+constexpr frames operator""_hz(uint64_t f)
+{
+	return frames(f);
+}
+// server frame time, in ms
+constexpr milliseconds	framerate_ms = duration_cast<milliseconds>(frametime_s);
 
 // default server FPS
-constexpr gtime		BASE_FRAMERATE = 10;
+constexpr uint64_t		BASE_FRAMERATE = framerate;
 // the amount of time, in s, that a single frame lasts for
-constexpr float		BASE_1_FRAMETIME = 1.0f / BASE_FRAMERATE;
+constexpr gtimef		BASE_1_FRAMETIME = frametime_s;
 // the amount of time, in ms, that a single frame lasts for
-constexpr gtime		BASE_FRAMETIME = BASE_1_FRAMETIME * 1000;
+constexpr milliseconds	BASE_FRAMETIME = framerate_ms;
 // the amount of time, in s, that a single frame lasts for
-constexpr float		BASE_FRAMETIME_1000 = BASE_1_FRAMETIME;
+constexpr gtimef		BASE_FRAMETIME_1000 = BASE_1_FRAMETIME;
 // the amount of time, in s, that a single frame lasts for
-constexpr float		FRAMETIME = BASE_1_FRAMETIME;
+constexpr gtimef		FRAMETIME = BASE_1_FRAMETIME;
 
 // Means of death structure for structured death
 // messages. Formatter arguments:

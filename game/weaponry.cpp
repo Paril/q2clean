@@ -81,7 +81,7 @@ void PlayerNoise(entity &who, vector where, player_noise type)
 			return;
 
 		level.disguise_violator = who;
-		level.disguise_violation_framenum = level.framenum + 5;
+		level.disguise_violation_framenum = level.framenum + 500ms;
 	}
 #endif
 
@@ -132,12 +132,12 @@ void ChangeWeapon(entity &ent)
 {
 	int i;
 
-	if (ent.client->grenade_framenum)
+	if (ent.client->grenade_framenum != gtime::zero())
 	{
 		ent.client->grenade_framenum = level.framenum;
 		ent.client->weapon_sound = SOUND_NONE;
 		ent.client->pers.weapon->weaponthink(ent);
-		ent.client->grenade_framenum = 0;
+		ent.client->grenade_framenum = gtime::zero();
 	}
 
 	ent.client->pers.lastweapon = ent.client->pers.weapon;
@@ -343,7 +343,7 @@ void Weapon_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE
 				if (level.framenum >= ent.pain_debounce_framenum)
 				{
 					gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
-					ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
+					ent.pain_debounce_framenum = level.framenum + 1s;
 				}
 				NoAmmoWeaponChange(ent);
 			}
@@ -431,13 +431,13 @@ void Throw_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE_
 			{
 				ent.client->ps.gunframe = 1;
 				ent.client->weaponstate = WEAPON_FIRING;
-				ent.client->grenade_framenum = 0;
+				ent.client->grenade_framenum = gtime::zero();
 				return;
 			}
 			else if (level.framenum >= ent.pain_debounce_framenum)
 			{
 				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
-				ent.pain_debounce_framenum = level.framenum + (1 * BASE_FRAMERATE);
+				ent.pain_debounce_framenum = level.framenum + 1s;
 			}
 
 			NoAmmoWeaponChange (ent);
@@ -464,9 +464,9 @@ void Throw_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE_
 
 		if (ent.client->ps.gunframe == FRAME_THROW_HOLD)
 		{
-			if (!ent.client->grenade_framenum)
+			if (ent.client->grenade_framenum == gtime::zero())
 			{
-				ent.client->grenade_framenum = level.framenum + (gtime)((GRENADE_TIMER + 0.2) * BASE_FRAMERATE);
+				ent.client->grenade_framenum = duration_cast<gtime>(level.framenum + GRENADE_TIMER + 0.2s);
 
 				if (weapon_sound)
 					ent.client->weapon_sound = gi.soundindex(weapon_sound);
@@ -507,7 +507,7 @@ void Throw_Generic(entity &ent, int32_t FRAME_ACTIVATE_LAST, int32_t FRAME_FIRE_
 
 		if (ent.client->ps.gunframe == FRAME_IDLE_FIRST)
 		{
-			ent.client->grenade_framenum = 0;
+			ent.client->grenade_framenum = gtime::zero();
 			ent.client->weaponstate = WEAPON_READY;
 			
 			if (!ent.client->pers.inventory[ent.client->ammo_index])

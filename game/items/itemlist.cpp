@@ -1388,8 +1388,6 @@ const array<gitem_t, ITEM_TOTAL> &item_list()
 
 void InitItems()
 {
-	constexpr size_t MAX_VWEPS = 19;
-
 	for (auto &it : itemlist)
 	{
 		it.id = (gitem_id)(&it - itemlist.data());

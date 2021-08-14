@@ -25,12 +25,12 @@ static void rotating_light_alarm(entity &self)
 	if (self.spawnflags & START_OFF)
 	{
 		self.think = nullptr;
-		self.nextthink = 0;	
+		self.nextthink = gtime::zero();	
 	}
 	else
 	{
 		gi.sound (self, CHAN_NO_PHS_ADD | CHAN_VOICE, self.moveinfo.sound_start, ATTN_STATIC);
-		self.nextthink = level.framenum + (1 * BASE_FRAMERATE);
+		self.nextthink = level.framenum + 1s;
 	}
 }
 
@@ -44,7 +44,7 @@ static void rotating_light_killed(entity &self, entity &, entity &, int32_t, vec
 	self.use = nullptr;
 
 	self.think = SAVABLE(G_FreeEdict);	
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(rotating_light_killed);
@@ -59,7 +59,7 @@ static void rotating_light_use(entity &self, entity &, entity &)
 		if (self.spawnflags & 2)
 		{
 			self.think = SAVABLE(rotating_light_alarm);
-			self.nextthink = level.framenum + 1;
+			self.nextthink = level.framenum + 1_hz;
 		}
 	}
 	else
@@ -125,7 +125,7 @@ The default delay is 1 second
 */
 static void object_repair_fx(entity &ent)
 {
-	ent.nextthink = level.framenum + (gtime)(ent.delay * BASE_FRAMERATE);
+	ent.nextthink = duration_cast<gtime>(level.framenum + ent.delay);
 
 	if (ent.health <= 100)
 		ent.health++;
@@ -138,7 +138,7 @@ REGISTER_STATIC_SAVABLE(object_repair_fx);
 static void object_repair_dead(entity &ent)
 {
 	G_UseTargets (ent, ent);
-	ent.nextthink = level.framenum + 1;
+	ent.nextthink = level.framenum + 1_hz;
 	ent.think = SAVABLE(object_repair_fx);
 }
 
@@ -148,12 +148,12 @@ static void object_repair_sparks(entity &ent)
 {
 	if (ent.health < 0)
 	{
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 1_hz;
 		ent.think = SAVABLE(object_repair_dead);
 		return;
 	}
 
-	ent.nextthink = level.framenum + (gtime)(ent.delay * BASE_FRAMERATE);
+	ent.nextthink = duration_cast<gtime>(level.framenum + ent.delay);
 	
 	gi.ConstructMessage(svc_temp_entity, TE_WELDING_SPARKS, uint8_t { 10 }, ent.origin, vecdir { vec3_origin }, uint8_t { 0xe0 + (Q_rand()&7) }).multicast (ent.origin, MULTICAST_PVS);
 }
@@ -166,11 +166,11 @@ static void SP_func_object_repair(entity &ent)
 	ent.solid = SOLID_BBOX;
 	ent.bounds = bbox::sized(8.f);
 	ent.think = SAVABLE(object_repair_sparks);
-	ent.nextthink = level.framenum + (1 * BASE_FRAMERATE);
+	ent.nextthink = level.framenum + 1s;
 	ent.health = 100;
 
-	if (!ent.delay)
-		ent.delay = 1.0f;
+	if (ent.delay == gtimef::zero())
+		ent.delay = 1s;
 }
 
 REGISTER_ENTITY(OBJECT_REPAIR, func_object_repair);

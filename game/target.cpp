@@ -253,8 +253,8 @@ static void target_explosion_explode(entity &self)
 
 	T_RadiusDamage(self, self.activator, (float)self.dmg, 0, (float)(self.dmg + 40), MOD_EXPLOSIVE);
 
-	float save = self.delay;
-	self.delay = 0;
+	gtimef save = self.delay;
+	self.delay = gtimef::zero();
 	G_UseTargets(self, self.activator);
 	self.delay = save;
 }
@@ -265,14 +265,14 @@ static void use_target_explosion(entity &self, entity &, entity &cactivator)
 {
 	self.activator = cactivator;
 
-	if (!self.delay)
+	if (self.delay == gtimef::zero())
 	{
 		target_explosion_explode(self);
 		return;
 	}
 
 	self.think = SAVABLE(target_explosion_explode);
-	self.nextthink = level.framenum + (gtime)(self.delay * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.delay);
 }
 
 REGISTER_STATIC_SAVABLE(use_target_explosion);
@@ -294,7 +294,7 @@ Changes level to "map" when fired
 */
 static void use_target_changelevel(entity &self, entity &other, entity &cactivator)
 {
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 		return;     // already activated
 
 #ifdef SINGLE_PLAYER
@@ -509,7 +509,8 @@ killtarget also work.
 */
 static void target_crosslevel_target_think(entity &self)
 {
-	if (self.spawnflags == (spawn_flag)(game.serverflags & SFL_CROSS_TRIGGER_MASK & (cross_server_flags)self.spawnflags)) {
+	if (self.spawnflags == (spawn_flag)(game.serverflags & SFL_CROSS_TRIGGER_MASK & (cross_server_flags) self.spawnflags))
+	{
 		G_UseTargets(self, self);
 		G_FreeEdict(self);
 	}
@@ -519,12 +520,12 @@ REGISTER_STATIC_SAVABLE(target_crosslevel_target_think);
 
 static void SP_target_crosslevel_target(entity &self)
 {
-	if (!self.delay)
-		self.delay = 1.f;
+	if (self.delay == gtime::zero())
+		self.delay = 1s;
 	self.svflags = SVF_NOCLIENT;
 
 	self.think = SAVABLE(target_crosslevel_target_think);
-	self.nextthink = level.framenum + (gtime)(self.delay * BASE_FRAMERATE);
+	self.nextthink = duration_cast<gtime>(level.framenum + self.delay);
 }
 
 REGISTER_ENTITY(TARGET_CROSSLEVEL_TARGET, target_crosslevel_target);
@@ -602,7 +603,7 @@ void target_laser_think(entity &self)
 
 	self.old_origin = tr.endpos;
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_SAVABLE(target_laser_think);
@@ -620,7 +621,7 @@ static void target_laser_off(entity &self)
 {
 	self.spawnflags &= ~LASER_ON;
 	self.svflags |= SVF_NOCLIENT;
-	self.nextthink = 0;
+	self.nextthink = gtime::zero();
 }
 
 static void target_laser_use(entity &self, entity &, entity &cactivator)
@@ -693,7 +694,7 @@ static void SP_target_laser(entity &self)
 {
 	// let everything else get spawned before we start firing
 	self.think = SAVABLE(target_laser_start);
-	self.nextthink = level.framenum + 1 * BASE_FRAMERATE;
+	self.nextthink = level.framenum + 1s;
 }
 
 static REGISTER_ENTITY(TARGET_LASER, target_laser);
@@ -708,18 +709,17 @@ message     two letters; starting lightlevel and ending lightlevel
 
 static void target_lightramp_think(entity &self)
 {
-	float diff = (level.framenum - self.timestamp) * FRAMETIME;
+	float diff = duration_cast<gtimef>(level.framenum - self.timestamp).count();
 
-	mutable_string s = format("{}", (char) ('a' + self.movedir.x + diff * self.movedir.z));
-	gi.configstring((config_string)(CS_LIGHTS + self.enemy->style), s);
+	gi.configstringfmt((config_string)(CS_LIGHTS + self.enemy->style), "{}", (char) ('a' + self.movedir.x + diff * self.movedir.z));
 
 	if (diff < self.speed)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 	else if (self.spawnflags & 1)
 	{
-		int temp = (int)self.movedir.x;
+		int temp = (int) self.movedir.x;
 		self.movedir.x = self.movedir.y;
-		self.movedir.y = (float)temp;
+		self.movedir.y = (float) temp;
 		self.movedir.z *= -1;
 	}
 }
@@ -806,7 +806,7 @@ static void target_earthquake_think(entity &self)
 		self.last_move_framenum < level.framenum)
 	{
 		gi.positioned_sound(self.origin, self, self.noise_index, ATTN_NONE);
-		self.last_move_framenum = level.framenum + (gtime)(0.5f * BASE_FRAMERATE);
+		self.last_move_framenum = level.framenum + 500ms;
 	}
 
 	for (uint32_t i = 1; i < num_entities; i++)
@@ -826,17 +826,17 @@ static void target_earthquake_think(entity &self)
 	}
 
 	if (level.framenum < self.timestamp)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(target_earthquake_think);
 
 static void target_earthquake_use(entity &self, entity &, entity &cactivator)
 {
-	self.timestamp = level.framenum + self.count * BASE_FRAMERATE;
-	self.nextthink = level.framenum + 1;
+	self.timestamp = level.framenum + seconds(self.count);
+	self.nextthink = level.framenum + 1_hz;
 	self.activator = cactivator;
-	self.last_move_framenum = 0;
+	self.last_move_framenum = gtime::zero();
 }
 
 REGISTER_STATIC_SAVABLE(target_earthquake_use);

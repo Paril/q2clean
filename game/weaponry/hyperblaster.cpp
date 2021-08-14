@@ -22,7 +22,7 @@ static void Weapon_HyperBlaster_Fire(entity &ent)
 			if (level.framenum >= ent.pain_debounce_framenum)
 			{
 				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
-				ent.pain_debounce_framenum = level.framenum + 1 * BASE_FRAMERATE;
+				ent.pain_debounce_framenum = level.framenum + 1s;
 			}
 			NoAmmoWeaponChange(ent);
 		}

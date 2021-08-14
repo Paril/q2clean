@@ -61,6 +61,19 @@ void ai_move(entity &self, float dist)
 	M_walkmove(self, self.angles[YAW], dist);
 }
 
+// records sighting of an enemy
+inline void ai_enemy_visible(entity &self)
+{
+	self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
+	self.monsterinfo.last_sighting = self.enemy->origin;
+	self.monsterinfo.trail_framenum = level.framenum;
+
+#ifdef ROGUE_AI
+	self.monsterinfo.blind_fire_target = self.enemy->origin;
+	self.monsterinfo.blind_fire_framedelay = gtime::zero();
+#endif
+}
+
 void ai_stand(entity &self, float dist)
 {
 	if (dist)
@@ -88,15 +101,7 @@ void ai_stand(entity &self, float dist)
 
 			// record sightings of player
 			if (self.enemy.has_value() && self.enemy->inuse && visible(self, self.enemy))
-			{
-				self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-				self.monsterinfo.last_sighting = self.enemy->origin;
-				self.monsterinfo.trail_framenum = level.framenum;
-#ifdef ROGUE_AI
-				self.monsterinfo.blind_fire_target = self.enemy->origin;
-				self.monsterinfo.blind_fire_framedelay = 0;
-#endif
-			}
+				ai_enemy_visible(self);
 			else if (!firing)
 			{
 				FindTarget (self);
@@ -117,15 +122,15 @@ void ai_stand(entity &self, float dist)
 		return;
 	}
 
-	if (!(self.spawnflags & 1) && (self.monsterinfo.idle) && (level.framenum > self.monsterinfo.idle_framenum))
+	if (!(self.spawnflags & 1) && self.monsterinfo.idle && (level.framenum > self.monsterinfo.idle_framenum))
 	{
-		if (self.monsterinfo.idle_framenum)
+		if (self.monsterinfo.idle_framenum != gtime::zero())
 		{
 			self.monsterinfo.idle(self);
-			self.monsterinfo.idle_framenum = level.framenum + (int)random(15.f * BASE_FRAMERATE, 30.f * BASE_FRAMERATE);
+			self.monsterinfo.idle_framenum = level.framenum + random(15s, 30s);
 		}
 		else
-			self.monsterinfo.idle_framenum = level.framenum + (int)random(15.f * BASE_FRAMERATE);
+			self.monsterinfo.idle_framenum = level.framenum + random(15s);
 	}
 }
 
@@ -138,13 +143,15 @@ void ai_walk(entity &self, float dist)
 	if (FindTarget(self))
 		return;
 
-	if ((self.monsterinfo.search) && (level.framenum > self.monsterinfo.idle_framenum)) {
-		if (self.monsterinfo.idle_framenum) {
+	if (self.monsterinfo.search && (level.framenum > self.monsterinfo.idle_framenum))
+	{
+		if (self.monsterinfo.idle_framenum != gtime::zero())
+		{
 			self.monsterinfo.search(self);
-			self.monsterinfo.idle_framenum = level.framenum + (int)random(15.f * BASE_FRAMERATE, 30.f * BASE_FRAMERATE);
-		} else {
-			self.monsterinfo.idle_framenum = level.framenum + (int)random(15.f * BASE_FRAMERATE);
+			self.monsterinfo.idle_framenum = level.framenum + random(15s, 30s);
 		}
+		else
+			self.monsterinfo.idle_framenum = level.framenum + random(15s);
 	}
 }
 
@@ -235,9 +242,9 @@ range_t range(entity &self, entity &other)
 }
 
 //============================================================================
-void AttackFinished(entity &self, float time)
+void AttackFinished(entity &self, gtimef time)
 {
-	self.monsterinfo.attack_finished = level.framenum + (gtime)(time * BASE_FRAMERATE);
+	self.monsterinfo.attack_finished = duration_cast<gtime>(level.framenum + time);
 }
 
 void HuntTarget(entity &self)
@@ -253,7 +260,7 @@ void HuntTarget(entity &self)
 
 	// wait a while before first attack
 	if (!(self.monsterinfo.aiflags & AI_STAND_GROUND))
-		AttackFinished(self, 1);
+		AttackFinished(self, 1s);
 }
 
 void FoundTarget(entity &self)
@@ -269,14 +276,14 @@ void FoundTarget(entity &self)
 		level.sight_entity_framenum = level.framenum;
 	}
 
-	self.show_hostile = level.framenum + 1 * BASE_FRAMERATE;   // wake up other monsters
+	self.show_hostile = level.framenum + 1s;   // wake up other monsters
 
 	self.monsterinfo.last_sighting = self.enemy->origin;
 	self.monsterinfo.trail_framenum = level.framenum;
 	
 #ifdef ROGUE_AI
 	self.monsterinfo.blind_fire_target = self.enemy->origin;
-	self.monsterinfo.blind_fire_framedelay = 0;
+	self.monsterinfo.blind_fire_framedelay = gtime::zero();
 #endif
 
 	if (!self.combattarget)
@@ -300,7 +307,7 @@ void FoundTarget(entity &self)
 
 	// clear the targetname, that point is ours!
 	self.movetarget->targetname = nullptr;
-	self.monsterinfo.pause_framenum = 0;
+	self.monsterinfo.pause_framenum = gtime::zero();
 
 	// run for it
 	self.monsterinfo.run(self);
@@ -337,7 +344,7 @@ bool FindTarget(entity &self)
 // but not weapon impact/explosion noises
 
 	heardit = false;
-	if ((level.sight_entity_framenum >= (level.framenum - 1)) && !(self.spawnflags & 1))
+	if ((level.sight_entity_framenum >= (level.framenum - 1_hz)) && !(self.spawnflags & 1))
 	{
 		cl = level.sight_entity;
 		if (cl->enemy == self.enemy)
@@ -347,10 +354,10 @@ bool FindTarget(entity &self)
 	else if (level.disguise_violation_framenum > level.framenum)
 		cl = level.disguise_violator;
 #endif
-	else if (level.sound_entity_framenum >= (level.framenum - 1)) {
+	else if (level.sound_entity_framenum >= (level.framenum - 1_hz)) {
 		cl = level.sound_entity;
 		heardit = true;
-	} else if (!(self.enemy.has_value()) && (level.sound2_entity_framenum >= (level.framenum - 1)) && !(self.spawnflags & 1)) {
+	} else if (!(self.enemy.has_value()) && (level.sound2_entity_framenum >= (level.framenum - 1_hz)) && !(self.spawnflags & 1)) {
 		cl = level.sound2_entity;
 		heardit = true;
 	} else {
@@ -520,27 +527,22 @@ bool M_CheckAttack(entity &self)
 				// PMM - if we can't see our target, and we're not blocked by a monster, go into blind fire if available
 				if (!(tr.ent.svflags & SVF_MONSTER) && !visible(self, self.enemy))
 				{
-					if ((self.monsterinfo.blindfire) && (self.monsterinfo.blind_fire_framedelay <= (20.0 * BASE_FRAMERATE)))
+					if (self.monsterinfo.blindfire && (self.monsterinfo.blind_fire_framedelay <= 20s))
 					{
 						if (level.framenum < self.monsterinfo.attack_finished)
-						{
 							return false;
-						}
+
 						if (level.framenum < (self.monsterinfo.trail_framenum + self.monsterinfo.blind_fire_framedelay))
-						{
 							// wait for our time
 							return false;
-						}
-						else
-						{
-							// make sure we're not going to shoot a monster
-							tr = gi.traceline(spot1, self.monsterinfo.blind_fire_target, self, CONTENTS_MONSTER);
-							if (tr.allsolid || tr.startsolid || ((tr.fraction < 1.0) && (tr.ent != self.enemy)))
-								return false;
 
-							self.monsterinfo.attack_state = AS_BLIND;
-							return true;
-						}
+						// make sure we're not going to shoot a monster
+						tr = gi.traceline(spot1, self.monsterinfo.blind_fire_target, self, CONTENTS_MONSTER);
+						if (tr.allsolid || tr.startsolid || ((tr.fraction < 1.0) && (tr.ent != self.enemy)))
+							return false;
+
+						self.monsterinfo.attack_state = AS_BLIND;
+						return true;
 					}
 				}
 				// pmm
@@ -602,7 +604,7 @@ bool M_CheckAttack(entity &self)
 	if (random() < chance || self.enemy->solid == SOLID_NOT)
 	{
 		self.monsterinfo.attack_state = AS_MISSILE;
-		self.monsterinfo.attack_finished = level.framenum + (gtime)random(2.f * BASE_FRAMERATE);
+		self.monsterinfo.attack_finished = level.framenum + random(2s);
 		return true;
 	}
 
@@ -772,7 +774,7 @@ bool ai_checkattack(entity &self, float)
 
 		if (self.monsterinfo.aiflags & AI_SOUND_TARGET)
 		{
-			if ((level.framenum - self.enemy->last_sound_framenum) > 5.0f * BASE_FRAMERATE)
+			if ((level.framenum - self.enemy->last_sound_framenum) > 5s)
 			{
 				if (self.goalentity == self.enemy)
 				{
@@ -787,7 +789,7 @@ bool ai_checkattack(entity &self, float)
 			}
 			else
 			{
-				self.show_hostile = level.framenum + 1 * BASE_FRAMERATE;
+				self.show_hostile = level.framenum + 1s;
 				return false;
 			}
 		}
@@ -849,28 +851,21 @@ bool ai_checkattack(entity &self, float)
 				// will just revert to walking with no target and
 				// the monsters will wonder around aimlessly trying
 				// to hunt the world entity
-				self.monsterinfo.pause_framenum = INT_MAX;
+				self.monsterinfo.pause_framenum = gtime::max();
 				self.monsterinfo.stand(self);
 			}
 			return true;
 		}
 	}
 
-	self.show_hostile = level.framenum + 1 * BASE_FRAMERATE;   // wake up other monsters
+	self.show_hostile = level.framenum + 1s;   // wake up other monsters
 
 // check knowledge of enemy
 	enemy_vis = visible(self, self.enemy);
 	if (enemy_vis)
 	{
-		self.monsterinfo.search_framenum = level.framenum + 5 * BASE_FRAMERATE;
-		self.monsterinfo.last_sighting = self.enemy->origin;
-		self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-		self.monsterinfo.trail_framenum = level.framenum;
-
-#ifdef ROGUE_AI
-		self.monsterinfo.blind_fire_target = self.enemy->origin;
-		self.monsterinfo.blind_fire_framedelay = 0;
-#endif
+		self.monsterinfo.search_framenum = level.framenum + 5s;
+		ai_enemy_visible(self);
 	}
 
 	enemy_range = range(self, self.enemy);
@@ -1060,14 +1055,8 @@ void ai_run(entity &self, float dist)
 			M_MoveToGoal (self, dist);
 
 		if (self.enemy.has_value() && self.enemy->inuse && enemy_vis)
-		{
-			self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-			self.monsterinfo.last_sighting = self.enemy->origin;
-			self.monsterinfo.trail_framenum = level.framenum;
+			ai_enemy_visible(self);
 
-			self.monsterinfo.blind_fire_target = self.enemy->origin;
-			self.monsterinfo.blind_fire_framedelay = 0;
-		}
 		return;
 	}
 #endif
@@ -1080,24 +1069,16 @@ void ai_run(entity &self, float dist)
 		if (!self.inuse)
 			return;
 
-		self.monsterinfo.aiflags &= ~AI_LOST_SIGHT;
-		self.monsterinfo.last_sighting = self.enemy->origin;
-		self.monsterinfo.trail_framenum = level.framenum;
-		
-#ifdef ROGUE_AI
-		self.monsterinfo.blind_fire_target = self.enemy->origin;
-		self.monsterinfo.blind_fire_framedelay = 0;
-#endif
+		ai_enemy_visible(self);
 		return;
 	}
 
 #ifdef ROGUE_AI
-	// if we've been looking (unsuccessfully) for the player for 10 seconds
-	// PMM - reduced to 5, makes them much nastier
-	if ((self.monsterinfo.trail_framenum + (5 * BASE_FRAMERATE)) <= level.framenum)
+	// if we've been looking (unsuccessfully) for the player for 5 seconds
+	if ((self.monsterinfo.trail_framenum + 5s) <= level.framenum)
 	{
 		// and we haven't checked for valid hint paths in the last 10 seconds
-		if ((self.monsterinfo.last_hint_framenum + (10 * BASE_FRAMERATE)) <= level.framenum)
+		if ((self.monsterinfo.last_hint_framenum + 10s) <= level.framenum)
 		{
 			// check for hint_paths.
 			self.monsterinfo.last_hint_framenum = level.framenum;
@@ -1116,11 +1097,11 @@ void ai_run(entity &self, float dist)
 			return;
 	}
 
-	if ((self.monsterinfo.search_framenum) && (level.framenum > (self.monsterinfo.search_framenum + 20 * BASE_FRAMERATE)))
+	if (self.monsterinfo.search_framenum != gtime::zero() && (level.framenum > (self.monsterinfo.search_framenum + 20s)))
 	{
 		if (!alreadyMoved)
 			M_MoveToGoal(self, dist);
-		self.monsterinfo.search_framenum = 0;
+		self.monsterinfo.search_framenum = gtime::zero();
 		return;
 	}
 
@@ -1142,7 +1123,7 @@ void ai_run(entity &self, float dist)
 		self.monsterinfo.aiflags &= ~AI_PURSUE_NEXT;
 
 		// give ourself more time since we got this far
-		self.monsterinfo.search_framenum = level.framenum + 5 * BASE_FRAMERATE;
+		self.monsterinfo.search_framenum = level.framenum + 5s;
 
 		if (self.monsterinfo.aiflags & AI_PURSUE_TEMP) {
 			self.monsterinfo.aiflags &= ~AI_PURSUE_TEMP;

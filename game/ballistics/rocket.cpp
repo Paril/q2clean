@@ -71,7 +71,7 @@ entity &fire_rocket(entity &self, vector start, vector dir, int32_t damage, int3
 	rocket.modelindex = gi.modelindex("models/objects/rocket/tris.md2");
 	rocket.owner = self;
 	rocket.touch = SAVABLE(rocket_touch);
-	rocket.nextthink = level.framenum + BASE_FRAMERATE * 8000 / speed;
+	rocket.nextthink = level.framenum + seconds(8000 / speed);
 	rocket.think = SAVABLE(G_FreeEdict);
 	rocket.dmg = damage;
 	rocket.radius_dmg = radius_damage;

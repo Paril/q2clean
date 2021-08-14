@@ -21,13 +21,13 @@ void weapon_trap_fire(entity &ent, bool held)
 	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
 	vector start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	float timer = (ent.client->grenade_framenum - level.framenum) * FRAMETIME;
-	int32_t speed = (int32_t) (GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER));
+	gtime timer = ent.client->grenade_framenum - level.framenum;
+	int32_t speed = (int32_t) (GRENADE_MINSPEED + (GRENADE_TIMER - timer).count() * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER.count()));
 	fire_trap(ent, start, forward, damage, speed, radius, held);
 
 	ent.client->pers.inventory[ent.client->ammo_index]--;
 
-	ent.client->grenade_framenum = (gtime) (level.framenum + 1.0f * BASE_FRAMERATE);
+	ent.client->grenade_framenum = level.framenum + 1s;
 }
 
 void Weapon_Trap(entity &ent)

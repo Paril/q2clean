@@ -74,7 +74,7 @@ bool Pickup_Armor(entity &ent, entity &other)
 #else
 	if (!(ent.spawnflags & DROPPED_ITEM))
 #endif
-		SetRespawn(ent, 20);
+		SetRespawn(ent, 20s);
 
 	return true;
 }
@@ -120,7 +120,7 @@ bool Pickup_PowerArmor(entity &ent, entity &other)
 	{
 #endif
 		if (!(ent.spawnflags & DROPPED_ITEM))
-			SetRespawn(ent, ent.item->quantity);
+			SetRespawn(ent, seconds(ent.item->quantity));
 
 		// auto-use for DM only if we didn't already have one
 		if (!quantity)

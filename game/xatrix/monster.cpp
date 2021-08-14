@@ -68,7 +68,7 @@ static void heat_think(entity &self)
 		self.velocity = vec * 500;
 	}
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(heat_think);
@@ -76,7 +76,7 @@ REGISTER_STATIC_SAVABLE(heat_think);
 inline void fire_heat(entity &self, vector start, vector dir, int32_t damage, int32_t speed, float damage_radius, int32_t radius_damage)
 {
 	entity &heat = fire_rocket(self, start, dir, damage, speed, damage_radius, radius_damage);
-	heat.nextthink = level.framenum + 1;
+	heat.nextthink = level.framenum + 1_hz;
 	heat.think = SAVABLE(heat_think);
 }
 
@@ -129,7 +129,7 @@ static void dabeam_hit(entity &self)
 	} while (1);
 
 	self.old_origin = tr.endpos;
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	self.think = SAVABLE(G_FreeEdict);
 }
 
@@ -155,7 +155,7 @@ void monster_dabeam(entity &self)
 		vector point = self.enemy->absbounds.center();
 
 		if (self.owner->monsterinfo.aiflags & AI_MEDIC)
-			point[0] += sin(level.time) * 8;
+			point[0] += sin(level.time.count()) * 8;
 
 		self.movedir = point - self.origin;
 		VectorNormalize(self.movedir);
@@ -167,7 +167,7 @@ void monster_dabeam(entity &self)
 		G_SetMovedir(self.angles, self.movedir);
 
 	self.think = SAVABLE(dabeam_hit);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 	self.bounds = bbox::sized(8.f);
 	gi.linkentity(self);
 

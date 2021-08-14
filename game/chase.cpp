@@ -5,6 +5,8 @@
 #include "lib/gi.h"
 #include "game.h"
 
+constexpr gtime chase_update_period { 320 };
+
 void UpdateChaseCam(entity &ent)
 {
 	entityref targ = ent.client->chase_target;
@@ -98,7 +100,7 @@ void UpdateChaseCam(entity &ent)
 #ifdef SINGLE_PLAYER
 		!ent.client->showhelp &&
 #endif
-		!(level.framenum & 31)))
+		(level.framenum % chase_update_period) == gtime::zero()))
 	{
 		ent.client->update_chase = false;
 		gi.ConstructMessage(svc_layout, format("xv 0 yb -68 string2 \"Chasing {0}\"", targ->client->pers.netname)).unicast(ent, false);

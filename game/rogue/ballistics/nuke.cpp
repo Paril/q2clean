@@ -13,11 +13,11 @@
 
 constexpr means_of_death MOD_NUKE { .self_kill_fmt = "{0}'s destruction was mutually assured.\n", .other_kill_fmt = "{0} was nuked by {3}'s antimatter bomb.\n" };
 
-constexpr float NUKE_DELAY			= 4.f;
-constexpr float NUKE_TIME_TO_LIVE	= 6.f;
+constexpr gtime NUKE_DELAY			= 4s;
+constexpr gtime NUKE_TIME_TO_LIVE	= 6s;
 constexpr float NUKE_RADIUS			= 512.f;
 constexpr int32_t NUKE_DAMAGE		= 400;
-constexpr float NUKE_QUAKE_TIME		= 3.f;
+constexpr gtime NUKE_QUAKE_TIME		= 3s;
 constexpr float NUKE_QUAKE_STRENGTH	= 100.f;
 
 static entity_type ET_NUKE("nuke", ET_GRENADE);
@@ -27,7 +27,7 @@ static void Nuke_Quake(entity &self)
 	if (self.last_move_framenum < level.framenum)
 	{
 		gi.positioned_sound(self.origin, self, self.noise_index, 0.75f, ATTN_NONE);
-		self.last_move_framenum = level.framenum + (int)(0.5 * BASE_FRAMERATE);
+		self.last_move_framenum = level.framenum + 500ms;
 	}
 
 	for (uint32_t i = 1; i < num_entities; i++)
@@ -48,7 +48,7 @@ static void Nuke_Quake(entity &self)
 	}
 
 	if (level.framenum < self.timestamp)
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 1_hz;
 	else
 		G_FreeEdict (self);
 }
@@ -98,7 +98,7 @@ inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float damage
 		if (points > 0)
 		{
 			if (ent->is_client())
-				ent->client->nuke_framenum = level.framenum + 20;
+				ent->client->nuke_framenum = level.framenum + 2s;
 
 			vector dir = ent->origin - inflictor.origin;
 			if (ent->is_client())
@@ -114,16 +114,16 @@ inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float damage
 	// cycle through players
 	while (ent.has_value())
 	{
-		if (ent->is_client() && (ent->client->nuke_framenum != level.framenum + 20) && ent->inuse)
+		if (ent->is_client() && (ent->client->nuke_framenum != level.framenum + 2s) && ent->inuse)
 		{
 			trace tr = gi.traceline(inflictor.origin, ent->origin, inflictor, MASK_SOLID);
 
 			if (tr.fraction == 1.0)
-				ent->client->nuke_framenum = level.framenum + 20;
+				ent->client->nuke_framenum = level.framenum + 2s;
 			else
 			{
 				float dist = VectorDistance(ent->origin, inflictor.origin);
-				ent->client->nuke_framenum = max(ent->client->nuke_framenum, level.framenum + (dist < 2048 ? 15 : 10));
+				ent->client->nuke_framenum = max(ent->client->nuke_framenum, level.framenum + (dist < 2048 ? 1500ms : 1s));
 			}
 
 			ent = next_ent(ent);
@@ -156,9 +156,9 @@ static void Nuke_Explode(entity &ent)
 	ent.noise_index = gi.soundindex ("world/rumble.wav");
 	ent.think = SAVABLE(Nuke_Quake);
 	ent.speed = NUKE_QUAKE_STRENGTH;
-	ent.timestamp = level.framenum + (gtime)(NUKE_QUAKE_TIME * BASE_FRAMERATE);
-	ent.nextthink = level.framenum + 1;
-	ent.last_move_framenum = 0;
+	ent.timestamp = level.framenum + NUKE_QUAKE_TIME;
+	ent.nextthink = level.framenum + 1_hz;
+	ent.last_move_framenum = gtime::zero();
 }
 
 static void nuke_die(entity &self, entity &, entity &attacker, int32_t, vector)
@@ -220,7 +220,7 @@ static void Nuke_Think(entity &ent)
 		}
 
 		ent.think = SAVABLE(Nuke_Think);
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 100ms;
 		ent.health = 1;
 		ent.owner = 0;
 
@@ -228,14 +228,14 @@ static void Nuke_Think(entity &ent)
 
 		if (ent.timestamp <= level.framenum)
 		{
-			float next_tick;
+			gtime next_tick;
 
 			if ((ent.wait - level.framenum) <= (NUKE_TIME_TO_LIVE / 2.0))
-				next_tick = 0.3f;
+				next_tick = 300ms;
 			else
-				next_tick = 0.5f;
+				next_tick = 500ms;
 
-			ent.timestamp = level.framenum + (gtime)(next_tick * BASE_FRAMERATE);
+			ent.timestamp = level.framenum + next_tick;
 
 			gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), attenuation);
 		}
@@ -245,10 +245,10 @@ static void Nuke_Think(entity &ent)
 		if (ent.timestamp <= level.framenum)
 		{
 			gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/nukewarn2.wav"), attenuation);
-			ent.timestamp = level.framenum + BASE_FRAMERATE;
+			ent.timestamp = level.framenum + 1s;
 		}
 
-		ent.nextthink = level.framenum + 1;
+		ent.nextthink = level.framenum + 100ms;
 	}
 }
 
@@ -287,7 +287,7 @@ void fire_nuke(entity &self, vector start, vector aimdir, int32_t speed)
 	nuke.modelindex = gi.modelindex ("models/weapons/g_nuke/tris.md2");
 	nuke.owner = self;
 	nuke.teammaster = self;
-	nuke.nextthink = level.framenum + 1;
+	nuke.nextthink = level.framenum + 1_hz;
 	nuke.wait = level.framenum + ((NUKE_DELAY + NUKE_TIME_TO_LIVE) * BASE_FRAMERATE);
 	nuke.think = SAVABLE(Nuke_Think);
 	nuke.touch = SAVABLE(nuke_bounce);

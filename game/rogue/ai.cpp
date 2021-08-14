@@ -289,7 +289,7 @@ static void hintpath_go(entity &self, entity &point)
 {
 	self.ideal_yaw = vectoyaw(point.origin - self.origin);
 	self.goalentity = self.movetarget = point;
-	self.monsterinfo.pause_framenum = 0;
+	self.monsterinfo.pause_framenum = gtime::zero();
 	self.monsterinfo.aiflags |= AI_HINT_PATH;
 	self.monsterinfo.aiflags &= ~(AI_SOUND_TARGET | AI_PURSUIT_LAST_SEEN | AI_PURSUE_NEXT | AI_PURSUE_TEMP);
 	// run for it
@@ -332,7 +332,7 @@ void hintpath_stop(entity &self)
 	// will just revert to walking with no target and
 	// the monsters will wonder around aimlessly trying
 	// to hunt the world entity
-	self.monsterinfo.pause_framenum = INT_MAX;
+	self.monsterinfo.pause_framenum = gtime::max();
 	self.monsterinfo.stand (self);
 }
 
@@ -720,8 +720,8 @@ static void hint_path_touch(entity &self, entity &other, vector, const surface &
 
 	// have the monster freeze if the hint path we just touched has a wait time
 	// on it, for example, when riding a plat.
-	if (self.wait)
-		other.nextthink = level.framenum + (int)(self.wait * BASE_FRAMERATE);
+	if (self.wait != gtimef::zero())
+		other.nextthink = duration_cast<gtime>(level.framenum + self.wait);
 }
 
 REGISTER_STATIC_SAVABLE(hint_path_touch);
@@ -896,7 +896,7 @@ entity &SpawnBadArea(vector cmins, vector cmaxs, gtime lifespan_frames, entityre
 	badarea.touch = SAVABLE(badarea_touch);
 	gi.linkentity (badarea);
 
-	if (lifespan_frames)
+	if (lifespan_frames != gtime::zero())
 	{
 		badarea.think = SAVABLE(G_FreeEdict);
 		badarea.nextthink = level.framenum + lifespan_frames;
@@ -981,7 +981,7 @@ void monster_done_dodge(entity &self)
 //
 // New dodge code
 //
-void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr)
+void M_MonsterDodge(entity &self, entity &attacker, gtimef eta, trace &tr)
 {
 	// this needs to be here since this can be called after the monster has "died"
 	if (self.health < 1)
@@ -1001,7 +1001,7 @@ void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr)
 
 	// PMM - don't bother if it's going to hit anyway; fix for weird in-your-face etas (I was
 	// seeing numbers like 13 and 14)
-	if (eta < 0.1 || eta > 5)
+	if (eta < 100ms || eta > 5s)
 		return;
 
 	// skill level determination..
@@ -1063,7 +1063,7 @@ void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr)
 
 		// set this prematurely; it doesn't hurt, and prevents extra iterations
 		self.monsterinfo.aiflags |= AI_DUCKED;
-		self.monsterinfo.duck (self, eta);
+		self.monsterinfo.duck(self, eta);
 	}
 }
 
@@ -1077,7 +1077,7 @@ void monster_duck_down(entity &self)
 	self.bounds.maxs[2] = self.monsterinfo.base_height - 32;
 	self.takedamage = true;
 	if (self.monsterinfo.duck_wait_framenum < level.framenum)
-		self.monsterinfo.duck_wait_framenum = level.framenum + (1 * BASE_FRAMERATE);
+		self.monsterinfo.duck_wait_framenum = level.framenum + 1s;
 	gi.linkentity (self);
 }
 
@@ -1094,7 +1094,7 @@ void monster_duck_up(entity &self)
 	self.monsterinfo.aiflags &= ~AI_DUCKED;
 	self.bounds.maxs[2] = self.monsterinfo.base_height;
 	self.takedamage = true;
-	self.monsterinfo.next_duck_framenum = level.framenum + (int)(DUCK_INTERVAL * BASE_FRAMERATE);
+	self.monsterinfo.next_duck_framenum = level.framenum + DUCK_INTERVAL;
 	gi.linkentity (self);
 }
 
@@ -1111,7 +1111,7 @@ void monster_jump_start(entity &self)
 
 bool monster_jump_finished(entity &self)
 {
-	return (level.framenum - self.timestamp) > (3 * BASE_FRAMERATE);
+	return (level.framenum - self.timestamp) > 3s;
 }
 
 // MOVE STUFF
@@ -1157,7 +1157,7 @@ bool MarkTeslaArea(entity &tesla)
 	{
 		entity &trigger = tesla.teamchain;
 
-		if (tesla.air_finished_framenum)
+		if (tesla.air_finished_framenum != gtime::zero())
 			area = SpawnBadArea (trigger.absbounds.mins, trigger.absbounds.maxs, tesla.air_finished_framenum, tesla);
 		else
 			area = SpawnBadArea (trigger.absbounds.mins, trigger.absbounds.maxs, tesla.nextthink, tesla);
@@ -1168,7 +1168,7 @@ bool MarkTeslaArea(entity &tesla)
 		vector cmins { -TESLA_DAMAGE_RADIUS, -TESLA_DAMAGE_RADIUS, tesla.bounds.mins[2] };
 		vector cmaxs { TESLA_DAMAGE_RADIUS, TESLA_DAMAGE_RADIUS, TESLA_DAMAGE_RADIUS };
 
-		area = SpawnBadArea(cmins, cmaxs, 30 * BASE_FRAMERATE, tesla);
+		area = SpawnBadArea(cmins, cmaxs, 30s, tesla);
 	}
 
 	if (area.has_value())

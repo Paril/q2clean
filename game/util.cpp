@@ -32,7 +32,7 @@ entity &G_Spawn()
 	entityref best;
 	// the first couple seconds of server time can involve a lot of
 	// freeing and allocating
-	const bool quick_replace = level.framenum < 10;
+	const bool quick_replace = level.framenum < 100ms;
 
 	for (entity &e : entity_range(game.maxclients + 1, num_entities - 1))
 	{
@@ -40,7 +40,7 @@ entity &G_Spawn()
 			continue;
 
 		// if this is a really good entity, mark it down immediately
-		if (quick_replace || (level.framenum - e.freeframenum) > (gtime)(0.5f * BASE_FRAMERATE))
+		if (quick_replace || (level.framenum - e.freeframenum) > 500ms)
 		{
 			best = e;
 			break;
@@ -134,11 +134,11 @@ void G_UseTargets(entity &ent, entity &cactivator)
 	//
 	// check for a delay
 	//
-	if (ent.delay)
+	if (ent.delay != gtimef::zero())
 	{
 		// create a temp object to fire at a later time
 		entity &t = G_Spawn();
-		t.nextthink = level.framenum + (gtime) (ent.delay * BASE_FRAMERATE);
+		t.nextthink = duration_cast<gtime>(level.framenum + ent.delay);
 		t.think = SAVABLE(Think_Delay);
 		t.activator = cactivator;
 		t.message = ent.message;

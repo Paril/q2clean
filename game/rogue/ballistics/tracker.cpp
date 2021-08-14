@@ -13,7 +13,7 @@
 constexpr damage_flags TRACKER_IMPACT_FLAGS = (DAMAGE_NO_POWER_ARMOR | DAMAGE_ENERGY | DAMAGE_INSTANT_GIB);
 constexpr damage_flags TRACKER_DAMAGE_FLAGS = (TRACKER_IMPACT_FLAGS | DAMAGE_NO_KNOCKBACK);
 
-constexpr float TRACKER_DAMAGE_TIME	= 0.5f; // time in seconds
+constexpr gtime TRACKER_DAMAGE_TIME	= 500ms;
 
 constexpr means_of_death MOD_TRACKER { .other_kill_fmt = "{0} was annihilated by {3}'s disruptor.\n" };
 
@@ -22,7 +22,7 @@ static void tracker_pain_daemon_think(entity &self)
 	if(!self.inuse)
 		return;
 
-	if ((level.framenum - self.timestamp) > TRACKER_DAMAGE_TIME * BASE_FRAMERATE)
+	if ((level.framenum - self.timestamp) > TRACKER_DAMAGE_TIME)
 	{
 		if(!self.enemy->is_client())
 			self.enemy->effects &= ~EF_TRACKERTRAIL;
@@ -39,11 +39,11 @@ static void tracker_pain_daemon_think(entity &self)
 			return;
 
 		if (self.enemy->is_client())
-			self.enemy->client->tracker_pain_framenum = level.framenum + 1;
+			self.enemy->client->tracker_pain_framenum = level.framenum + 100ms;
 		else
 			self.enemy->effects |= EF_TRACKERTRAIL;
 		
-		self.nextthink = level.framenum + 1;
+		self.nextthink = level.framenum + 100ms;
 		return;
 	}
 
@@ -59,7 +59,7 @@ static inline void tracker_pain_daemon_spawn(entity &cowner, entity &cenemy, int
 {
 	entity &daemon = G_Spawn();
 	daemon.think = SAVABLE(tracker_pain_daemon_think);
-	daemon.nextthink = level.framenum + 1;
+	daemon.nextthink = level.framenum + 100ms;
 	daemon.timestamp = level.framenum;
 	daemon.owner = cowner;
 	daemon.enemy = cenemy;
@@ -150,7 +150,7 @@ static void tracker_fly(entity &self)
 	self.angles = vectoangles(dir);
 	self.velocity = dir * self.speed;
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(tracker_fly);
@@ -179,12 +179,12 @@ void fire_tracker(entity &self, vector start, vector dir, int32_t damage, int32_
 
 	if (cenemy.has_value())
 	{
-		bolt.nextthink = level.framenum + 1;
+		bolt.nextthink = level.framenum + 1_hz;
 		bolt.think = SAVABLE(tracker_fly);
 	}
 	else
 	{
-		bolt.nextthink = level.framenum + (10 * BASE_FRAMERATE);
+		bolt.nextthink = level.framenum + 10s;
 		bolt.think = SAVABLE(G_FreeEdict);
 	}
 

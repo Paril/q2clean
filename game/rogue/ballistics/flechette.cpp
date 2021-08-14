@@ -57,7 +57,7 @@ void fire_flechette(entity &self, vector start, vector dir, int32_t damage, int3
 
 	flechette.owner = self;
 	flechette.touch = SAVABLE(flechette_touch);
-	flechette.nextthink = level.framenum + ((8000 / speed) * BASE_FRAMERATE);
+	flechette.nextthink = level.framenum + seconds(8000 / speed);
 	flechette.think = SAVABLE(G_FreeEdict);
 	flechette.dmg = damage;
 	flechette.dmg_radius = (float)kick;

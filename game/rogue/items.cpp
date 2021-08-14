@@ -29,7 +29,7 @@ bool Pickup_Nuke(entity &ent, entity &other)
 #else
 	if !(ent.spawnflags & DROPPED_ITEM)
 #endif
-		SetRespawn(ent, citem.quantity);
+		SetRespawn(ent, seconds(citem.quantity));
 
 	return true;
 }
@@ -40,9 +40,9 @@ void Use_IR(entity &ent, const gitem_t &it)
 	ValidateSelectedItem(ent);
 
 	if (ent.client->ir_framenum > level.framenum)
-		ent.client->ir_framenum += 600;
+		ent.client->ir_framenum += 60s;
 	else
-		ent.client->ir_framenum = level.framenum + 600;
+		ent.client->ir_framenum = level.framenum + 60s;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ir_start.wav"));
 }
@@ -53,9 +53,9 @@ void Use_Double(entity &ent, const gitem_t &it)
 	ValidateSelectedItem (ent);
 
 	if (ent.client->double_framenum > level.framenum)
-		ent.client->double_framenum += 300;
+		ent.client->double_framenum += 30s;
 	else
-		ent.client->double_framenum = level.framenum + 300;
+		ent.client->double_framenum = level.framenum + 30s;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage1.wav"));
 }
@@ -92,7 +92,7 @@ void SetTriggeredSpawn(entity &ent)
 		return;
 
 	ent.think = nullptr;
-	ent.nextthink = 0;
+	ent.nextthink = gtime::zero();
 	ent.use = SAVABLE(Item_TriggeredSpawn);
 	ent.svflags |= SVF_NOCLIENT;
 	ent.solid = SOLID_NOT;

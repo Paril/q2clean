@@ -279,7 +279,7 @@ CheckDMRules
 */
 static void CheckDMRules()
 {
-	if (level.intermission_framenum)
+	if (level.intermission_framenum != gtime::zero())
 		return;
 
 #ifdef SINGLE_PLAYER
@@ -297,7 +297,7 @@ static void CheckDMRules()
 
 	if (timelimit)
 	{
-		if (level.time >= timelimit * 60)
+		if (level.time >= minutes((int32_t) timelimit))
 		{
 			gi.bprint(PRINT_HIGH, "Timelimit hit.\n");
 			EndDMLevel();
@@ -330,7 +330,7 @@ ExitLevel
 static void ExitLevel()
 {
 	level.exitintermission = 0;
-	level.intermission_framenum = 0;
+	level.intermission_framenum = gtime::zero();
 	
 	gi.AddCommandStringFmt("gamemap \"{}\"\n", level.changemap);
 	level.changemap = nullptr;
@@ -350,20 +350,20 @@ static void ExitLevel()
 
 void RunFrame()
 {
-	level.framenum++;
-	level.time = level.framenum * FRAMETIME;
+	level.framenum += framerate_ms;
+	level.time = duration_cast<gtimef>(level.framenum);
 
-#ifdef SINGLE_PLAYER
-	// choose a client for monsters to target this frame
-	AI_SetSightClient();
-#endif
-	
 	// exit intermissions
 	if (level.exitintermission)
 	{
 		ExitLevel();
 		return;
 	}
+#ifdef SINGLE_PLAYER
+
+	// choose a client for monsters to target this frame
+	AI_SetSightClient();
+#endif
 	
 	//
 	// treat each object in turn

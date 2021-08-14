@@ -213,7 +213,7 @@ inline cJSON *json_serializer_write(serializer&, const vector &v, const bool& de
 	return cJSON_CreateFloatArray(&v.x, 3);
 }
 
-inline cJSON *json_serializer_write(serializer&, const bbox &v, const bool& defaultable = false)
+inline cJSON *json_serializer_write(serializer&, const bbox &v, const bool &defaultable = false)
 {
 	if (defaultable && !v.mins && !v.maxs)
 		return nullptr;
@@ -222,7 +222,7 @@ inline cJSON *json_serializer_write(serializer&, const bbox &v, const bool& defa
 }
 
 template<typename T>
-inline cJSON *json_serializer_write(serializer&, const savable<T> &str, const bool& defaultable = false)
+inline cJSON *json_serializer_write(serializer&, const savable<T> &str, const bool &defaultable = false)
 {
 	if (str)
 		return cJSON_CreateString(str.registry->name);
@@ -244,6 +244,12 @@ inline cJSON *json_serializer_write(serializer &stream, const array<T, N> &arr, 
 		cJSON_AddItemToArray(array, json_serializer_write(stream, v));
 
 	return array;
+}
+
+template<typename rep, typename period>
+inline cJSON *json_serializer_write(serializer &stream, const duration<rep, period> &v, const bool &defaultable = false)
+{
+	return json_serializer_write(stream, v.count(), defaultable);
 }
 
 template<typename T> requires is_number<T>
@@ -322,6 +328,14 @@ inline void json_serializer_read(cJSON *json, serializer &stream, array<T, N> &a
 
 	for (auto &v : arr)
 		json_serializer_read(cJSON_GetArrayItem(json, i++), stream, v);
+}
+
+template<typename rep, typename period>
+inline void json_serializer_read(cJSON *json, serializer &stream, duration<rep, period> &arr)
+{
+	rep r;
+	json_serializer_read<rep>(json, stream, r);
+	arr = duration<rep, period>(r);
 }
 
 template<typename T>
@@ -1334,7 +1348,7 @@ void ReadLevel(stringlit filename)
 
 		// fire any cross-level triggers
 		if (ent.type == ET_TARGET_CROSSLEVEL_TARGET)
-			ent.nextthink = level.framenum + (gtime) (ent.delay * BASE_FRAMERATE);
+			ent.nextthink = duration_cast<gtime>(level.framenum + ent.delay);
 	}
 #endif
 }

@@ -43,7 +43,7 @@ static void bfg_explode(entity &self)
 		}
 	}
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 100ms;
 	self.frame++;
 	if (self.frame == 5)
 		self.think = SAVABLE(G_FreeEdict);
@@ -75,14 +75,14 @@ static void bfg_touch(entity &self, entity &other, vector normal, const surface 
 	gi.sound(self, CHAN_VOICE, gi.soundindex("weapons/bfg_.x1b.wav"));
 	self.solid = SOLID_NOT;
 	self.touch = nullptr;
-	self.origin += ((-1 * FRAMETIME) * self.velocity);
+	self.origin += (-FRAMETIME.count() * self.velocity);
 	self.velocity = vec3_origin;
 	self.modelindex = gi.modelindex("sprites/s_bfg3.sp2");
 	self.frame = 0;
 	self.sound = SOUND_NONE;
 	self.effects &= ~EF_ANIM_ALLFAST;
 	self.think = SAVABLE(bfg_explode);
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 100ms;
 	self.enemy = other;
 
 	gi.ConstructMessage(svc_temp_entity, TE_BFG_BIGEXPLOSION, self.origin).multicast(self.origin, MULTICAST_PVS);
@@ -166,7 +166,7 @@ static void bfg_think(entity &self)
 		gi.ConstructMessage(svc_temp_entity, TE_BFG_LASER, self.origin, tr.endpos).multicast(self.origin, MULTICAST_PHS);
 	}
 
-	self.nextthink = level.framenum + 1;
+	self.nextthink = level.framenum + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(bfg_think);
@@ -184,14 +184,14 @@ void fire_bfg(entity &self, vector start, vector dir, int32_t damage, int32_t sp
 	bfg.modelindex = gi.modelindex("sprites/s_bfg1.sp2");
 	bfg.owner = self;
 	bfg.touch = SAVABLE(bfg_touch);
-	bfg.nextthink = level.framenum + BASE_FRAMERATE * 8000 / speed;
+	bfg.nextthink = level.framenum + seconds(8000 / speed);
 	bfg.think = SAVABLE(G_FreeEdict);
 	bfg.radius_dmg = damage;
 	bfg.dmg_radius = damage_radius;
 	bfg.sound = gi.soundindex("weapons/bfg__l1a.wav");
 
 	bfg.think = SAVABLE(bfg_think);
-	bfg.nextthink = level.framenum + 1;
+	bfg.nextthink = level.framenum + 100ms;
 
 #ifdef SINGLE_PLAYER
 	if (self.is_client())

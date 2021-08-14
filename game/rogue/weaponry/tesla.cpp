@@ -23,8 +23,8 @@ static void weapon_tesla_fire(entity &ent, bool)
 	vector offset { 0, -4, ent.viewheight - 22.f };
 	vector start = P_ProjectSource(ent, ent.origin, offset, forward, right, up);
 
-	float timer = (ent.client->grenade_framenum - level.framenum) * FRAMETIME;
-	int32_t speed = (int32_t)(GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER));
+	gtimef timer = ent.client->grenade_framenum - level.framenum;
+	int32_t speed = (int32_t)(GRENADE_MINSPEED + (GRENADE_TIMER - timer).count() * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER.count()));
 	if (speed > GRENADE_MAXSPEED)
 		speed = GRENADE_MAXSPEED;
 
@@ -33,7 +33,7 @@ static void weapon_tesla_fire(entity &ent, bool)
 	if (!(dmflags & DF_INFINITE_AMMO))
 		ent.client->pers.inventory[ent.client->ammo_index]--;
 
-	ent.client->grenade_framenum = level.framenum + BASE_FRAMERATE;
+	ent.client->grenade_framenum = level.framenum + 1s;
 
 	if (ent.deadflag || ent.modelindex != MODEL_PLAYER) // VWep animations screw up corpses
 		return;

@@ -177,12 +177,14 @@ struct client : public server_client
 
 	vector	kick_angles;    // weapon kicks
 	vector	kick_origin;
-	float	v_dmg_roll, v_dmg_pitch, v_dmg_time;    // damage kicks
-	float	fall_time, fall_value;      // for view drop on fall
+	float	v_dmg_roll, v_dmg_pitch;
+	gtimef	v_dmg_time;    // damage kicks
+	gtimef	fall_time;
+	float	fall_value;      // for view drop on fall
 	float	bonus_alpha;
 	vector	damage_blend;
 	float	damage_alpha;
-	vector	v_angle;	// aiming direction
+	vector	v_angle;			// aiming direction
 	float	bobtime;			// so off-ground doesn't change it
 	vector	oldviewangles;
 	vector	oldvelocity;
@@ -213,8 +215,8 @@ struct client : public server_client
 	
 	gtime	pickup_msg_framenum;
 	
-	float				flood_locktill;     // locked from talking
-	array<float, 10>	flood_when;     // when messages were said
+	gtimef				flood_locktill;     // locked from talking
+	array<gtimef, 10>	flood_when;     // when messages were said
 	size_t				flood_whenhead;     // head pointer for when said
 	
 	gtime	respawn_framenum;   // can respawn when time > this

@@ -38,7 +38,7 @@ bool below(entity &self, entity &other);
 
 void monster_done_dodge(entity &self);
 
-void M_MonsterDodge(entity &self, entity &attacker, float eta, trace &tr);
+void M_MonsterDodge(entity &self, entity &attacker, gtimef eta, trace &tr);
 
 DECLARE_SAVABLE(M_MonsterDodge);
 

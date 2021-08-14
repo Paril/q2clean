@@ -68,10 +68,10 @@ Runs thinking code for this frame if necessary
 */
 static inline bool SV_RunThink(entity &ent)
 {
-	if (ent.nextthink <= 0 || ent.nextthink > level.framenum)
+	if (ent.nextthink <= gtime::zero() || ent.nextthink > level.framenum)
 		return true;
 
-	ent.nextthink = 0;
+	ent.nextthink = gtime::zero();
 
 	if (!ent.think)
 		gi.dprintfmt("{}: NULL think", ent);
@@ -226,10 +226,10 @@ void SV_AddGravity(entity &ent)
 {
 #ifdef ROGUE_AI
 	if (ent.gravityVector[2] > 0)
-		ent.velocity += ent.gravityVector * (ent.gravity * sv_gravity * FRAMETIME);
+		ent.velocity += ent.gravityVector * (ent.gravity * sv_gravity * FRAMETIME.count());
 	else
 #endif
-		ent.velocity.z -= ent.gravity * sv_gravity * FRAMETIME;
+		ent.velocity.z -= ent.gravity * sv_gravity * FRAMETIME.count();
 }
 
 /*
@@ -461,8 +461,8 @@ static void SV_Physics_Pusher(entity &ent)
 		if (part->velocity || part->avelocity)
 		{
 			// object is moving
-			vector move = part->velocity * FRAMETIME;
-			vector amove = part->avelocity * FRAMETIME;
+			vector move = part->velocity * FRAMETIME.count();
+			vector amove = part->avelocity * FRAMETIME.count();
 
 			if (!SV_Push(part, move, amove))
 				break;  // move was blocked
@@ -473,7 +473,7 @@ static void SV_Physics_Pusher(entity &ent)
 	{
 		// the move failed, bump all nextthink times and back out moves
 		for (entityref mv = ent; mv.has_value(); mv = mv->teamchain)
-			if (mv->nextthink > 0)
+			if (mv->nextthink > gtime::zero())
 				mv->nextthink++;
 
 		// if the pusher has a "blocked" function, call it
@@ -520,8 +520,8 @@ static void SV_Physics_Noclip(entity &ent)
 	if (!ent.inuse)
 		return;
 
-	ent.angles += (FRAMETIME * ent.avelocity);
-	ent.origin += (FRAMETIME * ent.velocity);
+	ent.angles += ent.avelocity * FRAMETIME.count();
+	ent.origin += ent.velocity * FRAMETIME.count();
 
 	gi.linkentity(ent);
 }
@@ -583,10 +583,10 @@ static void SV_Physics_Toss(entity &ent)
 		SV_AddGravity(ent);
 
 // move angles
-	ent.angles += (FRAMETIME * ent.avelocity);
+	ent.angles += ent.avelocity * FRAMETIME.count();
 
 // move origin
-	vector move = ent.velocity * FRAMETIME;
+	vector move = ent.velocity * FRAMETIME.count();
 	trace tr;
 	SV_PushEntity(ent, move, tr);
 	if (!ent.inuse)
@@ -680,8 +680,9 @@ const float sv_waterfriction	= 1.f;
 
 static void SV_AddRotationalFriction(entity &ent)
 {
-	ent.angles += (FRAMETIME * ent.avelocity);
-	float adjustment = FRAMETIME * sv_stopspeed * sv_friction;
+	ent.angles += ent.avelocity * FRAMETIME.count();
+
+	float adjustment = sv_stopspeed * sv_friction * FRAMETIME.count();
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -743,7 +744,7 @@ static void SV_Physics_Step(entity &ent)
 		speed = fabs(ent.velocity.z);
 		control = speed < sv_stopspeed ? sv_stopspeed : speed;
 		friction = sv_friction / 3;
-		newspeed = speed - (FRAMETIME * control * friction);
+		newspeed = speed - (control * friction * FRAMETIME.count());
 		if (newspeed < 0)
 			newspeed = 0;
 		newspeed /= speed;
@@ -755,7 +756,7 @@ static void SV_Physics_Step(entity &ent)
 	{
 		speed = fabs(ent.velocity.z);
 		control = speed < sv_stopspeed ? sv_stopspeed : speed;
-		newspeed = speed - (FRAMETIME * control * sv_waterfriction * (int32_t) ent.waterlevel);
+		newspeed = speed - (FRAMETIME.count() * control * sv_waterfriction * (int32_t) ent.waterlevel);
 		if (newspeed < 0)
 			newspeed = 0;
 		newspeed /= speed;
@@ -774,7 +775,7 @@ static void SV_Physics_Step(entity &ent)
 					friction = sv_friction;
 
 					control = speed < sv_stopspeed ? sv_stopspeed : speed;
-					newspeed = speed - FRAMETIME * control * friction;
+					newspeed = speed - (FRAMETIME.count() * control * friction);
 
 					if (newspeed < 0)
 						newspeed = 0;
@@ -790,7 +791,7 @@ static void SV_Physics_Step(entity &ent)
 		else
 			mask = MASK_SOLID;
 
-		SV_FlyMove(ent, FRAMETIME, mask);
+		SV_FlyMove(ent, FRAMETIME.count(), mask);
 
 		gi.linkentity(ent);
 

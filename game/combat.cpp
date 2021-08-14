@@ -141,7 +141,7 @@ static inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, 
 	save = min(damage, save);
 
 	SpawnDamage(pa_te_type, point, normal);
-	ent.powerarmor_framenum = (gtime) (level.framenum + 0.2f * BASE_FRAMERATE);
+	ent.powerarmor_framenum = level.framenum + 200ms;
 
 	int32_t power_used = save / damagePerCell;
 
@@ -417,7 +417,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 		if (targ.pain_debounce_framenum < level.framenum)
 		{
 			gi.sound(targ, CHAN_ITEM, gi.soundindex("items/protect4.wav"));
-			targ.pain_debounce_framenum = level.framenum + 2 * BASE_FRAMERATE;
+			targ.pain_debounce_framenum = level.framenum + 2s;
 		}
 		take = 0;
 		save = damage;
