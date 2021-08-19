@@ -1,7 +1,6 @@
 #pragma once 
 
-#include <cmath>
-#include <utility>
+#include "lib/std.h"
 
 // specialized templates for certain math-like algorithms/operations
 

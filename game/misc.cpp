@@ -1,4 +1,4 @@
-#include <ctime>
+#include "lib/std.h"
 #include "config.h"
 #include "entity.h"
 #include "misc.h"
@@ -10,6 +10,7 @@
 #include "lib/math/random.h"
 #include "lib/string/format.h"
 #include "combat.h"
+#include <ctime>
 
 /*QUAKED func_group (0 0 0) ?
 Used to group brushes together just for editor convenience.
@@ -1762,9 +1763,9 @@ static void func_clock_think(entity &self)
 	}
 	else
 	{
-		time_t now = time(nullptr);
+		time_t now = _time64(nullptr);
 		tm ltime;
-		localtime_s(&ltime, &now);
+		_localtime64_s(&ltime, &now);
 		self.message = format("{:02}:{:02}:{:02}", ltime.tm_hour, ltime.tm_min, ltime.tm_sec);
 	}
 

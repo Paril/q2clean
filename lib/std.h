@@ -1,0 +1,27 @@
+#pragma once
+
+#include <algorithm>
+#include <exception>
+#include <iterator>
+#include <type_traits>
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <cfloat>
+#include <random>
+#include <cmath>
+#include <utility>
+#include <concepts>
+#include <memory>
+#include <cctype>
+#include <variant>
+#include <format>
+#include <string>
+#include <numeric>
+#include <new>
+#include <array>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <cinttypes>
+#include <cstddef>

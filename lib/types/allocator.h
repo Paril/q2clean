@@ -1,7 +1,6 @@
 #pragma once 
 
-#include <numeric>
-#include <new>
+#include "lib/std.h"
 
 // memory tag
 enum mem_tag : int32_t

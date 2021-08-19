@@ -1,6 +1,6 @@
 #pragma once
 
-#include <exception>
+#include "lib/std.h"
 #include "config.h"
 #include "game.h"
 #include "entity.h"
@@ -59,8 +59,6 @@ constexpr vector G_ProjectSource(vector point, vector distance, vector forward, 
 }
 
 // Iterator implementation for enabling iterator-ing through entity chains
-#include <iterator>
-
 struct entity_chain_sentinel { };
 
 template<typename T> requires std::is_invocable_r_v<entityref, T, entityref>
@@ -193,18 +191,46 @@ inline auto G_IterateEquals(const entity_field_type<member> &match)
 	return entity_chain_container([match] (entityref e) { return G_FindEquals<member>(e, match); });
 }
 
+// iterate a chain of a specific member starting from the
+// specified entity.
+// effectively acts as `for (entityref e = start; e.has_value(); e = slave.*member)`
+template<auto member>
+inline auto G_IterateChain(const entity &start)
+{
+	return entity_chain_container([match] (entityref e) { return e = e.*member; });
+}
+
 /*
 =================
-findradius
+G_IterateRadius
 
-Returns entities that have origins within a spherical area
+Iterate entities that have origins within a spherical area
 =================
 */
-entityref findradius(entityref from, vector org, float rad);
-
 inline auto G_IterateRadius(vector org, float rad)
 {
-	return entity_chain_container([org, rad] (entityref e) { return findradius(e, org, rad); });
+	return entity_chain_container([org, rad] (entityref e) { /*return findradius(e, org, rad);*/
+
+		if (!e.has_value())
+			e = itoe(1);
+		else
+			e = next_ent(e);
+
+		for (; etoi(e) < num_entities; e = next_ent(e))
+		{
+			if (e->solid == SOLID_NOT)
+				continue;
+
+			vector eorg = org - (e->origin + e->bounds.center());
+
+			if (VectorLength(eorg) > rad)
+				continue;
+
+			return e;
+		}
+
+		return null_entity;
+	});
 }
 
 /*

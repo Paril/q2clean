@@ -1,7 +1,7 @@
 #pragma once
 
 // array is used for some built-in stuff
-#include <array>
+#include "lib/std.h"
 #include "lib/types.h"
 
 template<typename TKey, size_t N>

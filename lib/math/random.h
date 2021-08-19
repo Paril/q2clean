@@ -3,8 +3,7 @@
 #include "config.h"
 #include "lib/types.h"
 #include "lib/math/vector.h"
-#include <random>
-#include <chrono>
+#include "lib/std.h"
 
 // randomness!
 
@@ -18,9 +17,6 @@ inline uint64_t Q_rand()
 {
 	return internal::rng();
 }
-
-#include <random>
-#include <concepts>
 
 // return a random unsigned integer between [min, max).
 // if max is <= min, always returns min.

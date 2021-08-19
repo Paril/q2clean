@@ -148,19 +148,18 @@ static void tesla_activate(entity &self)
 	if (deathmatch)
 	{
 #endif
-		entityref search;
-		while ((search = findradius(search, self.origin, 1.5f * TESLA_DAMAGE_RADIUS)).has_value())
+		for (entity &search : G_IterateRadius(self.origin, 1.5f * TESLA_DAMAGE_RADIUS))
 		{
 			// if it's a monster or player with health > 0
 			// or it's a deathmatch start point
 			// and we can see it
 			// blow up
-			if ((search->type == ET_INFO_PLAYER_DEATHMATCH
-				|| search->type == ET_INFO_PLAYER_START
+			if ((search.type == ET_INFO_PLAYER_DEATHMATCH
+				|| search.type == ET_INFO_PLAYER_START
 #ifdef SINGLE_PLAYER
-				|| search->type == ET_INFO_PLAYER_COOP
+				|| search.type == ET_INFO_PLAYER_COOP
 #endif
-				|| search->type == ET_MISC_TELEPORTER_DEST)
+				|| search.type == ET_MISC_TELEPORTER_DEST)
 				&& visible(search, self))
 			{
 				tesla_remove (self);

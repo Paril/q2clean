@@ -1,4 +1,4 @@
-#include <algorithm>
+#include "lib/std.h"
 #include "config.h"
 #include "items/armor.h"
 #include "entity.h"

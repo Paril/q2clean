@@ -638,12 +638,13 @@ static void SV_Physics_Toss(entity &ent)
 
 	ent.waterlevel = isinwater ? WATER_LEGS : WATER_NONE;
 
-	gi.positioned_sound(wasinwater ? ent.origin : old_origin, ent, gi.soundindex("misc/h2ohit1.wav"));
+	if (isinwater != wasinwater)
+		gi.positioned_sound(wasinwater ? ent.origin : old_origin, ent, gi.soundindex("misc/h2ohit1.wav"));
 
 // move teamslaves
-	for (entityref slave = ent.teamchain; slave.has_value(); slave = slave->teamchain)
+	for (entity &slave : G_IterateChain<&entity::teamchain>(ent.teamchain))
 	{
-		slave->origin = ent.origin;
+		slave.origin = ent.origin;
 		gi.linkentity(slave);
 	}
 }

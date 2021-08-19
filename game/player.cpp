@@ -1443,17 +1443,12 @@ void ClientThink(entity &ent, const usercmd &ucmd)
 		ent.client->resp.cmd_angles = ucmd.get_angles();
 	else
 	{
-		pmove	pm = {};
-		
 		static entityref passent;
 		static content_flags mask;
 
 		passent = ent;
 		mask = (ent.health > 0) ? MASK_PLAYERSOLID : MASK_DEADSOLID;
 		
-		pm.trace = [](auto start, auto mins, auto maxs, auto end) { return gi.trace(start, { mins, maxs }, end, passent, mask); };
-		pm.pointcontents = [](auto point) { return gi.pointcontents(point); };
-
 		// set up for pmove
 		if (ent.movetype == MOVETYPE_NOCLIP)
 			ent.client->ps.pmove.pm_type = PM_SPECTATOR;
@@ -1469,7 +1464,10 @@ void ClientThink(entity &ent, const usercmd &ucmd)
 #else
 		ent.client->ps.pmove.gravity = (int16_t)sv_gravity;
 #endif
-		pm = pmove(ent.client->ps.pmove);
+		pmove pm = pmove(ent.client->ps.pmove);
+
+		pm.trace = [](auto start, auto mins, auto maxs, auto end) { return gi.trace(start, { mins, maxs }, end, passent, mask); };
+		pm.pointcontents = [](auto point) { return gi.pointcontents(point); };
 
 		pm.set_origin(ent.origin);
 		pm.set_velocity(ent.velocity);

@@ -398,11 +398,18 @@ public:
 
 	// packetized message type; you don't usually work directly with this
 	// type, it's given to you by ConstructMessage.
-	template<std::invocable T>
+	template<typename T>
 	struct packetized_message
 	{
-		const T &write_components;
 		game_import &gi;
+		svc_ops op;
+		T parameters;
+
+		inline void write_components()
+		{
+			gi.WriteMessageComponent(op);
+			std::apply([this](auto&&... args) { (gi.WriteMessageComponent(args), ...); }, parameters);
+		}
 
 		// send this message directly to this entity
 		packetized_message &unicast(entity &ent, bool reliable)
@@ -427,10 +434,7 @@ public:
 	template<typename ...Args>
 	[[nodiscard]] inline auto ConstructMessage(svc_ops op, const Args&... args)
 	{
-		return packetized_message { [&] () {
-			WriteMessageComponent(op);
-			(WriteMessageComponent(args), ...);
-		}, *this };
+		return packetized_message { *this, op, std::forward_as_tuple(args...) };
 	}
 
 	// config strings hold all the index strings, the lightstyles,

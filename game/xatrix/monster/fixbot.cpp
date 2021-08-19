@@ -28,27 +28,27 @@ static sound_index	sound_weld[3];
 
 static entityref fixbot_FindDeadMonster(entity &self)
 {
-	entityref ent, best;
+	entityref best;
 
-	while ((ent = findradius(ent, self.origin, 1024)).has_value())
+	for (entity &ent : G_IterateRadius(self.origin, 1024))
 	{
 		if (ent == self)
 			continue;
-		if (!(ent->svflags & SVF_MONSTER))
+		if (!(ent.svflags & SVF_MONSTER))
 			continue;
-		if (ent->monsterinfo.aiflags & AI_GOOD_GUY)
+		if (ent.monsterinfo.aiflags & AI_GOOD_GUY)
 			continue;
-		if (ent->owner.has_value())
+		if (ent.owner.has_value())
 			continue;
-		if (ent->health > 0)
+		if (ent.health > 0)
 			continue;
-		if (ent->nextthink != gtime::zero())
+		if (ent.nextthink != gtime::zero())
 			continue;
 		if (!visible(self, ent))
 			continue;
 		if (!best.has_value())
 			best = ent;
-		else if (ent->max_health > best->max_health)
+		else if (ent.max_health > best->max_health)
 			best = ent;
 	}
 
@@ -185,37 +185,30 @@ static entity_type ET_BOT_GOAL("bot_goal");
 
 static void use_scanner(entity &self)
 {
-	entityref	ent;
 	float   radius = 1024;
 
-	while ((ent = findradius(ent, self.origin, radius)).has_value())
+	for (entity &ent : G_IterateRadius(self.origin, radius))
 	{
-		if (ent->health >= 100)
-		{
-			if (ent->type == ET_OBJECT_REPAIR)
+		if (ent.type == ET_OBJECT_REPAIR && ent.health >= 100 && visible(self, ent))
+		{	
+			// remove the old one
+			if (self.goalentity->type == ET_BOT_GOAL)
 			{
-				if (visible(self, ent))
-				{	
-					// remove the old one
-					if (self.goalentity->type == ET_BOT_GOAL)
-					{
-						self.goalentity->nextthink = level.framenum + 1_hz;
-						self.goalentity->think = SAVABLE(G_FreeEdict);
-					}	
+				self.goalentity->nextthink = level.framenum + 1_hz;
+				self.goalentity->think = SAVABLE(G_FreeEdict);
+			}	
 					
-					self.goalentity = self.enemy = ent;
-					
-					vector vec = self.origin - self.goalentity->origin;
-					float len = VectorNormalize (vec);
+			self.goalentity = self.enemy = ent;
 
-					if (len < 32)
-					{
-						self.monsterinfo.currentmove = &SAVABLE(fixbot_move_weld_start);
-						return;
-					}
-					return;
-				}
+			vector vec = self.origin - self.goalentity->origin;
+			float len = VectorNormalize (vec);
+
+			if (len < 32)
+			{
+				self.monsterinfo.currentmove = &SAVABLE(fixbot_move_weld_start);
+				return;
 			}
+			return;
 		}
 	}
 

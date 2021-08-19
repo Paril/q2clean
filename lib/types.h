@@ -1,7 +1,6 @@
 #pragma once 
 
-#include <cinttypes>
-#include <cstddef>
+#include "lib/std.h"
 
 using int8_t = std::int8_t;
 using int16_t = std::int16_t;

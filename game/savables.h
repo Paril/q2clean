@@ -2,7 +2,7 @@
 
 #include "config.h"
 #include "lib/protocol.h"
-#include <type_traits>
+#include "lib/std.h"
 
 template<typename T>
 struct is_function_pointer

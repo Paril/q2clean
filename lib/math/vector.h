@@ -1,7 +1,6 @@
 #pragma once
 
-#include <exception>
-
+#include "lib/std.h"
 #include "lib/math.h"
 #include "lib/types.h"
 

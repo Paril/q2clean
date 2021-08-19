@@ -69,20 +69,18 @@ inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float damage
 	float killzone = radius;
 	float killzone2 = radius * 2.f;
 
-	entityref ent;
-
-	while ((ent = findradius(ent, inflictor.origin, killzone2)).has_value())
+	for (entity &ent : G_IterateRadius(inflictor.origin, killzone2))
 	{
 		if (ent == ignore)
 			continue;
-		if (!ent->inuse)
+		if (!ent.inuse)
 			continue;
-		if (!ent->takedamage)
+		if (!ent.takedamage)
 			continue;
-		if (!(ent->is_client() || (ent->svflags & SVF_MONSTER) || (ent->flags & FL_DAMAGEABLE)))
+		if (!(ent.is_client() || (ent.svflags & SVF_MONSTER) || (ent.flags & FL_DAMAGEABLE)))
 			continue;
 
-		vector v = ent->origin + ent->bounds.center();
+		vector v = ent.origin + ent.bounds.center();
 		v = inflictor.origin - v;
 
 		float len = VectorLength(v);
@@ -97,39 +95,33 @@ inline void T_RadiusNukeDamage(entity &inflictor, entity &attacker, float damage
 
 		if (points > 0)
 		{
-			if (ent->is_client())
-				ent->client->nuke_framenum = level.framenum + 2s;
+			if (ent.is_client())
+				ent.client->nuke_framenum = level.framenum + 2s;
 
-			vector dir = ent->origin - inflictor.origin;
-			if (ent->is_client())
-				ent->flags |= FL_NOGIB;
+			vector dir = ent.origin - inflictor.origin;
+			if (ent.is_client())
+				ent.flags |= FL_NOGIB;
 			T_Damage (ent, inflictor, attacker, dir, inflictor.origin, vec3_origin, (int)points, (int)points, { DAMAGE_RADIUS }, mod);
-			if (ent->is_client())
-				ent->flags &= ~FL_NOGIB;
+			if (ent.is_client())
+				ent.flags &= ~FL_NOGIB;
 		}
 	}
 
-	ent = itoe(1); // skip the worldspawn
-
 	// cycle through players
-	while (ent.has_value())
+	for (auto &ent : entity_range(1, game.maxclients))
 	{
-		if (ent->is_client() && (ent->client->nuke_framenum != level.framenum + 2s) && ent->inuse)
+		if (ent.inuse && ent.client->nuke_framenum != level.framenum + 2s)
 		{
-			trace tr = gi.traceline(inflictor.origin, ent->origin, inflictor, MASK_SOLID);
+			trace tr = gi.traceline(inflictor.origin, ent.origin, inflictor, MASK_SOLID);
 
 			if (tr.fraction == 1.0)
-				ent->client->nuke_framenum = level.framenum + 2s;
+				ent.client->nuke_framenum = level.framenum + 2s;
 			else
 			{
-				float dist = VectorDistance(ent->origin, inflictor.origin);
-				ent->client->nuke_framenum = max(ent->client->nuke_framenum, level.framenum + (dist < 2048 ? 1500ms : 1s));
+				float dist = VectorDistance(ent.origin, inflictor.origin);
+				ent.client->nuke_framenum = max(ent.client->nuke_framenum, level.framenum + (dist < 2048 ? 1500ms : 1s));
 			}
-
-			ent = next_ent(ent);
 		}
-		else
-			ent = null_entity;
 	}
 }
 

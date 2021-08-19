@@ -1,6 +1,6 @@
 #pragma once
 
-#include <exception>
+#include "lib/std.h"
 #include "config.h"
 #include "lib/string.h"
 #include "lib/protocol.h"

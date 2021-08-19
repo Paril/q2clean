@@ -1215,10 +1215,10 @@ static void door_use(entity &self, entity &, entity &cactivator)
 		if (self.moveinfo.state == STATE_UP || self.moveinfo.state == STATE_TOP)
 		{
 			// trigger all paired doors
-			for (entityref ent = self; ent.has_value(); ent = ent->teamchain)
+			for (entity &ent : G_IterateChain<&entity::teamchain>(self))
 			{
-				ent->message = nullptr;
-				ent->touch = nullptr;
+				ent.message = nullptr;
+				ent.touch = nullptr;
 				door_go_down(ent);
 			}
 			return;
@@ -1238,10 +1238,10 @@ static void door_use(entity &self, entity &, entity &cactivator)
 #endif
 
 	// trigger all paired doors
-	for (entityref ent = self; ent.has_value(); ent = ent->teamchain)
+	for (entity &ent : G_IterateChain<&entity::teamchain>(self))
 	{
-		ent->message = nullptr;
-		ent->touch = nullptr;
+		ent.message = nullptr;
+		ent.touch = nullptr;
 		door_go_up(ent, cactivator);
 	}
 }

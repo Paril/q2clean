@@ -163,52 +163,52 @@ static void abortHeal(entity &self, bool change_frame, bool gib, bool mark)
 
 static entityref medic_FindDeadMonster(entity &self)
 {
-	entityref ent, best;
+	entityref best;
 	float radius = 1024;
-
 #ifdef ROGUE_AI
+
 	if (self.monsterinfo.aiflags & AI_STAND_GROUND)
 		radius = MEDIC_MAX_HEAL_DISTANCE;
 #endif
 
-	while ((ent = findradius(ent, self.origin, radius)).has_value())
+	for (auto &ent : G_IterateRadius(self.origin, radius))
 	{
 		if (ent == self)
 			continue;
-		if (!(ent->svflags & SVF_MONSTER))
+		if (!(ent.svflags & SVF_MONSTER))
 			continue;
-		if (ent->monsterinfo.aiflags & AI_GOOD_GUY)
+		if (ent.monsterinfo.aiflags & AI_GOOD_GUY)
 			continue;
 #ifdef ROGUE_AI
 		// check to make sure we haven't bailed on this guy already
-		if ((ent->monsterinfo.badMedic1 == self) || (ent->monsterinfo.badMedic2 == self))
+		if ((ent.monsterinfo.badMedic1 == self) || (ent.monsterinfo.badMedic2 == self))
 			continue;
-		if (ent->monsterinfo.healer.has_value())
+		if (ent.monsterinfo.healer.has_value())
 			// FIXME - this is correcting a bug that is somewhere else
 			// if the healer is a monster, and it's in medic mode .. continue .. otherwise
 			//   we will override the healer, if it passes all the other tests
-			if ((ent->monsterinfo.healer->inuse) && (ent->monsterinfo.healer->health > 0) &&
-				(ent->monsterinfo.healer->svflags & SVF_MONSTER) && (ent->monsterinfo.healer->monsterinfo.aiflags & AI_MEDIC))
+			if ((ent.monsterinfo.healer->inuse) && (ent.monsterinfo.healer->health > 0) &&
+				(ent.monsterinfo.healer->svflags & SVF_MONSTER) && (ent.monsterinfo.healer->monsterinfo.aiflags & AI_MEDIC))
 				continue;
 #else
-		if (ent->owner.has_value())
+		if (ent.owner.has_value())
 			continue;
 #endif
-		if (ent->health > 0)
+		if (ent.health > 0)
 			continue;
-		if (ent->nextthink != gtime::zero() && ent->think != M_FliesOn)
+		if (ent.nextthink != gtime::zero() && ent.think != M_FliesOn)
 			continue;
 		if (!visible(self, ent))
 			continue;
 #ifdef ROGUE_AI
-		if (VectorDistance(self.origin, ent->origin) <= MEDIC_MIN_DISTANCE)
+		if (VectorDistance(self.origin, ent.origin) <= MEDIC_MIN_DISTANCE)
 			continue;
 #endif
-		if (!best.has_value() || ent->max_health > best->max_health)
+		if (!best.has_value() || ent.max_health > best->max_health)
 			best = ent;
 	}
-
 #ifdef ROGUE_AI
+
 	if (best.has_value())
 		self.timestamp = level.framenum + MEDIC_TRY_TIME;
 #endif

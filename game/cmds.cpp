@@ -1,4 +1,4 @@
-#include <algorithm>
+#include "lib/std.h"
 #include "config.h"
 #include "entity.h"
 #include "lib/info.h"

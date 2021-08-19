@@ -1,16 +1,11 @@
 #pragma once
 
-#include <memory>
-#include <cctype>
-#include <variant>
-#include <type_traits>
-
+#include "lib/std.h"
 #include "lib/types.h"
 #include "lib/string.h"
 #include "lib/math/vector.h"
 
 // new format string!
-#include <format>
 
 // format the specified string, using the C++20 format lib.
 // returns a mutable string, which you can convert into other

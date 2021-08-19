@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include "lib/std.h"
 #include "lib/types/allocator.h"
 
 // dynarray is the name used by Q2++ for what C++ calls

@@ -353,6 +353,9 @@
     <ClInclude Include="lib\math\bbox.h">
       <Filter>lib\math</Filter>
     </ClInclude>
+    <ClInclude Include="lib\std.h">
+      <Filter>lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

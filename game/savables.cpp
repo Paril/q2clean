@@ -1,7 +1,7 @@
 #include "savables.h"
 
 #ifdef SAVING
-#include <fstream>
+#include "lib/std.h"
 #include "lib/string/format.h"
 #include "game/items/itemlist.h"
 #include "game/entity.h"

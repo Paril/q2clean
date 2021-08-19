@@ -1,7 +1,7 @@
 #pragma once
 
+#include "lib/std.h"
 #include "vector.h"
-#include <cfloat>
 
 // a structure that holds an axis-aligned bounding box.
 // by default, this is a point (all zeroes) to match Q2's

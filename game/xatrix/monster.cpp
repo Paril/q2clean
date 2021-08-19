@@ -32,23 +32,23 @@ void monster_fire_ionripper(entity &self, vector start, vector dir, int32_t dama
 static void heat_think(entity &self)
 {
 	float	oldlen = 0;
-	entityref	target, acquire;
+	entityref	acquire;
 
 	// acquire new target
-	while ((target = findradius (target, self.origin, 1024)).has_value())
+	for (entity &target : G_IterateRadius(self.origin, 1024))
 	{
 		if (self.owner == target)
 			continue;
-		if ((target->svflags & SVF_MONSTER) || !target->is_client())
+		if ((target.svflags & SVF_MONSTER) || !target.is_client())
 			continue;
-		if (target->health <= 0)
+		if (target.health <= 0)
 			continue;
 		if (!visible (self, target))
 			continue;
 		if (!infront (self, target))
 			continue;
 
-		vector vec = self.origin - target->origin;
+		vector vec = self.origin - target.origin;
 		float len = VectorLength (vec);
 
 		if (!acquire.has_value() || len < oldlen)

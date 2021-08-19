@@ -1,8 +1,7 @@
 #pragma once
 
+#include "lib/std.h"
 #include "lib/types.h"
-#include <type_traits>
-#include <chrono>
 
 using gtime = std::chrono::milliseconds;
 using gtimef = std::chrono::duration<double>;

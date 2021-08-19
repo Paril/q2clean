@@ -1,7 +1,7 @@
 #pragma once
 
 #include "config.h"
-#include <exception>
+#include "lib/std.h"
 #include "lib/string.h"
 #include "lib/math/vector.h"
 #include "lib/math/bbox.h"

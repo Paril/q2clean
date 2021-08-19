@@ -140,16 +140,16 @@ static void Trap_Think(entity &ent)
 	if (ent.frame < 4)
 		ent.frame++;
 
-	entityref	target, best;
+	entityref	best;
 	float		oldlen = 8000;
 
-	while ((target = findradius(target, ent.origin, 256)).has_value())
+	for (entity &target : G_IterateRadius(ent.origin, 256))
 	{
 		if (target == ent)
 			continue;
-		if (!(target->svflags & SVF_MONSTER) && !target->is_client())
+		if (!(target.svflags & SVF_MONSTER) && !target.is_client())
 			continue;
-		if (target->health <= 0)
+		if (target.health <= 0)
 			continue;
 		if (!visible(ent, target))
 			continue;
@@ -158,7 +158,7 @@ static void Trap_Think(entity &ent)
 			best = target;
 			continue;
 		}
-		vector vec = ent.origin - target->origin;
+		vector vec = ent.origin - target.origin;
 		float len = VectorLength(vec);
 		if (len < oldlen)
 		{
