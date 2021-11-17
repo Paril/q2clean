@@ -7,13 +7,12 @@
 #include "itemlist.h"
 
 // item spawnflags
-constexpr spawn_flag ITEM_TRIGGER_SPAWN = (spawn_flag) 0x00000001;
-constexpr spawn_flag ITEM_NO_TOUCH = (spawn_flag) 0x00000002;
+constexpr spawn_flag ITEM_TRIGGER_SPAWN = (spawn_flag) (1 << 0);
+constexpr spawn_flag ITEM_NO_TOUCH = (spawn_flag) (1 << 1);
 // 6 bits reserved for editor flags
-// 8 bits used as power cube id bits for coop games
-constexpr spawn_flag DROPPED_ITEM = (spawn_flag) 0x00010000;
-constexpr spawn_flag DROPPED_PLAYER_ITEM = (spawn_flag) 0x00020000;
-constexpr spawn_flag ITEM_TARGETS_USED = (spawn_flag) 0x00040000;
+constexpr spawn_flag DROPPED_ITEM = (spawn_flag) (1 << 8);
+constexpr spawn_flag DROPPED_PLAYER_ITEM = (spawn_flag) (1 << 9);
+constexpr spawn_flag ITEM_TARGETS_USED = (spawn_flag) (1 << 10);
 
 void DoRespawn(entity &item);
 

@@ -36,7 +36,7 @@
 /*@@ { "macro": "CUSTOM_PMOVE", "desc": "By default, this codebase uses the PMove export from the engine; if you wish to create a custom player movement system, you can use Y here and edit pmove.cpp." } @@*/
 //#define CUSTOM_PMOVE
 
-/*@@ { "macro": "SAVING", "desc": "Allow save/load code." } @@*/
+/*@@ { "macro": "SAVING", "desc": "Allow save/load code.", "depends": [ "SINGLE_PLAYER" ] } @@*/
 #define SAVING
 
 /*@@ { "macro": "SAVING", "desc": "Save/load in JSON rather than binary. This format is slower, but allows for compatibility between save code as long as names haven't changed.", "depends": [ "SAVING" ] } @@*/

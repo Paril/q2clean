@@ -18,7 +18,7 @@ constexpr means_of_death MOD_HYPERBLASTER { .other_kill_fmt = "{0} was melted by
 
 inline means_of_death_ref blaster_mod(entity &self)
 {
-	if (self.owner.has_value() && (self.owner->is_client() || (self.owner->svflags & SVF_MONSTER)))
+	if (self.owner.has_value() && (self.owner->is_client || (self.owner->svflags & SVF_MONSTER)))
 	{
 		if (self.spawnflags & BLASTER_IS_HYPER)
 			return MOD_HYPERBLASTER;
@@ -48,7 +48,7 @@ static void blaster_touch(entity &self, entity &other, vector normal, const surf
 	}
 #ifdef SINGLE_PLAYER
 
-	if (self.owner->is_client())
+	if (self.owner->is_client)
 		PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
@@ -141,7 +141,7 @@ void fire_blaster(entity &self, vector start, vector dir, int32_t damage, int32_
 	bolt.sound = gi.soundindex("misc/lasfly.wav");
 	bolt.owner = self;
 	bolt.touch = SAVABLE(blaster_touch);
-	bolt.nextthink = level.framenum + 2s;
+	bolt.nextthink = level.time + 2s;
 	bolt.think = SAVABLE(G_FreeEdict);
 	bolt.dmg = damage;
 	if (hyper)
@@ -149,7 +149,7 @@ void fire_blaster(entity &self, vector start, vector dir, int32_t damage, int32_
 	gi.linkentity(bolt);
 
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge(self, bolt.origin, dir, speed);
 #endif
 

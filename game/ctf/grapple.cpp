@@ -23,12 +23,12 @@ static void GrappleReset(entity &self)
 {
 	entity &cl = self.owner;
 
-	if (!cl.client->grapple.has_value())
+	if (!cl.client.grapple.has_value())
 		return;
 
 	float volume = 1.0;
 
-	if (cl.client->silencer_shots)
+	if (cl.client.silencer_shots)
 		volume = 0.2f;
 
 	gi.sound(cl, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex(
@@ -39,17 +39,17 @@ static void GrappleReset(entity &self)
 #endif
 		), volume);
 
-	cl.client->grapple = 0;
-	cl.client->grapplereleaseframenum = level.framenum;
-	cl.client->grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
-	cl.client->ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
+	cl.client.grapple = 0;
+	cl.client.grapplereleaseframenum = level.time;
+	cl.client.grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
+	cl.client.ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
 	G_FreeEdict(self);
 }
 
 void GrapplePlayerReset(entity &ent)
 {
-	if (ent.is_client() && ent.client->grapple.has_value())
-		GrappleReset(ent.client->grapple);
+	if (ent.is_client && ent.client.grapple.has_value())
+		GrappleReset(ent.client.grapple);
 }
 
 constexpr means_of_death MOD_GRAPPLE { .other_kill_fmt = "{0} was hooked to death by {3}'s grapple.\n" };
@@ -61,7 +61,7 @@ static void GrappleTouch(entity &self, entity &other, vector plane, const surfac
 	if (other == self.owner)
 		return;
 
-	if (self.owner->client->grapplestate != GRAPPLE_STATE_FLY)
+	if (self.owner->client.grapplestate != GRAPPLE_STATE_FLY)
 		return;
 
 	if (surf.flags & SURF_SKY)
@@ -83,12 +83,12 @@ static void GrappleTouch(entity &self, entity &other, vector plane, const surfac
 		return;
 	}
 
-	self.owner->client->grapplestate = GRAPPLE_STATE_PULL; // we're on hook
+	self.owner->client.grapplestate = GRAPPLE_STATE_PULL; // we're on hook
 	self.enemy = other;
 
 	self.solid = SOLID_NOT;
 
-	if (self.owner->client->silencer_shots)
+	if (self.owner->client.silencer_shots)
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
@@ -108,7 +108,7 @@ static void GrappleDrawCable(entity &self)
 	vector	dir;
 	float	distance;
 
-	AngleVectors(self.owner->client->v_angle, &f, &r, nullptr);
+	AngleVectors(self.owner->client.v_angle, &f, &r, nullptr);
 	offset = { 16.f, self.count ? -16.f : 16.f, self.owner->viewheight - 8.f };
 	start = P_ProjectSource(self.owner, self.owner->origin, offset, f, r);
 
@@ -137,11 +137,11 @@ void GrapplePull(entity &self)
 	float vlen;
 
 #ifdef GRAPPLE
-	if (self.owner->client->pers.weapon &&
-		self.owner->client->pers.weapon->id == ITEM_GRAPPLE &&
-		!self.owner->client->newweapon &&
-		self.owner->client->weaponstate != WEAPON_FIRING &&
-		self.owner->client->weaponstate != WEAPON_ACTIVATING)
+	if (self.owner->client.pers.weapon &&
+		self.owner->client.pers.weapon->id == ITEM_GRAPPLE &&
+		!self.owner->client.newweapon &&
+		self.owner->client.weaponstate != WEAPON_FIRING &&
+		self.owner->client.weaponstate != WEAPON_ACTIVATING)
 	{
 		GrappleReset(self);
 		return;
@@ -166,7 +166,7 @@ void GrapplePull(entity &self)
 
 	GrappleDrawCable(self);
 
-	if (self.owner->client->grapplestate > GRAPPLE_STATE_FLY)
+	if (self.owner->client.grapplestate > GRAPPLE_STATE_FLY)
 	{
 		// pull player toward grapple
 		// this causes icky stuff with prediction, we need to extend
@@ -175,33 +175,33 @@ void GrapplePull(entity &self)
 		// that velociy in the direction of the point
 		vector forward, up;
 
-		AngleVectors(self.owner->client->v_angle, &forward, nullptr, &up);
+		AngleVectors(self.owner->client.v_angle, &forward, nullptr, &up);
 		v = self.owner->origin;
 		v[2] += self.owner->viewheight;
 		hookdir = self.origin - v;
 
 		vlen = VectorNormalize(hookdir);
 
-		if (self.owner->client->grapplestate == GRAPPLE_STATE_PULL)
+		if (self.owner->client.grapplestate == GRAPPLE_STATE_PULL)
 		{
 			float volume = 1.0;
 
-			if (self.owner->client->silencer_shots)
+			if (self.owner->client.silencer_shots)
 				volume = 0.2f;
 
 			if (vlen < 64)
 			{
-				self.owner->client->ps.pmove.pm_flags |= PMF_NO_PREDICTION;
+				self.owner->client.ps.pmove.pm_flags |= PMF_NO_PREDICTION;
 #ifndef HOOK_STANDARD_ASSETS
 				gi.sound(self.owner, CHAN_RELIABLE | CHAN_WEAPON, gi.soundindex("weapons/grapple/grhang.wav"), volume);
 #endif
-				self.owner->client->grapplestate = GRAPPLE_STATE_HANG;
+				self.owner->client.grapplestate = GRAPPLE_STATE_HANG;
 			}
 #ifdef HOOK_STANDARD_ASSETS
-			else if (self.pain_debounce_framenum < level.framenum)
+			else if (self.pain_debounce_time < level.time)
 			{
 				gi.sound(self.owner, CHAN_WEAPON, gi.soundindex("world/turbine1.wav"), volume);
-				self.pain_debounce_framenum = level.framenum + 500ms;
+				self.pain_debounce_time = level.time + 500ms;
 			}
 #endif
 		}
@@ -234,8 +234,8 @@ static void CTFFireGrapple(entity &self, vector start, vector dir, int damage, i
 	grapple.owner = self;
 	grapple.touch = SAVABLE(GrappleTouch);
 	grapple.dmg = damage;
-	self.client->grapple = grapple;
-	self.client->grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
+	self.client.grapple = grapple;
+	self.client.grapplestate = GRAPPLE_STATE_FLY; // we're firing, not on hook
 	gi.linkentity(grapple);
 
 	trace tr = gi.traceline(self.origin, grapple.origin, grapple, MASK_SHOT);
@@ -253,14 +253,14 @@ static void CTFGrappleFire(entity &ent, int damage, bool offhand)
 	vector offset;
 	float volume = 1.0;
 
-	if (ent.client->grapplestate > GRAPPLE_STATE_FLY)
+	if (ent.client.grapplestate > GRAPPLE_STATE_FLY)
 		return; // it's already out
 
-	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+	AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 	offset = { 24.f, offhand ? -8.f : 8.f, ent.viewheight - 8.f + 2.f };
 	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	if (ent.client->silencer_shots)
+	if (ent.client.silencer_shots)
 		volume = 0.2f;
 
 #ifdef HOOK_STANDARD_ASSETS
@@ -280,45 +280,45 @@ static void Weapon_Grapple_Fire(entity &ent)
 {
 	const int damage = 10;
 	CTFGrappleFire(ent, damage, false);
-	ent.client->ps.gunframe++;
+	ent.client.ps.gunframe++;
 }
 
 void CTFWeapon_Grapple(entity &ent)
 {
 	// if the the attack button is still down, stay in the firing frame
-	if ((ent.client->buttons & BUTTON_ATTACK) &&
-		ent.client->weaponstate == WEAPON_FIRING && ent.client->grapple.has_value())
-		ent.client->ps.gunframe = 9;
+	if ((ent.client.buttons & BUTTON_ATTACK) &&
+		ent.client.weaponstate == WEAPON_FIRING && ent.client.grapple.has_value())
+		ent.client.ps.gunframe = 9;
 
-	if (!(ent.client->buttons & BUTTON_ATTACK) && ent.client->grapple.has_value())
+	if (!(ent.client.buttons & BUTTON_ATTACK) && ent.client.grapple.has_value())
 	{
-		GrappleReset(ent.client->grapple);
-		if (ent.client->weaponstate == WEAPON_FIRING)
-			ent.client->weaponstate = WEAPON_READY;
+		GrappleReset(ent.client.grapple);
+		if (ent.client.weaponstate == WEAPON_FIRING)
+			ent.client.weaponstate = WEAPON_READY;
 	}
 
-	if (ent.client->newweapon &&
-		ent.client->grapplestate > GRAPPLE_STATE_FLY &&
-		ent.client->weaponstate == WEAPON_FIRING)
+	if (ent.client.newweapon &&
+		ent.client.grapplestate > GRAPPLE_STATE_FLY &&
+		ent.client.weaponstate == WEAPON_FIRING)
 	{
 		// he wants to change weapons while grappled
-		ent.client->weaponstate = WEAPON_DROPPING;
-		ent.client->ps.gunframe = 32;
+		ent.client.weaponstate = WEAPON_DROPPING;
+		ent.client.ps.gunframe = 32;
 	}
 
-	const weapon_state prevstate = ent.client->weaponstate;
+	const weapon_state prevstate = ent.client.weaponstate;
 	Weapon_Generic(ent, 5, 9, 31, 36, G_FrameIsOneOf<10, 18, 27>, G_FrameIsOneOf<6>, Weapon_Grapple_Fire);
 
 	// if we just switched back to grapple, immediately go to fire frame
 	if (prevstate == WEAPON_ACTIVATING &&
-		ent.client->weaponstate == WEAPON_READY &&
-		ent.client->grapplestate > GRAPPLE_STATE_FLY)
+		ent.client.weaponstate == WEAPON_READY &&
+		ent.client.grapplestate > GRAPPLE_STATE_FLY)
 	{
-		if (!(ent.client->buttons & BUTTON_ATTACK))
-			ent.client->ps.gunframe = 9;
+		if (!(ent.client.buttons & BUTTON_ATTACK))
+			ent.client.ps.gunframe = 9;
 		else
-			ent.client->ps.gunframe = 5;
-		ent.client->weaponstate = WEAPON_FIRING;
+			ent.client.ps.gunframe = 5;
+		ent.client.weaponstate = WEAPON_FIRING;
 	}
 }
 #endif

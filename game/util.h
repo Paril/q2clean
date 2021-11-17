@@ -80,10 +80,16 @@ struct entity_chain_iterator
 	}
 
 	using difference_type = ptrdiff_t;
-	using value_type = entity;
+	using value_type = entityref;
+	using pointer = void;
+	using reference = void;
+	using iterator_category = std::forward_iterator_tag;
 
-	entity &operator*() { return e; }
-	entity &operator*() const { return e; }
+	const entityref &operator*() { return e; }
+	const entityref &operator*() const { return e; }
+	
+	const entityref &operator->() { return e; }
+	const entityref &operator->() const { return e; }
 
 	entity_chain_iterator &operator++()
 	{
@@ -195,9 +201,9 @@ inline auto G_IterateEquals(const entity_field_type<member> &match)
 // specified entity.
 // effectively acts as `for (entityref e = start; e.has_value(); e = slave.*member)`
 template<auto member>
-inline auto G_IterateChain(const entity &start)
+inline auto G_IterateChain(entityref start)
 {
-	return entity_chain_container([match] (entityref e) { return e = e.*member; });
+	return entity_chain_container([start] (entityref e) { return e.has_value() ? (*e).*member : start; });
 }
 
 /*
@@ -209,7 +215,7 @@ Iterate entities that have origins within a spherical area
 */
 inline auto G_IterateRadius(vector org, float rad)
 {
-	return entity_chain_container([org, rad] (entityref e) { /*return findradius(e, org, rad);*/
+	return entity_chain_container([org, rad] (entityref e) {
 
 		if (!e.has_value())
 			e = itoe(1);

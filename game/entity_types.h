@@ -205,6 +205,9 @@ public:
 	// this registers the specified type into the registry.
 	constexpr entity_type(stringlit id) : id(id)
 	{
+		if (!id)
+			throw std::bad_alloc();
+
 		register_et(this);
 	}
 
@@ -214,6 +217,9 @@ public:
 		id(id),
 		parent(&parent)
 	{
+		if (!id)
+			throw std::bad_alloc();
+
 		register_et(this);
 	}
 
@@ -246,6 +252,8 @@ struct entity_type_ref
 	constexpr entity_type_ref(const entity_type &type) : type(&type) { }
 
 	constexpr const entity_type *operator->() const { return type; }
+
+	constexpr bool has_value() const { return (bool) *this; }
 
 	constexpr operator bool() const { return type != &ET_UNKNOWN; }
 

@@ -18,6 +18,7 @@ class string;
 // changing around, but not shared across multiple instances.
 class mutable_string : public std::basic_string<char, std::char_traits<char>, game_allocator<char>>
 {
+	using basic_string::basic_string;
 };
 
 // most strings in Q2++ are immutable. this is to remain simple
@@ -64,10 +65,10 @@ public:
 		string(string.data(), string.length())
 	{
 	}
-
+	
 	// move a mutable string into a saved string
 	inline string(mutable_string &&string) noexcept :
-		shared(string),
+		shared(std::move(string)),
 		slength(std::get<mutable_string>(shared).size())
 	{
 	}
@@ -152,7 +153,7 @@ public:
 	}
 	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
 
-	inline bool operator==(const string &lit) const { return !strcmp(ptr(), lit.ptr()); }
+	inline bool operator==(const string &lit) const { return *this == lit.ptr(); }
 	inline bool operator!=(const string &lit) const { return !(*this == lit); }
 
 	inline bool operator==(const stringref &lit) const;
@@ -187,6 +188,19 @@ public:
 	constexpr stringref() :
 		data(nullptr),
 		slength(0)
+	{
+	}
+
+	inline stringref(string &&str) :
+		data(std::move(str)),
+		slength(std::get<string>(data).length())
+	{
+	}
+	
+	// move a mutable string into a stringref
+	inline stringref(mutable_string &&str) noexcept :
+		data(std::move(str)),
+		slength(std::get<string>(data).length())
 	{
 	}
 
@@ -235,12 +249,28 @@ public:
 		return ptr[index];
 	}
 
-	inline bool operator==(const stringref &lit) const { return !strcmp(operator stringlit(), lit.ptr()); }
+	inline bool operator==(stringlit lit) const
+	{
+		// both literals null or empty
+		if (!*this && (!lit || !*lit))
+			return true;
+		// only one side is empty
+		else if (!*this || (!lit || !*lit))
+			return false;
+
+		return !strcmp(ptr(), lit);
+	}
+	inline bool operator!=(stringlit lit) const { return !(*this == lit); }
+
+	inline bool operator==(const stringref &lit) const { return *this == lit.ptr(); }
 	inline bool operator!=(const stringref &lit) const { return !(*this == lit); }
 
 	// string is "valid" if its length is non-zero and doesn't start with a 0
 	inline explicit operator bool() const { return slength && operator stringlit() && operator stringlit()[0]; }
 };
+
+inline bool string::operator==(const stringref &lit) const { return *this == lit.ptr(); }
+inline bool string::operator!=(const stringref &lit) const { return !(*this == lit); }
 
 template<typename T>
 constexpr bool is_string_v = std::is_same_v<T, stringref> || std::is_same_v<T, string> || std::is_same_v<T, stringlit> || (std::is_array_v<T> && std::is_same_v<std::remove_extent_t<T>, char>);
@@ -266,9 +296,6 @@ inline string::string(const stringref &sub, const size_t &start, const size_t &l
 	string(length ? (sub.ptr() + start) : nullptr, length)
 {
 }
-
-inline bool string::operator==(const stringref &lit) const { return *this == lit.ptr(); }
-inline bool string::operator!=(const stringref &lit) const { return !(*this == lit); }
 
 // return index of substring in str, or -1
 template<is_string_not_literal TA, is_string TB>

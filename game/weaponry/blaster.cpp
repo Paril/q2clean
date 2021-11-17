@@ -14,15 +14,13 @@ void Blaster_Fire(entity &ent, vector g_offset, int32_t damage, bool hyper, enti
 	vector	start;
 	vector	offset;
 
-	if (is_quad)
-		damage *= damage_multiplier;
-	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+	AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 	offset = { 24, 8, ent.viewheight - 8.f };
 	offset += g_offset;
 	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	ent.client->kick_origin = forward * -2;
-	ent.client->kick_angles[0] = -1.f;
+	ent.client.kick_origin = forward * -2;
+	ent.client.kick_angles[0] = -1.f;
 
 	fire_blaster(ent, start, forward, damage, 1000, effect, hyper);
 
@@ -37,17 +35,12 @@ void Blaster_Fire(entity &ent, vector g_offset, int32_t damage, bool hyper, enti
 static void Weapon_Blaster_Fire(entity &ent)
 {
 #ifdef SINGLE_PLAYER
-	int32_t damage;
-	if (!deathmatch)
-		damage = 10;
-	else
-		damage = 15;
-
+	const int32_t damage = (!deathmatch ? 10 : 15) * damage_multiplier;
 #else
-	constexpr int32_t damage = 15;
+	constexpr int32_t damage = 15 * damage_multiplier;
 #endif
 	Blaster_Fire(ent, vec3_origin, damage, false, EF_BLASTER);
-	ent.client->ps.gunframe++;
+	ent.client.ps.gunframe++;
 }
 
 void Weapon_Blaster(entity &ent)

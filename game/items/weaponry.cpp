@@ -8,15 +8,15 @@
 
 bool Add_Ammo(entity &ent, const gitem_t &it, int32_t count)
 {
-	if (!ent.is_client())
+	if (!ent.is_client)
 		return false;
 
-	int32_t max = ent.client->pers.max_ammo[it.ammotag];
+	int32_t max = ent.client.pers.max_ammo[it.ammotag];
 
-	if (ent.client->pers.inventory[it.id] == max)
+	if (ent.client.pers.inventory[it.id] == max)
 		return false;
 
-	ent.client->pers.inventory[it.id] = min(max, ent.client->pers.inventory[it.id] + count);
+	ent.client.pers.inventory[it.id] = min(max, ent.client.pers.inventory[it.id] + count);
 	return true;
 }
 
@@ -32,20 +32,20 @@ bool Pickup_Ammo(entity &ent, entity &other)
 	else
 		ammocount = ent.item->quantity;
 
-	const int32_t oldcount = other.client->pers.inventory[ent.item->id];
+	const int32_t oldcount = other.client.pers.inventory[ent.item->id];
 
 	if (!Add_Ammo(other, ent.item, ammocount))
 		return false;
 
-	if (weapon && !oldcount && other.client->pers.weapon != ent.item &&
+	if (weapon && !oldcount && other.client.pers.weapon != ent.item &&
 #ifdef SINGLE_PLAYER
 	(!deathmatch ||
 #endif
-		(other.client->pers.weapon && other.client->pers.weapon->id == ITEM_BLASTER))
+		(other.client.pers.weapon && other.client.pers.weapon->id == ITEM_BLASTER))
 #ifdef SINGLE_PLAYER
 		)
 #endif
-		other.client->newweapon = ent.item;
+		other.client.newweapon = ent.item;
 
 #ifdef SINGLE_PLAYER
 	if (!(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)) && deathmatch)
@@ -61,22 +61,22 @@ void Drop_Ammo(entity &ent, const gitem_t &it)
 {
 	entity &dropped = Drop_Item(ent, it);
 
-	if (ent.client->pers.inventory[it.id] >= it.quantity)
+	if (ent.client.pers.inventory[it.id] >= it.quantity)
 		dropped.count = it.quantity;
 	else
-		dropped.count = ent.client->pers.inventory[it.id];
+		dropped.count = ent.client.pers.inventory[it.id];
 
-	if (ent.client->pers.weapon &&
-		ent.client->pers.weapon->ammotag == AMMO_GRENADES &&
+	if (ent.client.pers.weapon &&
+		ent.client.pers.weapon->ammotag == AMMO_GRENADES &&
 		it.ammotag == AMMO_GRENADES &&
-		(ent.client->pers.inventory[it.id] - dropped.count) <= 0)
+		(ent.client.pers.inventory[it.id] - dropped.count) <= 0)
 	{
 		gi.cprint(ent, PRINT_HIGH, "Can't drop current weapon\n");
 		G_FreeEdict(dropped);
 		return;
 	}
 
-	ent.client->pers.inventory[it.id] -= dropped.count;
+	ent.client.pers.inventory[it.id] -= dropped.count;
 	ValidateSelectedItem(ent);
 }
 
@@ -89,13 +89,13 @@ bool Pickup_Weapon(entity &ent, entity &other)
 #else
 	if ((dmflags & DF_WEAPONS_STAY) &&
 #endif
-		other.client->pers.inventory[index])
+		other.client.pers.inventory[index])
 	{
 		if (!(ent.spawnflags & (DROPPED_ITEM | DROPPED_PLAYER_ITEM)))
 			return false;   // leave the weapon for others to pickup
 	}
 
-	other.client->pers.inventory[index]++;
+	other.client.pers.inventory[index]++;
 
 	if (!(ent.spawnflags & DROPPED_ITEM))
 	{
@@ -124,12 +124,12 @@ bool Pickup_Weapon(entity &ent, entity &other)
 		}
 	}
 
-	if (other.client->pers.weapon != ent.item && (other.client->pers.inventory[index] == 1) && (
+	if (other.client.pers.weapon != ent.item && (other.client.pers.inventory[index] == 1) && (
 #ifdef SINGLE_PLAYER
 		!deathmatch ||
 #endif
-		other.client->pers.weapon->id == ITEM_BLASTER))
-		other.client->newweapon = ent.item;
+		other.client.pers.weapon->id == ITEM_BLASTER))
+		other.client.newweapon = ent.item;
 
 	return true;
 }
@@ -153,17 +153,17 @@ enum use_weap_result : uint8_t
 
 inline use_weap_result CanUseWeapon(entity &ent, const gitem_t &it)
 {
-	if (it == ent.client->pers.weapon)
+	if (it == ent.client.pers.weapon)
 		return USEWEAP_IS_ACTIVE;
 
-	if (!ent.client->pers.inventory[it.id])
+	if (!ent.client.pers.inventory[it.id])
 		return USEWEAP_OUT_OF_ITEM;
 
 	if (it.ammo && !g_select_empty && !(it.flags & IT_AMMO))
 	{
-		if (!ent.client->pers.inventory[it.ammo])
+		if (!ent.client.pers.inventory[it.ammo])
 			return USEWEAP_NO_AMMO;
-		else if (ent.client->pers.inventory[it.ammo] < it.quantity)
+		else if (ent.client.pers.inventory[it.ammo] < it.quantity)
 			return USEWEAP_NOT_ENOUGH_AMMO;
 	}
 
@@ -187,10 +187,10 @@ void Use_Weapon(entity &ent, const gitem_t &it)
 
 	gitem_id chain_begin = ITEM_NONE;
 
-	if (ent.client->newweapon.has_value() && WeaponIsChained(ent.client->newweapon, it))
-		chain_begin = ent.client->newweapon->id;
-	else if (ent.client->pers.weapon.has_value() && WeaponIsChained(ent.client->pers.weapon, it))
-		chain_begin = ent.client->pers.weapon->id;
+	if (ent.client.newweapon.has_value() && WeaponIsChained(ent.client.newweapon, it))
+		chain_begin = ent.client.newweapon->id;
+	else if (ent.client.pers.weapon.has_value() && WeaponIsChained(ent.client.pers.weapon, it))
+		chain_begin = ent.client.pers.weapon->id;
 
 	if (chain_begin)
 	{
@@ -201,9 +201,9 @@ void Use_Weapon(entity &ent, const gitem_t &it)
 		{
 			if (WeaponIsChained(GetItemByIndex(id), it) && // this weapon is in this chain...
 				CanUseWeapon(ent, GetItemByIndex(id)) == USEWEAP_OK && // we can use it...
-				ent.client->newweapon != id) // we're not already switching to it
+				ent.client.newweapon != id) // we're not already switching to it
 			{
-				ent.client->newweapon = id;
+				ent.client.newweapon = id;
 				return;
 			}
 		}
@@ -229,7 +229,7 @@ void Use_Weapon(entity &ent, const gitem_t &it)
 		return;
 	default:
 		// change to this weapon when down
-		ent.client->newweapon = it;
+		ent.client.newweapon = it;
 		break;
 	}
 }
@@ -240,7 +240,7 @@ void Drop_Weapon(entity &ent, const gitem_t &it)
 		return;
 
 	// see if we're already using it
-	if (((it == ent.client->pers.weapon) || (it == ent.client->newweapon)) && (ent.client->pers.inventory[it.id] == 1))
+	if (((it == ent.client.pers.weapon) || (it == ent.client.newweapon)) && (ent.client.pers.inventory[it.id] == 1))
 	{
 		gi.cprint(ent, PRINT_HIGH, "Can't drop current weapon\n");
 		return;
@@ -248,5 +248,5 @@ void Drop_Weapon(entity &ent, const gitem_t &it)
 
 	Drop_Item(ent, it);
 
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 }

@@ -32,7 +32,7 @@ entity &G_Spawn()
 	entityref best;
 	// the first couple seconds of server time can involve a lot of
 	// freeing and allocating
-	const bool quick_replace = level.framenum < 100ms;
+	const bool quick_replace = level.time < 100ms;
 
 	for (entity &e : entity_range(game.maxclients + 1, num_entities - 1))
 	{
@@ -40,7 +40,7 @@ entity &G_Spawn()
 			continue;
 
 		// if this is a really good entity, mark it down immediately
-		if (quick_replace || (level.framenum - e.freeframenum) > 500ms)
+		if (quick_replace || (level.time - e.freeframenum) > 500ms)
 		{
 			best = e;
 			break;
@@ -69,35 +69,10 @@ void G_FreeEdict(entity &e)
 	e.__free();
 	e.inuse = false;
 	e.type = ET_UNKNOWN;
-	e.freeframenum = level.framenum;
+	e.freeframenum = level.time;
 }
 
 REGISTER_SAVABLE(G_FreeEdict);
-
-entityref findradius(entityref from, vector org, float rad)
-{
-	if (!from.has_value() || from->is_world())
-		from = itoe(1);
-	else
-		from = next_ent(from);
-
-	for (; etoi(from) < num_entities; from = next_ent(from))
-	{
-		if (!from->inuse)
-			continue;
-		if (from->solid == SOLID_NOT)
-			continue;
-
-		vector eorg = org - (from->origin + from->bounds.center());
-
-		if (VectorLength(eorg) > rad)
-			continue;
-
-		return from;
-	}
-
-	return null_entity;
-}
 
 entityref G_PickTarget(const stringref &stargetname)
 {
@@ -138,7 +113,7 @@ void G_UseTargets(entity &ent, entity &cactivator)
 	{
 		// create a temp object to fire at a later time
 		entity &t = G_Spawn();
-		t.nextthink = duration_cast<gtime>(level.framenum + ent.delay);
+		t.nextthink = duration_cast<gtime>(level.time + ent.delay);
 		t.think = SAVABLE(Think_Delay);
 		t.activator = cactivator;
 		t.message = ent.message;
@@ -165,31 +140,23 @@ void G_UseTargets(entity &ent, entity &cactivator)
 	//
 	if (ent.killtarget)
 	{
-#ifdef GROUND_ZERO
-		bool done = false;
-#endif
-
 		for (entity &t : G_IterateFunc<&entity::targetname>(ent.killtarget, striequals))
 		{
 #ifdef GROUND_ZERO
 			// PMM - if this entity is part of a train, cleanly remove it
 			if ((t.flags & FL_TEAMSLAVE) && t.teammaster.has_value())
 			{
-				entityref master = t.teammaster;
-
-				while (!done)
+				for (entity &master : G_IterateChain<&entity::teamchain>(t.teammaster))
 				{
-					if (master->teamchain == t)
+					if (master.teamchain == t)
 					{
-						master->teamchain = t.teamchain;
-						done = true;
+						master.teamchain = t.teamchain;
+						break;
 					}
-
-					master = master->teamchain;
 				}
 			}
-#endif
 
+#endif
 			G_FreeEdict(t);
 
 			if (!ent.inuse)
@@ -291,7 +258,7 @@ void BecomeExplosion2(entity &self)
 void G_TouchTriggers(entity &ent)
 {
 	// dead things don't activate triggers!
-	if ((ent.is_client() || (ent.svflags & SVF_MONSTER)) && (ent.health <= 0))
+	if ((ent.is_client || (ent.svflags & SVF_MONSTER)) && (ent.health <= 0))
 		return;
 
 	dynarray<entityref> touches = gi.BoxEdicts(ent.absbounds, AREA_TRIGGERS);

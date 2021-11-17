@@ -40,7 +40,7 @@ void fire_rail(entity &self, vector start, vector aimdir, int32_t damage, int32_
 		else
 		{
 			//ZOID--added so rail goes through SOLID_BBOX entities (gibs, etc)
-			if ((tr.ent.svflags & SVF_MONSTER) || tr.ent.is_client() ||
+			if ((tr.ent.svflags & SVF_MONSTER) || tr.ent.is_client ||
 				(tr.ent.solid == SOLID_BBOX))
 				ignore = tr.ent;
 			else
@@ -60,7 +60,7 @@ void fire_rail(entity &self, vector start, vector aimdir, int32_t damage, int32_
 		gi.ConstructMessage(svc_temp_entity, TE_RAILTRAIL, start, tr.endpos).multicast(tr.endpos, MULTICAST_PHS);
 #ifdef SINGLE_PLAYER
 
-	if (self.is_client())
+	if (self.is_client)
 		PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
 #endif
 }

@@ -31,12 +31,12 @@ enum damage_flags : uint16_t
 	DAMAGE_NO_PROTECTION = 1 << 4,	// armor, shields, invulnerability, and godmode have no effect
 	DAMAGE_IGNORE_FF = 1 << 5,	    // damage ignores friendly fire status
 	DAMAGE_INSTANT_GIB = 1 << 6,    // if damage takes us <= 0 health, set directly to gib_health - 1
+	DAMAGE_NO_RADIUS_HALF = 1 << 7, // no damage halving for self-radius damage
 
 #ifdef GROUND_ZERO
-	DAMAGE_DESTROY_ARMOR = 1 << 7,	// damage is done to armor and health.
-	DAMAGE_NO_REG_ARMOR = 1 << 8,	// damage skips regular armor
-	DAMAGE_NO_POWER_ARMOR = 1 << 9,	// damage skips power armor
-	DAMAGE_NO_RADIUS_HALF = 1 << 10, // no damage halving for self-radius damage
+	DAMAGE_DESTROY_ARMOR = 1 << 8,	// damage is done to armor and health.
+	DAMAGE_NO_REG_ARMOR = 1 << 9,	// damage skips regular armor
+	DAMAGE_NO_POWER_ARMOR = 1 << 10,// damage skips power armor
 #endif
 };
 

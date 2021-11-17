@@ -27,7 +27,7 @@ static void rocket_touch(entity &ent, entity &other, vector normal, const surfac
 	}
 #ifdef SINGLE_PLAYER
 
-	if (ent.owner->is_client())
+	if (ent.owner->is_client)
 		PlayerNoise(ent.owner, ent.origin, PNOISE_IMPACT);
 #endif
 
@@ -71,7 +71,7 @@ entity &fire_rocket(entity &self, vector start, vector dir, int32_t damage, int3
 	rocket.modelindex = gi.modelindex("models/objects/rocket/tris.md2");
 	rocket.owner = self;
 	rocket.touch = SAVABLE(rocket_touch);
-	rocket.nextthink = level.framenum + seconds(8000 / speed);
+	rocket.nextthink = level.time + seconds(8000 / speed);
 	rocket.think = SAVABLE(G_FreeEdict);
 	rocket.dmg = damage;
 	rocket.radius_dmg = radius_damage;
@@ -79,7 +79,7 @@ entity &fire_rocket(entity &self, vector start, vector dir, int32_t damage, int3
 	rocket.sound = gi.soundindex("weapons/rockfly.wav");
 
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge(self, rocket.origin, dir, speed);
 #endif
 

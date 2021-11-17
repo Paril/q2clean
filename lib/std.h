@@ -25,3 +25,4 @@
 #include <unordered_set>
 #include <cinttypes>
 #include <cstddef>
+#include <bitset>

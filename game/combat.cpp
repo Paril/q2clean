@@ -6,7 +6,7 @@
 #include "lib/gi.h"
 #include "items/armor.h"
 #include "combat.h"
-#ifdef GROUND_ZERO
+#if defined(GROUND_ZERO) || !defined(ROGUE_AI)
 #include "game/monster/medic.h"
 #endif
 #ifdef THE_RECKONING
@@ -84,10 +84,10 @@ static inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, 
 
 	int32_t		power = 0;
 
-	if (ent.is_client())
+	if (ent.is_client)
 	{
 		power_armor_type = PowerArmorType(ent);
-		power = ent.client->pers.inventory[ITEM_CELLS];
+		power = ent.client.pers.inventory[ITEM_CELLS];
 	}
 #ifdef SINGLE_PLAYER
 	else if (ent.svflags & SVF_MONSTER)
@@ -141,7 +141,7 @@ static inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, 
 	save = min(damage, save);
 
 	SpawnDamage(pa_te_type, point, normal);
-	ent.powerarmor_framenum = level.framenum + 200ms;
+	ent.powerarmor_time = level.time + 200ms;
 
 	int32_t power_used = save / damagePerCell;
 
@@ -151,9 +151,9 @@ static inline int32_t CheckPowerArmor(entity &ent, vector point, vector normal, 
 #endif
 
 #ifdef SINGLE_PLAYER
-	if (ent.is_client())
+	if (ent.is_client)
 #endif
-		ent.client->pers.inventory[ITEM_CELLS] = max(0, ent.client->pers.inventory[ITEM_CELLS] - power_used);
+		ent.client.pers.inventory[ITEM_CELLS] = max(0, ent.client.pers.inventory[ITEM_CELLS] - power_used);
 #ifdef SINGLE_PLAYER
 	else
 		ent.monsterinfo.power_armor_power -= power_used;
@@ -166,7 +166,7 @@ static inline int32_t CheckArmor(entity &ent, vector point, vector normal, int32
 	if (!damage)
 		return 0;
 
-	if (!ent.is_client())
+	if (!ent.is_client)
 		return 0;
 
 	if (style.flags & (DAMAGE_NO_ARMOR
@@ -190,13 +190,13 @@ static inline int32_t CheckArmor(entity &ent, vector point, vector normal, int32
 	else
 		save = (int32_t) ceil(armor.normal_protection * damage);
 
-	if (save > ent.client->pers.inventory[index])
-		save = ent.client->pers.inventory[index];
+	if (save > ent.client.pers.inventory[index])
+		save = ent.client.pers.inventory[index];
 
 	if (!save)
 		return 0;
 
-	ent.client->pers.inventory[index] -= save;
+	ent.client.pers.inventory[index] -= save;
 
 	SpawnDamage(style.sparks, point, normal);
 
@@ -214,10 +214,10 @@ enum gender_id : uint8_t
 
 inline gender_id GetGender(entity &ent)
 {
-	if (!ent.is_client())
+	if (!ent.is_client)
 		return GENDER_NEUTRAL;
 
-	string info = Info_ValueForKey(ent.client->pers.userinfo, "gender");
+	string info = Info_ValueForKey(ent.client.pers.userinfo, "gender");
 
 	if (info[0] == 'f' || info[0] == 'F')
 		return GENDER_FEMALE;
@@ -246,35 +246,33 @@ static void T_Obituary(entity &self, entity &attacker, means_of_death_ref mod)
 	bool self_kill = attacker == self;
 
 	gi.bprintfmt(PRINT_MEDIUM, (self_kill || !mod.other_kill_fmt) ? (mod.self_kill_fmt ? mod.self_kill_fmt : MOD_DEFAULT.self_kill_fmt) : mod.other_kill_fmt,
-		self.is_client() ? self.client->pers.netname : self.type->id, their[gender], themself[gender],
-		attacker.is_client() ? attacker.client->pers.netname : attacker.type->id);
+		self.is_client ? self.client.pers.netname : self.type->id, their[gender], themself[gender],
+		attacker.is_client ? attacker.client.pers.netname : attacker.type->id);
 
 	if (self_kill)
 	{
-		if (self.is_client()
+		if (self.is_client
 #ifdef SINGLE_PLAYER
 			&& deathmatch
 #endif
 			)
-			self.client->resp.score--;
+			self.client.resp.score--;
 	}
-	else if (attacker.is_client()
+	else if (attacker.is_client
 #ifdef SINGLE_PLAYER
 		&& deathmatch
+#endif
 		)
 	{
-#endif
 		if (OnSameTeam(self, attacker))
-			attacker.client->resp.score--;
+			attacker.client.resp.score--;
 		else
-			attacker.client->resp.score++;
-#ifdef SINGLE_PLAYER
+			attacker.client.resp.score++;
 	}
-#endif
 }
 
 // temporary
-static entity_type ET_MONSTER_CARRIER, ET_MONSTER_WIDOW, ET_MONSTER_WIDOW2, ET_MONSTER_TANK, ET_MONSTER_SUPERTANK, ET_MONSTER_MAKRON, ET_MONSTER_JORG;
+static entity_type ET_MONSTER_CARRIER, ET_MONSTER_WIDOW, ET_MONSTER_WIDOW2;
 
 static inline void Killed(entity &targ, entity &inflictor, entity &attacker, int32_t damage, vector point, means_of_death_ref mod)
 {
@@ -294,70 +292,64 @@ static inline void Killed(entity &targ, entity &inflictor, entity &attacker, int
 
 	targ.enemy = attacker;
 
+	if (!targ.deadflag)
 #ifdef SINGLE_PLAYER
-	if ((targ.svflags & SVF_MONSTER) && (targ.deadflag != DEAD_DEAD))
 	{
-#ifdef GROUND_ZERO
-		if (targ.monsterinfo.commander.has_value() && targ.monsterinfo.commander->inuse)
+		if (targ.svflags & SVF_MONSTER)
 		{
-			entityref commander = targ.monsterinfo.commander;
-
-			//ROGUE - free up slot for spawned monster if it's spawned
-			if (((targ.monsterinfo.aiflags & AI_SPAWNED_CARRIER) && commander->type == ET_MONSTER_CARRIER) ||
-				((targ.monsterinfo.aiflags & AI_SPAWNED_MEDIC_C) && commander->type == ET_MONSTER_MEDIC_COMMANDER))
-				commander->monsterinfo.monster_slots++;
-			else if (targ.monsterinfo.aiflags & AI_SPAWNED_WIDOW)
+#ifdef GROUND_ZERO
+			if (targ.monsterinfo.commander.has_value() && targ.monsterinfo.commander->inuse)
 			{
-				if (commander->type == ET_MONSTER_WIDOW || commander->type == ET_MONSTER_WIDOW2)
-					if (commander->monsterinfo.monster_used)
-						commander->monsterinfo.monster_used--;
+				entityref commander = targ.monsterinfo.commander;
+
+				//ROGUE - free up slot for spawned monster if it's spawned
+				if (((targ.monsterinfo.aiflags & AI_SPAWNED_CARRIER) && commander->type == ET_MONSTER_CARRIER) ||
+					((targ.monsterinfo.aiflags & AI_SPAWNED_MEDIC_C) && commander->type == ET_MONSTER_MEDIC_COMMANDER))
+					commander->monsterinfo.monster_slots++;
+				else if (targ.monsterinfo.aiflags & AI_SPAWNED_WIDOW)
+				{
+					if (commander->type == ET_MONSTER_WIDOW || commander->type == ET_MONSTER_WIDOW2)
+						if (commander->monsterinfo.monster_used)
+							commander->monsterinfo.monster_used--;
+				}
 			}
-		}
 #endif
 
-		if (!(targ.monsterinfo.aiflags & AI_GOOD_GUY_MASK))
-		{
-			level.killed_monsters++;
+			if (!(targ.monsterinfo.aiflags & AI_GOOD_GUY_MASK))
+			{
+				level.killed_monsters++;
 
-			if (coop && attacker.is_client())
-				attacker.client->resp.score++;
+				if (coop && attacker.is_client)
+					attacker.client.resp.score++;
 
 #ifndef ROGUE_AI
-			// medics won't heal monsters that they kill themselves
-			if (attacker.type == ET_MONSTER_MEDIC)
-				targ.owner = attacker;
+				// medics won't heal monsters that they kill themselves
+				if (attacker.type == ET_MONSTER_MEDIC)
+					targ.owner = attacker;
 #endif
+			}
 		}
-	}
-#endif
 
-#ifdef SINGLE_PLAYER
-	if ((targ.svflags & SVF_MONSTER) && (targ.deadflag != DEAD_DEAD))
-	{
 		targ.touch = nullptr;
 		monster_death_use(targ);
+
+#endif
+		T_Obituary(targ, attacker, mod);
+#ifdef SINGLE_PLAYER
 	}
 #endif
-
-	if (targ.deadflag == DEAD_NO)
-		T_Obituary(targ, attacker, mod);
 
 	targ.die(targ, inflictor, attacker, damage, point);
 }
 
 void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vector point, vector normal, int32_t damage, int32_t knockback, damage_style style, means_of_death_ref mod)
 {
-	int32_t	take;
-	int32_t	save;
-	int32_t	asave;
-	int32_t	psave;
-
 	if (!targ.takedamage)
 		return;
 #ifdef SINGLE_PLAYER
 
 	// easy mode takes half damage
-	if (!skill && !deathmatch && targ.is_client())
+	if (!skill && !deathmatch && targ.is_client)
 	{
 		damage = (int) (damage * 0.5f);
 		if (!damage)
@@ -373,9 +365,12 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 
 	VectorNormalize(dir);
 
-	// bonus damage for suprising a monster
-	if (!(style.flags & DAMAGE_RADIUS) && (targ.svflags & SVF_MONSTER) && attacker.is_client() && (!targ.enemy.has_value()) && (targ.health > 0))
+	// bonus damage for surprising a monster
+	if (!(style.flags & DAMAGE_RADIUS) && (targ.svflags & SVF_MONSTER) && attacker.is_client && (!targ.enemy.has_value() || targ.monsterinfo.surprise_time > level.time) && (targ.health > 0))
+	{
 		damage *= 2;
+		targ.monsterinfo.surprise_time = level.time + 1ms;
+	}
 
 	if (targ.flags & FL_NO_KNOCKBACK)
 		knockback = 0;
@@ -387,7 +382,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 			vector kvel;
 			const float	calc_mass = max(50.f, (float) targ.mass);
 
-			if (targ.is_client() && attacker == targ)
+			if (targ.is_client && attacker == targ)
 				kvel = dir * (1600.0f * knockback / calc_mass);  // the rocket jump hack...
 			else
 				kvel = dir * (500.0f * knockback / calc_mass);
@@ -396,8 +391,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 		}
 	}
 
-	take = damage;
-	save = 0;
+	int32_t take = damage, save = 0;
 
 	// check for godmode
 	if ((targ.flags & FL_GODMODE) && !(style.flags & DAMAGE_NO_PROTECTION))
@@ -408,27 +402,27 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 	}
 
 	// check for invincibility
-	if (!(style.flags & DAMAGE_NO_PROTECTION) && ((targ.is_client() && targ.client->invincible_framenum > level.framenum)
+	if (!(style.flags & DAMAGE_NO_PROTECTION) && (targ.is_client && targ.client.invincible_time > level.time)
 #if defined(GROUND_ZERO) && defined(SINGLE_PLAYER)
-		|| ((targ.svflags & SVF_MONSTER) && targ.monsterinfo.invincible_framenum > level.framenum))
+		|| ((targ.svflags & SVF_MONSTER) && targ.monsterinfo.invincible_time > level.time)
 #endif
 		)
 	{
-		if (targ.pain_debounce_framenum < level.framenum)
+		if (targ.pain_debounce_time < level.time)
 		{
 			gi.sound(targ, CHAN_ITEM, gi.soundindex("items/protect4.wav"));
-			targ.pain_debounce_framenum = level.framenum + 2s;
+			targ.pain_debounce_time = level.time + 2s;
 		}
 		take = 0;
 		save = damage;
 	}
 
+	int32_t asave = 0, psave = 0;
+
 #ifdef CTF
 	//team armor protect
-	if (ctf.intVal && targ.is_client && attacker.is_client &&
-		OnSameTeam(targ, attacker) && (dmflags.intVal & DF_ARMOR_PROTECT))
-		psave = asave = 0;
-	else
+	if (!(ctf.intVal && targ.is_client && attacker.is_client &&
+		OnSameTeam(targ, attacker) && (dmflags.intVal & DF_ARMOR_PROTECT)))
 	{
 #endif
 		psave = CheckPowerArmor(targ, point, normal, take, style);
@@ -448,7 +442,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 	if (style.flags & DAMAGE_DESTROY_ARMOR)
 	{
 		if (!(targ.flags & FL_GODMODE) && !(style.flags & DAMAGE_NO_PROTECTION) &&
-			!(targ.is_client() && targ.client->invincible_framenum > level.framenum))
+			!(targ.is_client && targ.client.invincible_time > level.time))
 			take = damage;
 	}
 #endif
@@ -464,7 +458,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 	{
 		temp_event type;
 
-		if ((targ.svflags & SVF_MONSTER) || targ.is_client())
+		if ((targ.svflags & SVF_MONSTER) || targ.is_client)
 		{
 			switch (targ.bleed_style)
 			{
@@ -494,7 +488,7 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 				targ.health = targ.gib_health ? targ.gib_health : -take;
 			}
 
-			if ((targ.svflags & SVF_MONSTER) || targ.is_client())
+			if ((targ.svflags & SVF_MONSTER) || targ.is_client)
 				targ.flags |= FL_NO_KNOCKBACK;
 
 			Killed(targ, inflictor, attacker, take, point, mod);
@@ -502,10 +496,10 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 		}
 	}
 
-	if ((!targ.is_client() || !(targ.flags & FL_GODMODE)) && take && targ.pain)
+	if ((!targ.is_client || !(targ.flags & FL_GODMODE)) && take && targ.pain)
 		targ.pain(targ, attacker, (float) knockback, take);
-
 #ifdef SINGLE_PLAYER
+
 	if (targ.svflags & SVF_MONSTER)
 		M_ReactToDamage(targ, attacker, inflictor, knockback, take);
 #endif
@@ -513,13 +507,13 @@ void T_Damage(entity &targ, entity &inflictor, entity &attacker, vector dir, vec
 	// add to the damage inflicted on a player this frame
 	// the total will be turned into screen blends and view angle kicks
 	// at the end of the frame
-	if (targ.is_client())
+	if (targ.is_client)
 	{
-		targ.client->damage_parmor += psave;
-		targ.client->damage_armor += asave;
-		targ.client->damage_blood += take;
-		targ.client->damage_knockback += knockback;
-		targ.client->damage_from = point;
+		targ.client.damage_parmor += psave;
+		targ.client.damage_armor += asave;
+		targ.client.damage_blood += take;
+		targ.client.damage_knockback += knockback;
+		targ.client.damage_from = point;
 	}
 }
 

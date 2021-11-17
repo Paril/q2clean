@@ -227,10 +227,10 @@ static void infantry_reacttodamage(entity &self, entity &, entity &, int32_t, in
 	monster_done_dodge(self);
 #endif
 
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	if (skill == 3)
 		return;     // no pain anims in nightmare
@@ -413,15 +413,15 @@ static void infantry_die(entity &self, entity &, entity &, int32_t damage, vecto
 		for (n = 0; n < 4; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 	// regular death
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 
 	n = Q_rand() % 3;
@@ -451,15 +451,15 @@ static void infantry_duck_down(entity &self)
 	if (self.monsterinfo.aiflags & AI_DUCKED)
 		return;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.maxs.z -= 32;
+	self.bounds.maxs.z -= 32;
 	self.takedamage = true;
-	self.monsterinfo.pause_framenum = level.framenum + 1 * BASE_FRAMERATE;
+	self.monsterinfo.pause_time = level.time + 1s;
 	gi.linkentity(self);
 }
 
 static void infantry_duck_hold(entity &self)
 {
-	if (level.framenum >= self.monsterinfo.pause_framenum)
+	if (level.time >= self.monsterinfo.pause_time)
 		self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
 	else
 		self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -468,7 +468,7 @@ static void infantry_duck_hold(entity &self)
 static void infantry_duck_up(entity &self)
 {
 	self.monsterinfo.aiflags &= ~AI_DUCKED;
-	self.maxs.z += 32;
+	self.bounds.maxs.z += 32;
 	self.takedamage = true;
 	gi.linkentity(self);
 }
@@ -486,7 +486,7 @@ constexpr mmove_t infantry_move_duck = { FRAME_duck01, FRAME_duck05, infantry_fr
 REGISTER_STATIC_SAVABLE(infantry_move_duck);
 
 #ifndef ROGUE_AI
-static void infantry_dodge(entity &self, entity &attacker, float)
+static void infantry_dodge(entity &self, entity &attacker, gtimef)
 {
 	if (random() > 0.25f)
 		return;
@@ -500,10 +500,10 @@ static void infantry_dodge(entity &self, entity &attacker, float)
 REGISTER_STATIC_SAVABLE(infantry_dodge);
 #endif
 
-#if defined(THE_RECKONING) || defined(GROUND_ZERO)
+#if defined(THE_RECKONING) || defined(GROUND_ZERO) || defined(ROGUE_AI)
 static void infantry_set_firetime(entity &self)
 {
-	self.monsterinfo.pause_framenum = level.framenum + random(150ms) + 500ms;
+	self.monsterinfo.pause_time = level.time + random(1500ms) + 500ms;
 }
 
 static void infantry_cock_gun(entity &self)
@@ -514,7 +514,7 @@ static void infantry_cock_gun(entity &self)
 static void infantry_cock_gun(entity &self)
 {
 	gi.sound(self, CHAN_WEAPON, sound_weapon_cock);
-	self.monsterinfo.pause_framenum = level.framenum + (Q_rand() & 15) + 3 + 7;
+	self.monsterinfo.pause_time = level.time + random(1000ms, 2600ms);
 }
 #endif
 
@@ -522,7 +522,7 @@ static void infantry_fire(entity &self)
 {
 	InfantryMachineGun(self);
 
-	if (level.framenum >= self.monsterinfo.pause_framenum)
+	if (level.time >= self.monsterinfo.pause_time)
 		self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
 	else
 		self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -545,6 +545,20 @@ constexpr mframe_t infantry_frames_attack1[] = {
 	{ ai_charge },
 	{ ai_charge, -1 },
 	{ ai_charge, -1 }
+#elif defined(ROGUE_AI)
+	{ ai_charge, 5, infantry_set_firetime },
+	{ ai_charge, 1 },
+	{ ai_charge, -3, infantry_fire },
+	{ ai_charge, -2 },
+	{ ai_charge, -2 },
+	{ ai_charge, 2 },
+	{ ai_charge, 1 },
+	{ ai_charge, 1 },
+	{ ai_charge, -1, infantry_cock_gun },
+	{ ai_charge },
+	{ ai_charge, -1 },
+	{ ai_charge, -1 },
+	{ ai_charge, 4 },
 #else
 	{ ai_charge, 4 },
 	{ ai_charge, -1 },
@@ -563,7 +577,11 @@ constexpr mframe_t infantry_frames_attack1[] = {
 	{ ai_charge, -3 }
 #endif
 };
+#if !(defined(THE_RECKONING) || defined(GROUND_ZERO)) && defined(ROGUE_AI)
+constexpr mmove_t infantry_move_attack1 = { FRAME_attak113, FRAME_attak101, infantry_frames_attack1, infantry_run };
+#else
 constexpr mmove_t infantry_move_attack1 = { FRAME_attak101, FRAME_attak115, infantry_frames_attack1, infantry_run };
+#endif
 
 REGISTER_STATIC_SAVABLE(infantry_move_attack1);
 
@@ -574,7 +592,7 @@ static void infantry_swing(entity &self)
 
 static void infantry_smack(entity &self)
 {
-	constexpr vector aim { MELEE_DISTANCE, 0, 0 };
+	constexpr vector aim { RANGE_MELEE, 0, 0 };
 	if (fire_hit(self, aim, (5 + (Q_rand() % 5)), 50))
 		gi.sound(self, CHAN_WEAPON, sound_punch_hit);
 }
@@ -599,7 +617,7 @@ static void infantry_attack(entity &self)
 	monster_done_dodge(self);
 #endif
 
-	if (range(self, self.enemy) == RANGE_MELEE)
+	if (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE)
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_attack2);
 	else
 		self.monsterinfo.currentmove = &SAVABLE(infantry_move_attack1);
@@ -718,9 +736,9 @@ static void infantry_duck(entity &self, gtimef eta)
 
 	if (!skill)
 		// PMM - stupid dodge
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + 1s);
 	else
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + (100ms * (3 - skill)));
 
 	// has to be done immediately otherwise he can get stuck
 	monster_duck_down(self);

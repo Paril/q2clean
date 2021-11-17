@@ -55,7 +55,7 @@ bool blocked_checkshot(entity &self, float shot_chance)
 	// blocked checkshot is only against players. this will
 	// filter out player sounds and other shit they should
 	// not be firing at.
-	if (!self.enemy->is_client())
+	if (!self.enemy->is_client)
 		return false;
 
 	if (random() < shot_chance)
@@ -289,11 +289,11 @@ static void hintpath_go(entity &self, entity &point)
 {
 	self.ideal_yaw = vectoyaw(point.origin - self.origin);
 	self.goalentity = self.movetarget = point;
-	self.monsterinfo.pause_framenum = gtime::zero();
+	self.monsterinfo.pause_time = gtime::zero();
 	self.monsterinfo.aiflags |= AI_HINT_PATH;
 	self.monsterinfo.aiflags &= ~(AI_SOUND_TARGET | AI_PURSUIT_LAST_SEEN | AI_PURSUE_NEXT | AI_PURSUE_TEMP);
 	// run for it
-	self.monsterinfo.search_framenum = level.framenum;
+	self.monsterinfo.search_time = level.time;
 	self.monsterinfo.run (self);
 }
 
@@ -309,7 +309,7 @@ void hintpath_stop(entity &self)
 {
 	self.goalentity = 0;
 	self.movetarget = 0;
-	self.monsterinfo.last_hint_framenum = level.framenum;
+	self.monsterinfo.last_hint_time = level.time;
 	self.monsterinfo.goal_hint = 0;
 	self.monsterinfo.aiflags &= ~AI_HINT_PATH;
 
@@ -332,12 +332,12 @@ void hintpath_stop(entity &self)
 	// will just revert to walking with no target and
 	// the monsters will wonder around aimlessly trying
 	// to hunt the world entity
-	self.monsterinfo.pause_framenum = gtime::max();
+	self.monsterinfo.pause_time = gtime::max();
 	self.monsterinfo.stand (self);
 }
 
 // temp
-static entity_type ET_MONSTER_TURRET("temp");
+static entity_type ET_MONSTER_TURRET;
 
 // =============
 // monsterlost_checkhint - the monster (self) will check around for valid hintpaths.
@@ -721,7 +721,7 @@ static void hint_path_touch(entity &self, entity &other, vector, const surface &
 	// have the monster freeze if the hint path we just touched has a wait time
 	// on it, for example, when riding a plat.
 	if (self.wait != gtimef::zero())
-		other.nextthink = duration_cast<gtime>(level.framenum + self.wait);
+		other.nextthink = duration_cast<gtime>(level.time + self.wait);
 }
 
 REGISTER_STATIC_SAVABLE(hint_path_touch);
@@ -899,7 +899,7 @@ entity &SpawnBadArea(vector cmins, vector cmaxs, gtime lifespan_frames, entityre
 	if (lifespan_frames != gtime::zero())
 	{
 		badarea.think = SAVABLE(G_FreeEdict);
-		badarea.nextthink = level.framenum + lifespan_frames;
+		badarea.nextthink = level.time + lifespan_frames;
 	}
 
 	badarea.owner = cowner;
@@ -1056,7 +1056,7 @@ void M_MonsterDodge(entity &self, entity &attacker, gtimef eta, trace &tr)
 
 	if (ducker)
 	{
-		if (self.monsterinfo.next_duck_framenum > level.framenum)
+		if (self.monsterinfo.next_duck_time > level.time)
 			return;
 
 		monster_done_dodge (self);
@@ -1076,14 +1076,14 @@ void monster_duck_down(entity &self)
 
 	self.bounds.maxs[2] = self.monsterinfo.base_height - 32;
 	self.takedamage = true;
-	if (self.monsterinfo.duck_wait_framenum < level.framenum)
-		self.monsterinfo.duck_wait_framenum = level.framenum + 1s;
+	if (self.monsterinfo.duck_wait_time < level.time)
+		self.monsterinfo.duck_wait_time = level.time + 1s;
 	gi.linkentity (self);
 }
 
 void monster_duck_hold(entity &self)
 {
-	if (level.framenum >= self.monsterinfo.duck_wait_framenum)
+	if (level.time >= self.monsterinfo.duck_wait_time)
 		self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
 	else
 		self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -1094,7 +1094,7 @@ void monster_duck_up(entity &self)
 	self.monsterinfo.aiflags &= ~AI_DUCKED;
 	self.bounds.maxs[2] = self.monsterinfo.base_height;
 	self.takedamage = true;
-	self.monsterinfo.next_duck_framenum = level.framenum + DUCK_INTERVAL;
+	self.monsterinfo.next_duck_time = level.time + DUCK_INTERVAL;
 	gi.linkentity (self);
 }
 
@@ -1106,12 +1106,12 @@ REGISTER_SAVABLE(monster_duck_up);
 
 void monster_jump_start(entity &self)
 {
-	self.timestamp = level.framenum;
+	self.timestamp = level.time;
 }
 
 bool monster_jump_finished(entity &self)
 {
-	return (level.framenum - self.timestamp) > 3s;
+	return (level.time - self.timestamp) > 3s;
 }
 
 // MOVE STUFF
@@ -1157,8 +1157,8 @@ bool MarkTeslaArea(entity &tesla)
 	{
 		entity &trigger = tesla.teamchain;
 
-		if (tesla.air_finished_framenum != gtime::zero())
-			area = SpawnBadArea (trigger.absbounds.mins, trigger.absbounds.maxs, tesla.air_finished_framenum, tesla);
+		if (tesla.air_finished_time != gtime::zero())
+			area = SpawnBadArea (trigger.absbounds.mins, trigger.absbounds.maxs, tesla.air_finished_time, tesla);
 		else
 			area = SpawnBadArea (trigger.absbounds.mins, trigger.absbounds.maxs, tesla.nextthink, tesla);
 	}
@@ -1192,7 +1192,7 @@ void TargetTesla(entity &self, entity &tesla)
 
 #ifdef ROGUE_AI
 	// store the player enemy in case we lose track of him.
-	if (self.enemy.has_value() && self.enemy->is_client())
+	if (self.enemy.has_value() && self.enemy->is_client)
 		self.monsterinfo.last_player_enemy = self.enemy;
 #endif
 

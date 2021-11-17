@@ -14,26 +14,22 @@ void weapon_grenade_fire(entity &ent, bool held)
 	vector	offset;
 	vector	forward, right;
 	vector	start;
-	int32_t	damage = 125;
+	const int32_t damage = 125 * damage_multiplier;
 	int32_t	speed;
-	float	radius;
-
-	radius = damage + 40.f;
-	if (is_quad)
-		damage *= damage_multiplier;
+	const float radius = (damage / damage_multiplier) + 40.f;
 
 	offset = { 8, 8, ent.viewheight - 8.f };
-	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+	AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	gtimef timer = (ent.client->grenade_framenum - level.framenum);
+	gtimef timer = (ent.client.grenade_time - level.time);
 	speed = (int32_t) (GRENADE_MINSPEED + (GRENADE_TIMER - timer).count() * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER.count()));
 	fire_grenade2(ent, start, forward, damage, speed, timer, radius, held);
 
 	if (!(dmflags & DF_INFINITE_AMMO))
-		ent.client->pers.inventory[ent.client->ammo_index]--;
+		ent.client.pers.inventory[ent.client.ammo_index]--;
 
-	ent.client->grenade_framenum = level.framenum + 1s;
+	ent.client.grenade_time = level.time + 1s;
 
 	if (ent.deadflag || ent.modelindex != MODEL_PLAYER) // VWep animations screw up corpses
 		return;
@@ -41,17 +37,17 @@ void weapon_grenade_fire(entity &ent, bool held)
 	if (ent.health <= 0)
 		return;
 
-	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
+	if (ent.client.ps.pmove.pm_flags & PMF_DUCKED)
 	{
-		ent.client->anim_priority = ANIM_ATTACK;
+		ent.client.anim_priority = ANIM_ATTACK;
 		ent.frame = FRAME_crattak1 - 1;
-		ent.client->anim_end = FRAME_crattak3;
+		ent.client.anim_end = FRAME_crattak3;
 	}
 	else
 	{
-		ent.client->anim_priority = ANIM_REVERSE;
+		ent.client.anim_priority = ANIM_REVERSE;
 		ent.frame = FRAME_wave08;
-		ent.client->anim_end = FRAME_wave01;
+		ent.client.anim_end = FRAME_wave01;
 	}
 }
 

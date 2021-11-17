@@ -37,7 +37,7 @@ static void tesla_remove(entity &self)
 			cur = next;
 		}
 	}
-	else if (self.air_finished_framenum != gtime::zero())
+	else if (self.air_finished_time != gtime::zero())
 		gi.dprint("tesla without a field!\n");
 
 	self.owner = self.teammaster;	// Going away, set the owner correctly.
@@ -71,7 +71,7 @@ REGISTER_STATIC_SAVABLE(tesla_think_active);
 
 static void tesla_think_active(entity &self)
 {
-	if (level.framenum > self.air_finished_framenum)
+	if (level.time > self.air_finished_time)
 	{
 		tesla_remove(self);
 		return;
@@ -97,11 +97,11 @@ static void tesla_think_active(entity &self)
 
 #ifdef SINGLE_PLAYER
 		// don't hit clients in single-player or coop
-		if (hit->is_client())
+		if (hit->is_client)
 			if (coop || !deathmatch)
 				continue;
 #endif
-		if (!(hit->svflags & SVF_MONSTER) && !(hit->flags & FL_DAMAGEABLE) && !hit->is_client())
+		if (!(hit->svflags & SVF_MONSTER) && !(hit->flags & FL_DAMAGEABLE) && !hit->is_client)
 			continue;
 	
 		trace tr = gi.traceline(start, hit->origin, self, MASK_SHOT);
@@ -131,7 +131,7 @@ static void tesla_think_active(entity &self)
 	if(self.inuse)
 	{
 		self.think = SAVABLE(tesla_think_active);
-		self.nextthink = level.framenum + 100ms;
+		self.nextthink = level.time + 100ms;
 	}
 }
 
@@ -191,8 +191,8 @@ static void tesla_activate(entity &self)
 		self.owner = 0;
 	self.teamchain = trigger;
 	self.think = SAVABLE(tesla_think_active);
-	self.nextthink = level.framenum + 1_hz;
-	self.air_finished_framenum = level.framenum + TESLA_TIME_TO_LIVE;
+	self.nextthink = level.time + 1_hz;
+	self.air_finished_time = level.time + TESLA_TIME_TO_LIVE;
 }
 
 REGISTER_STATIC_SAVABLE(tesla_activate);
@@ -220,7 +220,7 @@ static void tesla_think(entity &ent)
 	{
 		ent.frame = 14;
 		ent.think = SAVABLE(tesla_activate);
-		ent.nextthink = level.framenum + 100ms;
+		ent.nextthink = level.time + 100ms;
 		return;
 	}
 
@@ -229,7 +229,7 @@ static void tesla_think(entity &ent)
 		if (ent.frame == 10)
 #if defined(SINGLE_PLAYER)
 		{
-			if (ent.owner.has_value() && ent.owner->is_client())
+			if (ent.owner.has_value() && ent.owner->is_client)
 				PlayerNoise(ent.owner, ent.origin, PNOISE_WEAPON);		// PGM
 #endif
 			ent.skinnum = 1;
@@ -242,7 +242,7 @@ static void tesla_think(entity &ent)
 			ent.skinnum = 3;
 	}
 	ent.think = SAVABLE(tesla_think);
-	ent.nextthink = level.framenum + 100ms;
+	ent.nextthink = level.time + 100ms;
 }
 
 static void tesla_lava(entity &ent, entity &, vector normal, const surface &)
@@ -277,7 +277,7 @@ void fire_tesla(entity &self, vector start, vector aimdir, int32_t dmg_multiplie
 	tesla.origin = start;
 	tesla.velocity = aimdir * speed;
 	tesla.velocity += random(190.f, 210.f) * up;
-	tesla.velocity += random(-10.f, 10.f) * right;
+	tesla.velocity += crandom(10.f) * right;
 	tesla.movetype = MOVETYPE_BOUNCE;
 	tesla.solid = SOLID_BBOX;
 	tesla.effects |= EF_GRENADE;
@@ -291,9 +291,9 @@ void fire_tesla(entity &self, vector start, vector aimdir, int32_t dmg_multiplie
 	tesla.owner = self;		// PGM - we don't want it owned by self YET.
 	tesla.teammaster = self;
 
-	tesla.wait = level.framenum + TESLA_TIME_TO_LIVE;
+	tesla.wait = level.time + TESLA_TIME_TO_LIVE;
 	tesla.think = SAVABLE(tesla_think);
-	tesla.nextthink = level.framenum + TESLA_ACTIVATE_TIME;
+	tesla.nextthink = level.time + TESLA_ACTIVATE_TIME;
 
 	// blow up on contact with lava & slime code
 	tesla.touch = SAVABLE(tesla_lava);

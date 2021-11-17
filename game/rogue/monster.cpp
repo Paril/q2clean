@@ -248,9 +248,9 @@ static void spawngrow_think(entity &self)
 {
 	self.angles = randomv({ 360, 360, 360 });
 
-	if ((level.framenum < self.wait) && (self.frame < 2))
+	if ((level.time < self.wait) && (self.frame < 2))
 		self.frame++;
-	if (level.framenum >= self.wait)
+	if (level.time >= self.wait)
 	{
 		if (self.effects & EF_SPHERETRANS)
 		{
@@ -266,7 +266,7 @@ static void spawngrow_think(entity &self)
 		}
 	}
 
-	self.nextthink = level.framenum + 100ms;
+	self.nextthink = level.time + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(spawngrow_think);
@@ -294,8 +294,8 @@ void SpawnGrow_Spawn(vector startpos, int32_t size)
 
 	ent.think = SAVABLE(spawngrow_think);
 
-	ent.wait = level.framenum + lifespan;
-	ent.nextthink = level.framenum + 100ms;
+	ent.wait = level.time + lifespan;
+	ent.nextthink = level.time + 100ms;
 	if (size != 2)
 		ent.effects |= EF_SPHERETRANS;
 	gi.linkentity (ent);
@@ -308,7 +308,7 @@ void SpawnGrow_Spawn(vector startpos, int32_t size)
 
 inline vector WidowVelocityForDamage(int32_t damage)
 {
-	return { damage * crandom(), damage * crandom(), damage * crandom() + 200.f };
+	return { crandom(damage), crandom(damage), crandom(damage) + 200.f };
 }
 
 static void widow_gib_touch(entity &self, entity &, vector, const surface &)
@@ -338,7 +338,7 @@ void ThrowWidowGibReal(entity &self, stringlit gibname, int32_t damage, gib_type
 	{
 		vector csize = self.size * 0.5f;
 		vector origin = self.bounds.mins + csize;
-		gib.origin = origin + randomv(-csize, csize);
+		gib.origin = origin + crandomv(csize);
 	}
 
 	gib.solid = SOLID_NOT;
@@ -353,17 +353,17 @@ void ThrowWidowGibReal(entity &self, stringlit gibname, int32_t damage, gib_type
 	{
 		// sized gibs last longer
 		if (sized)
-			gib.nextthink = level.framenum + random(20s, 35s);
+			gib.nextthink = level.time + random(20s, 35s);
 		else
-			gib.nextthink = level.framenum + random(5s, 15s);
+			gib.nextthink = level.time + random(5s, 15s);
 	}
 	else
 	{
 		// sized gibs last longer
 		if (sized)
-			gib.nextthink = level.framenum + random(60s, 75s);
+			gib.nextthink = level.time + random(60s, 75s);
 		else
-			gib.nextthink = level.framenum + random(25s, 35s);
+			gib.nextthink = level.time + random(25s, 35s);
 	}
 
 	float vscale;
@@ -483,13 +483,13 @@ static void widowlegs_think(entity &self)
 	if (self.frame < MAX_LEGSFRAME)
 	{
 		self.frame++;
-		self.nextthink = level.framenum + 100ms;
+		self.nextthink = level.time + 100ms;
 		return;
 	}
 	else if (self.wait == gtime::zero())
-		self.wait = level.framenum + LEG_WAIT_TIME;
+		self.wait = level.time + LEG_WAIT_TIME;
 
-	if (level.framenum > self.wait)
+	if (level.time > self.wait)
 	{
 		vector f, r, u;
 		AngleVectors (self.angles, &f, &r, &u);
@@ -498,22 +498,22 @@ static void widowlegs_think(entity &self)
 		gi.ConstructMessage(svc_temp_entity, TE_EXPLOSION1, start).multicast(start, MULTICAST_ALL);
 		ThrowSmallStuff (self, start);
 
-		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib1/tris.md2", (int32_t) random(80.f, 100.f), GIB_METALLIC, start, SOUND_NONE, true);
-		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib2/tris.md2", (int32_t) random(80.f, 100.f), GIB_METALLIC, start, SOUND_NONE, true);
+		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib1/tris.md2", Q_rand_uniform(80, 100), GIB_METALLIC, start, SOUND_NONE, true);
+		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib2/tris.md2", Q_rand_uniform(80, 100), GIB_METALLIC, start, SOUND_NONE, true);
 
 		start = G_ProjectSource(self.origin, { -1.04f, -51.18f, 7.04f }, f, r, u);
 		gi.ConstructMessage(svc_temp_entity, TE_EXPLOSION1, start).multicast(start, MULTICAST_ALL);
 		ThrowSmallStuff (self, start);
 
-		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib1/tris.md2", (int32_t) random(80.f, 100.f), GIB_METALLIC, start, SOUND_NONE, true);
-		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib2/tris.md2", (int32_t) random(80.f, 100.f), GIB_METALLIC, start, SOUND_NONE, true);
-		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib3/tris.md2", (int32_t) random(80.f, 100.f), GIB_METALLIC, start, SOUND_NONE, true);
+		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib1/tris.md2", Q_rand_uniform(80, 100), GIB_METALLIC, start, SOUND_NONE, true);
+		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib2/tris.md2", Q_rand_uniform(80, 100), GIB_METALLIC, start, SOUND_NONE, true);
+		ThrowWidowGibSized (self, "models/monsters/blackwidow/gib3/tris.md2", Q_rand_uniform(80, 100), GIB_METALLIC, start, SOUND_NONE, true);
 
 		G_FreeEdict (self);
 		return;
 	}
 
-	if ((level.framenum > (self.wait - 500ms)) && (self.count == 0))
+	if ((level.time > (self.wait - 500ms)) && (self.count == 0))
 	{
 		self.count = 1;
 
@@ -527,7 +527,7 @@ static void widowlegs_think(entity &self)
 		gi.ConstructMessage(svc_temp_entity, TE_EXPLOSION1, start).multicast(start, MULTICAST_ALL);
 	}
 
-	self.nextthink = level.framenum + 100ms;
+	self.nextthink = level.time + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(widowlegs_think);
@@ -544,7 +544,7 @@ void Widowlegs_Spawn(vector startpos, vector cangles)
 	ent.modelindex = gi.modelindex("models/monsters/legs/tris.md2");
 	ent.think = SAVABLE(widowlegs_think);
 
-	ent.nextthink = level.framenum + 100ms;
+	ent.nextthink = level.time + 100ms;
 	gi.linkentity (ent);
 }
 

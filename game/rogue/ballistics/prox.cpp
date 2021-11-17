@@ -68,7 +68,7 @@ static void prox_die(entity &self, entity &inflictor, entity &, int32_t, vector)
 	else
 	{
 		self.think = SAVABLE(Prox_Explode);
-		self.nextthink = level.framenum + 100ms;
+		self.nextthink = level.time + 100ms;
 	}
 }
 
@@ -76,7 +76,7 @@ REGISTER_STATIC_SAVABLE(prox_die);
 
 static void Prox_Field_Touch(entity &ent, entity &other, vector, const surface &)
 {
-	if (!(other.svflags & SVF_MONSTER) && !other.is_client())
+	if (!(other.svflags & SVF_MONSTER) && !other.is_client)
 		return;
 
 	// trigger the prox mine if it's still there, and still mine.
@@ -92,7 +92,7 @@ static void Prox_Field_Touch(entity &ent, entity &other, vector, const surface &
 	{
 		gi.sound (ent, CHAN_VOICE, gi.soundindex ("weapons/proxwarn.wav"));
 		prox->think = SAVABLE(Prox_Explode);
-		prox->nextthink = level.framenum + PROX_TIME_DELAY;
+		prox->nextthink = level.time + PROX_TIME_DELAY;
 		return;
 	}
 
@@ -108,7 +108,7 @@ REGISTER_STATIC_SAVABLE(prox_seek);
 
 static void prox_seek(entity &ent)
 {
-	if (level.framenum > ent.wait)
+	if (level.time > ent.wait)
 		Prox_Explode(ent);
 	else
 	{
@@ -116,7 +116,7 @@ static void prox_seek(entity &ent)
 		if (ent.frame > 13)
 			ent.frame = 9;
 		ent.think = SAVABLE(prox_seek);
-		ent.nextthink = level.framenum + 100ms;
+		ent.nextthink = level.time + 100ms;
 	}
 }
 
@@ -145,7 +145,7 @@ static void prox_open(entity &ent)
 			// or it's a player start point
 			// and we can see it
 			// blow up
-			if (((((search.svflags & SVF_MONSTER) || search.is_client()) && (search.health > 0)) ||
+			if (((((search.svflags & SVF_MONSTER) || search.is_client) && (search.health > 0)) ||
 #ifdef SINGLE_PLAYER
 					(deathmatch &&
 #endif
@@ -167,10 +167,10 @@ static void prox_open(entity &ent)
 		}
 
 		int32_t multiplier = ent.dmg / PROX_DAMAGE;
-		ent.wait = level.framenum + ((PROX_TIME_TO_LIVE / multiplier) * BASE_FRAMERATE);
+		ent.wait = level.time + PROX_TIME_TO_LIVE / multiplier;
 
 		ent.think = SAVABLE(prox_seek);
-		ent.nextthink = level.framenum + 2200ms;
+		ent.nextthink = level.time + 2200ms;
 	}
 	else
 	{
@@ -179,7 +179,7 @@ static void prox_open(entity &ent)
 
 		ent.frame++;
 		ent.think = SAVABLE(prox_open);
-		ent.nextthink = level.framenum + 100ms;
+		ent.nextthink = level.time + 100ms;
 	}
 }
 
@@ -204,7 +204,7 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 
 	move_type cmovetype = MOVETYPE_NONE;
 
-	if ((other.svflags & SVF_MONSTER) || other.is_client() || (other.flags & FL_DAMAGEABLE))
+	if ((other.svflags & SVF_MONSTER) || other.is_client || (other.flags & FL_DAMAGEABLE))
 	{
 		if(other != ent.teammaster)
 			Prox_Explode(ent);
@@ -267,7 +267,7 @@ static void prox_land(entity &ent, entity &other, vector normal, const surface &
 	ent.die = SAVABLE(prox_die);
 	ent.teamchain = field;
 	ent.health = PROX_HEALTH;
-	ent.nextthink = level.framenum + 1_hz;
+	ent.nextthink = level.time + 1_hz;
 	ent.think = SAVABLE(prox_open);
 	ent.touch = nullptr;
 	ent.solid = SOLID_BBOX;
@@ -287,7 +287,7 @@ void fire_prox(entity &self, vector start, vector aimdir, int32_t dmg_multiplier
 	prox.origin = start;
 	prox.velocity = aimdir * speed;
 	prox.velocity += random(190.f, 210.f) * up;
-	prox.velocity += random(-10.f, 10.f) * right;
+	prox.velocity += crandom(10.f) * right;
 	prox.angles = dir;
 	prox.angles[PITCH] -= 90;
 	prox.movetype = MOVETYPE_BOUNCE;
@@ -305,7 +305,7 @@ void fire_prox(entity &self, vector start, vector aimdir, int32_t dmg_multiplier
 	prox.type = ET_PROX;
 	prox.bleed_style = BLEED_MECHANICAL;
 	prox.flags |= FL_DAMAGEABLE;
-	prox.nextthink = level.framenum + (gtime)((PROX_TIME_TO_LIVE / dmg_multiplier) * BASE_FRAMERATE);
+	prox.nextthink = level.time + (PROX_TIME_TO_LIVE / dmg_multiplier);
 
 	gi.linkentity (prox);
 }

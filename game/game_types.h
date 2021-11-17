@@ -30,13 +30,7 @@ constexpr milliseconds	framerate_ms = duration_cast<milliseconds>(frametime_s);
 // default server FPS
 constexpr uint64_t		BASE_FRAMERATE = framerate;
 // the amount of time, in s, that a single frame lasts for
-constexpr gtimef		BASE_1_FRAMETIME = frametime_s;
-// the amount of time, in ms, that a single frame lasts for
-constexpr milliseconds	BASE_FRAMETIME = framerate_ms;
-// the amount of time, in s, that a single frame lasts for
-constexpr gtimef		BASE_FRAMETIME_1000 = BASE_1_FRAMETIME;
-// the amount of time, in s, that a single frame lasts for
-constexpr gtimef		FRAMETIME = BASE_1_FRAMETIME;
+constexpr gtimef		FRAMETIME = frametime_s;
 
 // Means of death structure for structured death
 // messages. Formatter arguments:

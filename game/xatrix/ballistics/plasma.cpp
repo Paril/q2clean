@@ -24,7 +24,7 @@ static void plasma_touch(entity &ent, entity &other, vector normal, const surfac
 	}
 #if defined(SINGLE_PLAYER)
 
-	if (ent.owner->is_client())
+	if (ent.owner->is_client)
 		PlayerNoise(ent.owner, ent.origin, PNOISE_IMPACT);
 #endif
 
@@ -56,7 +56,7 @@ void fire_plasma(entity &self, vector start, vector dir, int32_t damage, int32_t
 
 	plasma.owner = self;
 	plasma.touch = SAVABLE(plasma_touch);
-	plasma.nextthink = level.framenum + seconds(8000 / speed);
+	plasma.nextthink = level.time + seconds(8000 / speed);
 	plasma.think = SAVABLE(G_FreeEdict);
 	plasma.dmg = damage;
 	plasma.radius_dmg = radius_damage;
@@ -67,7 +67,7 @@ void fire_plasma(entity &self, vector start, vector dir, int32_t damage, int32_t
 	plasma.effects |= EF_PLASMA | EF_ANIM_ALLFAST;
 
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge(self, plasma.origin, dir, speed);
 #endif
 

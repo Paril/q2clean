@@ -272,7 +272,7 @@ static void use_target_explosion(entity &self, entity &, entity &cactivator)
 	}
 
 	self.think = SAVABLE(target_explosion_explode);
-	self.nextthink = duration_cast<gtime>(level.framenum + self.delay);
+	self.nextthink = duration_cast<gtime>(level.time + self.delay);
 }
 
 REGISTER_STATIC_SAVABLE(use_target_explosion);
@@ -294,7 +294,7 @@ Changes level to "map" when fired
 */
 static void use_target_changelevel(entity &self, entity &other, entity &cactivator)
 {
-	if (level.intermission_framenum != gtime::zero())
+	if (level.intermission_time != gtime::zero())
 		return;     // already activated
 
 #ifdef SINGLE_PLAYER
@@ -315,8 +315,8 @@ static void use_target_changelevel(entity &self, entity &other, entity &cactivat
 		}
 
 		// if multiplayer, let everyone know who hit the exit
-		if (cactivator.is_client())
-			gi.bprintfmt(PRINT_HIGH, "{} exited the level.\n", cactivator.client->pers.netname);
+		if (cactivator.is_client)
+			gi.bprintfmt(PRINT_HIGH, "{} exited the level.\n", cactivator.client.pers.netname);
 #ifdef SINGLE_PLAYER
 	}
 
@@ -525,7 +525,7 @@ static void SP_target_crosslevel_target(entity &self)
 	self.svflags = SVF_NOCLIENT;
 
 	self.think = SAVABLE(target_crosslevel_target_think);
-	self.nextthink = duration_cast<gtime>(level.framenum + self.delay);
+	self.nextthink = duration_cast<gtime>(level.time + self.delay);
 }
 
 REGISTER_ENTITY(TARGET_CROSSLEVEL_TARGET, target_crosslevel_target);
@@ -583,7 +583,7 @@ void target_laser_think(entity &self)
 			T_Damage(tr.ent, self, self.activator, self.movedir, tr.endpos, vec3_origin, self.dmg, 1, { DAMAGE_ENERGY }, MOD_TARGET_LASER);
 
 		// if we hit something that's not a monster or player or is immune to lasers, we're done
-		if (!(tr.ent.svflags & SVF_MONSTER) && !tr.ent.is_client()
+		if (!(tr.ent.svflags & SVF_MONSTER) && !tr.ent.is_client
 #ifdef GROUND_ZERO
 			 && !(tr.ent.flags & FL_DAMAGEABLE)
 #endif
@@ -603,7 +603,7 @@ void target_laser_think(entity &self)
 
 	self.old_origin = tr.endpos;
 
-	self.nextthink = level.framenum + 1_hz;
+	self.nextthink = level.time + 1_hz;
 }
 
 REGISTER_SAVABLE(target_laser_think);
@@ -694,7 +694,7 @@ static void SP_target_laser(entity &self)
 {
 	// let everything else get spawned before we start firing
 	self.think = SAVABLE(target_laser_start);
-	self.nextthink = level.framenum + 1s;
+	self.nextthink = level.time + 1s;
 }
 
 static REGISTER_ENTITY(TARGET_LASER, target_laser);
@@ -709,12 +709,12 @@ message     two letters; starting lightlevel and ending lightlevel
 
 static void target_lightramp_think(entity &self)
 {
-	float diff = duration_cast<gtimef>(level.framenum - self.timestamp).count();
+	float diff = duration_cast<gtimef>(level.time - self.timestamp).count();
 
 	gi.configstringfmt((config_string)(CS_LIGHTS + self.enemy->style), "{}", (char) ('a' + self.movedir.x + diff * self.movedir.z));
 
 	if (diff < self.speed)
-		self.nextthink = level.framenum + 100ms;
+		self.nextthink = level.time + 100ms;
 	else if (self.spawnflags & 1)
 	{
 		int temp = (int) self.movedir.x;
@@ -731,11 +731,9 @@ static void target_lightramp_use(entity &self, entity &, entity &)
 	if (!self.enemy.has_value())
 	{
 		// check all the targets
-		entityref e;
-
-		while ((e = G_FindFunc<&entity::targetname>(e, self.target, striequals)).has_value())
+		for (entity &e : G_IterateFunc<&entity::targetname>(self.target, striequals))
 		{
-			if (e->type != ET_LIGHT)
+			if (e.type != ET_LIGHT)
 				gi.dprintfmt("{}: target \"{}\" ({}) is not a light\n", self, self.target, e);
 			else
 				self.enemy = e;
@@ -749,7 +747,7 @@ static void target_lightramp_use(entity &self, entity &, entity &)
 		}
 	}
 
-	self.timestamp = level.framenum;
+	self.timestamp = level.time;
 	target_lightramp_think(self);
 }
 
@@ -803,10 +801,10 @@ static void target_earthquake_think(entity &self)
 #ifdef GROUND_ZERO
 		self.noise_index &&
 #endif
-		self.last_move_framenum < level.framenum)
+		self.last_move_time < level.time)
 	{
 		gi.positioned_sound(self.origin, self, self.noise_index, ATTN_NONE);
-		self.last_move_framenum = level.framenum + 500ms;
+		self.last_move_time = level.time + 500ms;
 	}
 
 	for (uint32_t i = 1; i < num_entities; i++)
@@ -814,29 +812,29 @@ static void target_earthquake_think(entity &self)
 		entity &e = itoe(i);
 		if (!e.inuse)
 			continue;
-		if (!e.is_client())
+		if (!e.is_client)
 			continue;
 		if (!e.groundentity.has_value())
 			continue;
 
 		e.groundentity = null_entity;
-		e.velocity.x += random(-150.f, 150.f);
-		e.velocity.y += random(-150.f, 150.f);
+		e.velocity.x += crandom(150.f);
+		e.velocity.y += crandom(150.f);
 		e.velocity.z = self.speed * (100.0f / e.mass);
 	}
 
-	if (level.framenum < self.timestamp)
-		self.nextthink = level.framenum + 1_hz;
+	if (level.time < self.timestamp)
+		self.nextthink = level.time + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(target_earthquake_think);
 
 static void target_earthquake_use(entity &self, entity &, entity &cactivator)
 {
-	self.timestamp = level.framenum + seconds(self.count);
-	self.nextthink = level.framenum + 1_hz;
+	self.timestamp = level.time + seconds(self.count);
+	self.nextthink = level.time + 1_hz;
 	self.activator = cactivator;
-	self.last_move_framenum = gtime::zero();
+	self.last_move_time = gtime::zero();
 }
 
 REGISTER_STATIC_SAVABLE(target_earthquake_use);

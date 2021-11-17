@@ -22,9 +22,9 @@ static void tracker_pain_daemon_think(entity &self)
 	if(!self.inuse)
 		return;
 
-	if ((level.framenum - self.timestamp) > TRACKER_DAMAGE_TIME)
+	if ((level.time - self.timestamp) > TRACKER_DAMAGE_TIME)
 	{
-		if(!self.enemy->is_client())
+		if(!self.enemy->is_client)
 			self.enemy->effects &= ~EF_TRACKERTRAIL;
 		G_FreeEdict (self);
 		return;
@@ -38,16 +38,16 @@ static void tracker_pain_daemon_think(entity &self)
 		if (!self.inuse)
 			return;
 
-		if (self.enemy->is_client())
-			self.enemy->client->tracker_pain_framenum = level.framenum + 100ms;
+		if (self.enemy->is_client)
+			self.enemy->client.tracker_pain_time = level.time + 100ms;
 		else
 			self.enemy->effects |= EF_TRACKERTRAIL;
 		
-		self.nextthink = level.framenum + 100ms;
+		self.nextthink = level.time + 100ms;
 		return;
 	}
 
-	if (!self.enemy->is_client())
+	if (!self.enemy->is_client)
 		self.enemy->effects &= ~EF_TRACKERTRAIL;
 
 	G_FreeEdict (self);
@@ -59,8 +59,8 @@ static inline void tracker_pain_daemon_spawn(entity &cowner, entity &cenemy, int
 {
 	entity &daemon = G_Spawn();
 	daemon.think = SAVABLE(tracker_pain_daemon_think);
-	daemon.nextthink = level.framenum + 100ms;
-	daemon.timestamp = level.framenum;
+	daemon.nextthink = level.time + 100ms;
+	daemon.timestamp = level.time;
 	daemon.owner = cowner;
 	daemon.enemy = cenemy;
 	daemon.dmg = damage;
@@ -85,13 +85,13 @@ static void tracker_touch(entity &self, entity &other, vector normal, const surf
 	}
 #if defined(SINGLE_PLAYER)
 
-	if (self.is_client())
+	if (self.is_client)
 		PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
 	if (other.takedamage)
 	{
-		if ((other.svflags & SVF_MONSTER) || other.is_client())
+		if ((other.svflags & SVF_MONSTER) || other.is_client)
 		{
 			if (other.health > 0)		// knockback only for living creatures
 			{
@@ -137,7 +137,7 @@ static void tracker_fly(entity &self)
 	// PMM - try to hunt for center of enemy, if possible and not client
 	vector dest;
 
-	if (self.enemy->is_client())
+	if (self.enemy->is_client)
 	{
 		dest = self.enemy->origin;
 		dest[2] += self.enemy->viewheight;
@@ -150,7 +150,7 @@ static void tracker_fly(entity &self)
 	self.angles = vectoangles(dir);
 	self.velocity = dir * self.speed;
 
-	self.nextthink = level.framenum + 1_hz;
+	self.nextthink = level.time + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(tracker_fly);
@@ -179,17 +179,17 @@ void fire_tracker(entity &self, vector start, vector dir, int32_t damage, int32_
 
 	if (cenemy.has_value())
 	{
-		bolt.nextthink = level.framenum + 1_hz;
+		bolt.nextthink = level.time + 1_hz;
 		bolt.think = SAVABLE(tracker_fly);
 	}
 	else
 	{
-		bolt.nextthink = level.framenum + 10s;
+		bolt.nextthink = level.time + 10s;
 		bolt.think = SAVABLE(G_FreeEdict);
 	}
 
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge (self, bolt.origin, dir, cspeed);
 #endif
 

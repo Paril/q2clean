@@ -46,8 +46,11 @@ struct spawn_field
 	bool				is_temp;
 };
 
-static stringref strip_newlines(string input)
+static stringref strip_newlines(const string &input)
 {
+	if (!input)
+		return input;
+
 	size_t len = 0;
 
 	for (auto it = input.ptr(); *it; it++)
@@ -61,27 +64,25 @@ static stringref strip_newlines(string input)
 	if (len == input.length())
 		return input;
 
-	string str(len);
-	char *mut = (char *) str.ptr();
+	mutable_string str;
+	str.reserve(len + 1);
 
-	for (auto it = input.ptr(); *it; it++, mut++)
+	for (auto it = input.ptr(); *it; it++)
 	{
 		if (*it == '\\')
 		{
 			it++;
 
 			if (*it == 'n')
-				*mut = '\n';
+				str += '\n';
 			else
-				*mut = '\\';
+				str += '\\';
 		}
 		else
-			*mut = *it;
+			str += *it;
 	}
 
-	*mut = 0;
-
-	return str;
+	return std::move(str);
 }
 
 template<typename T>
@@ -97,6 +98,11 @@ static bool deserialize(const string &input, T &output)
 template<typename T> requires std::is_integral_v<T>
 static bool deserialize(const string &input, T &output)
 {
+	if (!input) {
+		output = (T) 0;
+		return true;
+	}
+
 	char *endptr;
 
 	if constexpr(std::is_unsigned_v<T>)
@@ -129,6 +135,11 @@ concept is_floating_like = std::is_floating_point_v<T>;
 template<is_floating_like T>
 static bool deserialize(const string &input, T &output)
 {
+	if (!input) {
+		output = (T) 0;
+		return true;
+	}
+
 	char *endptr;
 
 	if constexpr(sizeof(T) > 4)
@@ -315,7 +326,13 @@ bool ED_CallSpawn(entity &ent)
 	// if we have a type, call it immediately
 	if (ent.type)
 	{
-		ent.type->spawn->func(ent);
+		if (ent.type->spawn->func)
+		{
+			ent.type->spawn->func(ent);
+			return true;
+		}
+
+		G_FreeEdict(ent);
 		return true;
 	}
 
@@ -394,9 +411,9 @@ static inline void G_FixTeams()
 
 		entityref first_train;
 
-		for (entityref e2 = master; e2.has_value(); e2 = e2->teamchain)
+		for (entity &e2 : G_IterateChain<&entity::teamchain>(master))
 		{
-			if (e2->type == ET_FUNC_TRAIN)
+			if (e2.type == ET_FUNC_TRAIN)
 			{
 				first_train = e2;
 				break;
@@ -413,16 +430,16 @@ static inline void G_FixTeams()
 
 		// got one! we have to reposition this train to be the master now.
 		// swap all of the masters out, and store the guy before the train
-		for (entityref e2 = master; e2.has_value(); e2 = e2->teamchain)
+		for (entity &e2 : G_IterateChain<&entity::teamchain>(master))
 		{
-			e2->teammaster = first_train;
+			e2.teammaster = first_train;
 
 			// copy over movetype and speed
-			e2->movetype = MOVETYPE_PUSH;
-			e2->speed = first_train->speed;
+			e2.movetype = MOVETYPE_PUSH;
+			e2.speed = first_train->speed;
 			
 			// reached the guy before first_train
-			if (e2->teamchain == first_train)
+			if (e2.teamchain == first_train)
 				prev = e2;
 		}
 		

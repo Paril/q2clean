@@ -12,7 +12,7 @@ fire_lead
 This is an internal support routine used for bullet/pellet based weapons.
 =================
 */
-static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread, means_of_death_ref mod)
+inline void fire_lead(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread, means_of_death_ref mod)
 {
 	trace	tr;
 	vector	dir;
@@ -31,8 +31,8 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 
 		AngleVectors(dir, &forward, &right, &up);
 
-		r = crandom() * hspread;
-		u = crandom() * vspread;
+		r = crandom(hspread);
+		u = crandom(vspread);
 		end = start + (8192 * forward);
 		end += (r * right);
 		end += (u * up);
@@ -76,8 +76,8 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 				// change bullet's course when it enters water
 				dir = vectoangles(end - start);
 				AngleVectors(dir, &forward, &right, &up);
-				r = crandom() * hspread * 2;
-				u = crandom() * vspread * 2;
+				r = crandom(hspread * 2);
+				u = crandom(vspread * 2);
 				end = water_start + (8192 * forward);
 				end += (r * right);
 				end += (u * up);
@@ -100,7 +100,7 @@ static inline void fire_lead(entity &self, vector start, vector aimdir, int32_t 
 				gi.ConstructMessage(svc_temp_entity, te_impact, tr.endpos, vecdir { tr.normal }).multicast(tr.endpos, MULTICAST_PVS);
 
 #ifdef SINGLE_PLAYER
-				if (self.is_client())
+				if (self.is_client)
 					PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
 #endif
 			}

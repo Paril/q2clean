@@ -13,7 +13,7 @@ gtime quad_fire_drop_timeout_hack;
 
 void Use_QuadFire(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
 	gtime timeout;
@@ -26,10 +26,10 @@ void Use_QuadFire(entity &ent, const gitem_t &it)
 	else
 		timeout = 30s;
 
-	if (ent.client->quadfire_framenum > level.framenum)
-		ent.client->quadfire_framenum += timeout;
+	if (ent.client.quadfire_time > level.time)
+		ent.client.quadfire_time += timeout;
 	else
-		ent.client->quadfire_framenum = level.framenum + timeout;
+		ent.client.quadfire_time = level.time + timeout;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/quadfire1.wav"));
 }

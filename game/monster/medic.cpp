@@ -171,7 +171,7 @@ static entityref medic_FindDeadMonster(entity &self)
 		radius = MEDIC_MAX_HEAL_DISTANCE;
 #endif
 
-	for (auto &ent : G_IterateRadius(self.origin, radius))
+	for (entity &ent : G_IterateRadius(self.origin, radius))
 	{
 		if (ent == self)
 			continue;
@@ -210,7 +210,7 @@ static entityref medic_FindDeadMonster(entity &self)
 #ifdef ROGUE_AI
 
 	if (best.has_value())
-		self.timestamp = level.framenum + MEDIC_TRY_TIME;
+		self.timestamp = level.time + MEDIC_TRY_TIME;
 #endif
 
 	return best;
@@ -510,10 +510,10 @@ static void medic_reacttodamage(entity &self, entity &, entity &, int32_t, int32
 	monster_done_dodge (self);
 #endif
 
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	if (skill == 3)
 		return;     // no pain anims in nightmare
@@ -664,11 +664,11 @@ static void medic_die(entity &self, entity &, entity &, int32_t damage, vector)
 		for (n = 0; n < 4; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 // regular death
@@ -677,7 +677,7 @@ static void medic_die(entity &self, entity &, entity &, int32_t damage, vector)
 		(self.mass > 400) ? commander_sound_die :
 #endif
 		sound_die);
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 
 	self.monsterinfo.currentmove = &SAVABLE(medic_move_death);
@@ -695,15 +695,15 @@ static void medic_duck_down(entity &self)
 	if (self.monsterinfo.aiflags & AI_DUCKED)
 		return;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.maxs[2] -= 32;
+	self.bounds.maxs[2] -= 32;
 	self.takedamage = true;
-	self.monsterinfo.pause_framenum = level.framenum + 1 * BASE_FRAMERATE;
+	self.monsterinfo.pause_time = level.time + 1s;
 	gi.linkentity(self);
 }
 
 static void medic_duck_hold(entity &self)
 {
-	if (level.framenum >= self.monsterinfo.pause_framenum)
+	if (level.time >= self.monsterinfo.pause_time)
 		self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
 	else
 		self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -712,7 +712,7 @@ static void medic_duck_hold(entity &self)
 static void medic_duck_up(entity &self)
 {
 	self.monsterinfo.aiflags &= ~AI_DUCKED;
-	self.maxs[2] += 32;
+	self.bounds.maxs[2] += 32;
 	self.takedamage = true;
 	gi.linkentity(self);
 }
@@ -746,7 +746,7 @@ constexpr mmove_t medic_move_duck = { FRAME_duck1, FRAME_duck16, medic_frames_du
 REGISTER_STATIC_SAVABLE(medic_move_duck);
 
 #ifndef ROGUE_AI
-static void medic_dodge(entity &self, entity &attacker, float)
+static void medic_dodge(entity &self, entity &attacker, gtimef)
 {
 	if (random() > 0.25f)
 		return;
@@ -838,7 +838,7 @@ static void medic_cable_attack(entity &self)
 	float   distance;
 
 #ifdef ROGUE_AI
-	if (!self.enemy.has_value() || !self.enemy->inuse || (self.enemy->effects & EF_GIB) || self.enemy->is_client() || self.enemy->health > 0)
+	if (!self.enemy.has_value() || !self.enemy->inuse || (self.enemy->effects & EF_GIB) || self.enemy->is_client || self.enemy->health > 0)
 	{
 		abortHeal (self, true, false, false);
 		return;
@@ -957,7 +957,7 @@ static void medic_cable_attack(entity &self)
 #endif
 			if (self.enemy->think)
 			{
-				self.enemy->nextthink = level.framenum;
+				self.enemy->nextthink = level.time;
 				self.enemy->think(self.enemy);
 			}
 #if defined(ROGUE_AI) || defined(GROUND_ZERO)
@@ -975,7 +975,7 @@ static void medic_cable_attack(entity &self)
 #else
 			self.enemy->monsterinfo.aiflags |= AI_RESURRECTING;
 
-			if (self.oldenemy.has_value() && self.oldenemy->is_client())
+			if (self.oldenemy.has_value() && self.oldenemy->is_client)
 			{
 #endif
 				self.enemy->enemy = self.oldenemy;
@@ -989,7 +989,7 @@ static void medic_cable_attack(entity &self)
 				if (!FindTarget (self.enemy))
 				{
 					// no valid enemy, so stop acting
-					self.enemy->monsterinfo.pause_framenum = gtime::max();
+					self.enemy->monsterinfo.pause_time = gtime::max();
 					self.enemy->monsterinfo.stand (self.enemy);
 				}
 
@@ -998,7 +998,7 @@ static void medic_cable_attack(entity &self)
 				if (!FindTarget (self))
 				{
 					// no valid enemy, so stop acting
-					self.monsterinfo.pause_framenum = gtime::max();
+					self.monsterinfo.pause_time = gtime::max();
 					self.monsterinfo.stand (self);
 					return;
 				}
@@ -1042,7 +1042,7 @@ static void medic_hook_retract(entity &self)
 		if (!FindTarget (self))
 		{
 			// no valid enemy, so stop acting
-			self.monsterinfo.pause_framenum = gtime::max();
+			self.monsterinfo.pause_time = gtime::max();
 			self.monsterinfo.stand (self);
 			return;
 		}
@@ -1319,7 +1319,7 @@ static void medic_finish_spawn(entity &self)
 
 		if (ent->think)
 		{
-			ent->nextthink = level.framenum;
+			ent->nextthink = level.time;
 			ent->think(ent);
 		}
 
@@ -1439,7 +1439,7 @@ static void medic_attack(entity &self)
 			return;
 		}
 
-		if ((self.mass > 400) && (r > 0.2) && (range(self, self.enemy) != RANGE_MELEE) && (self.monsterinfo.monster_slots > 2))
+		if ((self.mass > 400) && (r > 0.2) && (VectorDistance(self.origin, self.enemy->origin) >= RANGE_MELEE) && (self.monsterinfo.monster_slots > 2))
 			self.monsterinfo.currentmove = &SAVABLE(medic_move_callReinforcements);
 		else
 #endif
@@ -1462,7 +1462,7 @@ static bool medic_checkattack(entity &self)
 		}
 
 		// if we ran out of time, give up
-		if (self.timestamp < level.framenum)
+		if (self.timestamp < level.time)
 		{
 			abortHeal(self, true, false, true);
 			self.timestamp = gtime::zero();
@@ -1485,7 +1485,7 @@ static bool medic_checkattack(entity &self)
 	}
 
 #ifdef GROUND_ZERO
-	if (self.enemy->is_client() && !visible(self, self.enemy) && (self.monsterinfo.monster_slots > 2))
+	if (self.enemy->is_client && !visible(self, self.enemy) && (self.monsterinfo.monster_slots > 2))
 	{
 		self.monsterinfo.attack_state = AS_BLIND;
 		return true;
@@ -1560,9 +1560,9 @@ static void medic_duck(entity &self, gtimef eta)
 
 	if (!skill)
 		// PMM - stupid dodge
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + 1s);
 	else
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + (100ms * (3 - skill)));
 
 	// has to be done immediately otherwise he can get stuck
 	monster_duck_down(self);

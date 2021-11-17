@@ -392,14 +392,14 @@ REGISTER_STATIC_SAVABLE(flyer_move_attack3);
 
 static void flyer_slash_left(entity &self)
 {
-	const vector aim { MELEE_DISTANCE, self.bounds.mins.x, 0 };
+	const vector aim { RANGE_MELEE, self.bounds.mins.x, 0 };
 	fire_hit(self, aim, 5, 0);
 	gi.sound(self, CHAN_WEAPON, sound_slash);
 }
 
 static void flyer_slash_right(entity &self)
 {
-	const vector  aim { MELEE_DISTANCE, self.bounds.maxs.x, 0 };
+	const vector  aim { RANGE_MELEE, self.bounds.maxs.x, 0 };
 	fire_hit(self, aim, 5, 0);
 	gi.sound(self, CHAN_WEAPON, sound_slash);
 }
@@ -481,7 +481,7 @@ static void flyer_attack(entity &self)
 	}
 	else // circle strafe
 	{
-		if (random () <= 0.5) // switch directions
+		if (random() <= 0.5) // switch directions
 			self.monsterinfo.lefty = !self.monsterinfo.lefty;
 		self.monsterinfo.attack_state = AS_SLIDING;
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_attack3);
@@ -505,11 +505,13 @@ REGISTER_STATIC_SAVABLE(flyer_melee);
 
 static void flyer_check_melee(entity &self)
 {
-	if (range(self, self.enemy) == RANGE_MELEE)
+	if (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE)
+	{
 		if (random() <= 0.8f)
 			self.monsterinfo.currentmove = &SAVABLE(flyer_move_loop_melee);
 		else
 			self.monsterinfo.currentmove = &SAVABLE(flyer_move_end_melee);
+	}
 	else
 		self.monsterinfo.currentmove = &SAVABLE(flyer_move_end_melee);
 }
@@ -522,7 +524,7 @@ static void flyer_reacttodamage(entity &self, entity &, entity &, int32_t, int32
 		return;
 #endif
 
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
 	int32_t n = Q_rand() % 3;
@@ -533,7 +535,7 @@ static void flyer_reacttodamage(entity &self, entity &, entity &, int32_t, int32
 	else
 		gi.sound(self, CHAN_VOICE, sound_pain1);
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 	if (skill == 3)
 		return;     // no pain anims in nightmare
 

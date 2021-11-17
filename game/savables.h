@@ -149,12 +149,19 @@ using savable = std::conditional_t<std::is_function_v<T>, T *, std::conditional_
 
 #include "lib/string.h"
 #include "lib/protocol.h"
+#include "lib/gi.h"
 
-constexpr void WriteGame(stringlit, qboolean) { }
+inline void WriteGame(stringlit, qboolean)
+{
+	gi.dprint("Saving is not enabled in this mod.\n");
+}
 
 constexpr void ReadGame(stringlit) { }
 
-constexpr void WriteLevel(stringlit) { }
+inline void WriteLevel(stringlit)
+{
+	gi.dprint("Saving is not enabled in this mod.\n");
+}
 
 constexpr void ReadLevel(stringlit) { }
 

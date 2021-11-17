@@ -1370,7 +1370,7 @@ always owned, never in the world
 	/*QUAKED item_foodcube (.3 .3 1) (-16 -16 -16) (16 16 16)
 	*/
 	{
-		.classname = "item_health_mega",
+		.classname = "item_foodcube",
 		.pickup = Pickup_Health,
 		.pickup_sound = "items/s_health.wav",
 		.world_model = "models/objects/trapfx/tris.md2",
@@ -1391,7 +1391,9 @@ void InitItems()
 	for (auto &it : itemlist)
 	{
 		it.id = (gitem_id)(&it - itemlist.data());
-		it.type = *gi.TagNew<entity_type>(TAG_GAME, it.classname, ET_ITEM);
+
+		if (it.classname)
+			it.type = *gi.TagNew<entity_type>(TAG_GAME, it.classname, ET_ITEM);
 	}
 }
 

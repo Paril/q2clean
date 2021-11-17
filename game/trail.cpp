@@ -37,7 +37,7 @@ void PlayerTrail_Add(vector spot)
 		return;
 
 	trail[trail_head]->origin = spot;
-	trail[trail_head]->timestamp = level.framenum;
+	trail[trail_head]->timestamp = level.time;
 
 	temp = spot - trail[PREV(trail_head)]->origin;
 	trail[trail_head]->angles[YAW] = vectoyaw(temp);
@@ -66,7 +66,7 @@ entityref PlayerTrail_PickFirst(entity &self)
 
 	for (marker = trail_head, n = TRAIL_LENGTH; n; n--)
 	{
-		if (trail[marker]->timestamp <= self.monsterinfo.trail_framenum)
+		if (trail[marker]->timestamp <= self.monsterinfo.trail_time)
 			marker = NEXT(marker);
 		else
 			break;
@@ -90,7 +90,7 @@ entityref PlayerTrail_PickNext(entity &self)
 		return null_entity;
 
 	for (marker = trail_head, n = TRAIL_LENGTH; n; n--) {
-		if (trail[marker]->timestamp <= self.monsterinfo.trail_framenum)
+		if (trail[marker]->timestamp <= self.monsterinfo.trail_time)
 			marker = NEXT(marker);
 		else
 			break;

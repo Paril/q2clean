@@ -68,7 +68,7 @@ Runs thinking code for this frame if necessary
 */
 static inline bool SV_RunThink(entity &ent)
 {
-	if (ent.nextthink <= gtime::zero() || ent.nextthink > level.framenum)
+	if (ent.nextthink <= gtime::zero() || ent.nextthink > level.time)
 		return true;
 
 	ent.nextthink = gtime::zero();
@@ -454,40 +454,37 @@ static void SV_Physics_Pusher(entity &ent)
 	// if the move is blocked, all moved objects will be backed out
 	pushed_list.clear();
 
-	entityref part = ent;
+	entityref blocked = ent;
 
-	for (; part.has_value(); part = part->teamchain)
+	for (entity &part : G_IterateChain<&entity::teamchain>(ent))
 	{
-		if (part->velocity || part->avelocity)
-		{
-			// object is moving
-			vector move = part->velocity * FRAMETIME.count();
-			vector amove = part->avelocity * FRAMETIME.count();
+		if (!part.velocity && !part.avelocity)
+			continue;
 
-			if (!SV_Push(part, move, amove))
-				break;  // move was blocked
+		// object is moving
+		vector move = part.velocity * FRAMETIME.count();
+		vector amove = part.avelocity * FRAMETIME.count();
+
+		if (!SV_Push(part, move, amove))
+		{
+			// the move failed, bump all nextthink times and back out moves
+			for (entity &mv : G_IterateChain<&entity::teamchain>(ent))
+				if (mv.nextthink > gtime::zero())
+					mv.nextthink += 1_hz;
+
+			// if the pusher has a "blocked" function, call it
+			// otherwise, just stay in place until the obstacle is gone
+			if (part.blocked)
+				part.blocked(part, obstacle);
+
+			return;  // move was blocked
 		}
 	}
 
-	if (part.has_value())
-	{
-		// the move failed, bump all nextthink times and back out moves
-		for (entityref mv = ent; mv.has_value(); mv = mv->teamchain)
-			if (mv->nextthink > gtime::zero())
-				mv->nextthink++;
-
-		// if the pusher has a "blocked" function, call it
-		// otherwise, just stay in place until the obstacle is gone
-		if (part->blocked)
-			part->blocked(part, obstacle);
-	}
-	else
-	{
-		// the move succeeded, so call all think functions
-		for (part = ent; part.has_value(); part = part->teamchain)
-			if (part->inuse)
-				SV_RunThink(part);
-	}
+	// the move succeeded, so call all think functions
+	for (entity &part : G_IterateChain<&entity::teamchain>(ent))
+		if (part.inuse)
+			SV_RunThink(part);
 }
 
 //==================================================================

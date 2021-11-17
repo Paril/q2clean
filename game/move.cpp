@@ -116,7 +116,7 @@ realcheck:
 // temp
 static entity_type ET_MONSTER_CARRIER, ET_MONSTER_WIDOW, ET_MONSTER_WIDOW2;
 
-static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
+static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg [[maybe_unused]])
 {
 	// try one move with vertical motion, then one without
 	for (int32_t i = 0 ; i < 2 ; i++)
@@ -130,7 +130,7 @@ static bool SV_moveswimfly(entity &ent, vector move, bool relink, vector oldorg)
 
 			float dz = ent.origin[2] - ent.goalentity->origin[2];
 
-			if (ent.goalentity->is_client())
+			if (ent.goalentity->is_client)
 			{
 #ifdef GROUND_ZERO
 				// we want the carrier to stay a certain distance off the ground, to help prevent him
@@ -391,7 +391,7 @@ bool SV_movestep(entity &ent, vector move, bool relink)
 				}
 				else if (ent.enemy->type == ET_TESLA)
 				{
-					if (ent.enemy.has_value() && ent.enemy->is_client())
+					if (ent.enemy.has_value() && ent.enemy->is_client)
 					{
 						if (!visible(ent, ent.enemy))
 						{

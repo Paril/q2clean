@@ -14,27 +14,22 @@ static void weapon_bfg_fire(entity &ent)
 	vector	forward, right;
 	float	damage_radius = 1000.f;
 #ifdef SINGLE_PLAYER
-	int32_t	damage;
-
-	if (!deathmatch)
-		damage = 500;
-	else
-		damage = 200;
+	const int32_t damage = (!deathmatch ? 500 : 200) * damage_multiplier;
 #else
-	int32_t	damage = 200;
+	constexpr int32_t damage = 200 * damage_multiplier;
 #endif
 
-	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+	AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 
 	offset = { 8, 8, ent.viewheight - 8.f };
 	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	if (ent.client->ps.gunframe == 9)
+	if (ent.client.ps.gunframe == 9)
 	{
 		// send muzzle flash
 		gi.ConstructMessage(svc_muzzleflash, ent, MZ_BFG | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
-		ent.client->ps.gunframe++;
+		ent.client.ps.gunframe++;
 #ifdef SINGLE_PLAYER
 
 		PlayerNoise(ent, start, PNOISE_WEAPON);
@@ -44,31 +39,29 @@ static void weapon_bfg_fire(entity &ent)
 
 	// cells can go down during windup (from power armor hits), so
 	// check again and abort firing if we don't have enough now
-	if (ent.client->pers.inventory[ent.client->ammo_index] < 50)
+	if (ent.client.pers.inventory[ent.client.ammo_index] < 50)
 	{
-		ent.client->ps.gunframe++;
+		ent.client.ps.gunframe++;
 		return;
 	}
 
-	ent.client->kick_origin = forward * -2;
+	ent.client.kick_origin = forward * -2;
 
 	// make a big pitch kick with an inverse fall
-	ent.client->v_dmg_pitch = -40.f;
-	ent.client->v_dmg_roll = random(-8.f, 8.f);
-	ent.client->v_dmg_time = level.time + DAMAGE_TIME;
+	ent.client.v_dmg_pitch = -40.f;
+	ent.client.v_dmg_roll = crandom(8.f);
+	ent.client.v_dmg_time = level.time + DAMAGE_TIME;
 
-	if (is_quad)
-		damage *= damage_multiplier;
 	fire_bfg(ent, start, forward, damage, 400, damage_radius);
 
-	ent.client->ps.gunframe++;
+	ent.client.ps.gunframe++;
 #ifdef SINGLE_PLAYER
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
 	if (!(dmflags & DF_INFINITE_AMMO))
-		ent.client->pers.inventory[ent.client->ammo_index] -= 50;
+		ent.client.pers.inventory[ent.client.ammo_index] -= 50;
 }
 
 void Weapon_BFG(entity &ent)

@@ -40,9 +40,23 @@ static void soldier_idle(entity &self)
 		gi.sound(self, CHAN_VOICE, sound_idle, ATTN_IDLE);
 }
 
+#ifdef THE_RECKONING
+static void soldierh_end_hyper_sound(entity &self)
+{
+	if (self.modelindex == soldierh_modelindex && (self.skinnum == 2 || self.skinnum == 3))
+	{
+		self.sound = SOUND_NONE;
+		gi.sound(self, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"));
+	}
+}
+#endif
+
 static void soldier_cock(entity &self)
 {
 	gi.sound(self, CHAN_WEAPON, sound_cock, self.frame == FRAME_stand322 ? ATTN_IDLE : ATTN_NORM);
+#ifdef THE_RECKONING
+	soldierh_end_hyper_sound(self);
+#endif
 }
 
 // STAND
@@ -361,17 +375,6 @@ constexpr mmove_t soldier_move_pain4 = { FRAME_pain401, FRAME_pain417, soldier_f
 
 REGISTER_STATIC_SAVABLE(soldier_move_pain4);
 
-#ifdef THE_RECKONING
-static void soldierh_end_hyper_sound(entity &self)
-{
-	if (self.modelindex == soldierh_modelindex && (self.skinnum == 2 || self.skinnum == 3))
-	{
-		self.sound = SOUND_NONE;
-		gi.sound(self, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"));
-	}
-}
-#endif
-
 static void soldier_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
 #ifdef ROGUE_AI
@@ -382,7 +385,7 @@ static void soldier_reacttodamage(entity &self, entity &, entity &, int32_t, int
 	self.monsterinfo.aiflags &= ~AI_MANUAL_STEERING;
 #endif
 
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 	{
 		if ((self.velocity.z > 100) && ((self.monsterinfo.currentmove == &soldier_move_pain1) || (self.monsterinfo.currentmove == &soldier_move_pain2) || (self.monsterinfo.currentmove == &soldier_move_pain3)))
 		{
@@ -395,7 +398,7 @@ static void soldier_reacttodamage(entity &self, entity &, entity &, int32_t, int
 		return;
 	}
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	const int32_t n = self.skinnum | 1;
 	if (n == 1)
@@ -454,7 +457,7 @@ static void soldierh_laserbeam(entity &self, monster_muzzleflash flash_index)
 
 	// RAFAEL
 	// this sound can't be called this frequent
-	if ((level.framenum % 800ms) == gtime::zero())
+	if ((level.time % 800ms) == gtime::zero())
 		gi.sound(self, CHAN_WEAPON, gi.soundindex("misc/lasfly.wav"), ATTN_STATIC);
 
 	start = self.origin;
@@ -564,8 +567,8 @@ static void soldier_fire(entity &self, int32_t flash_number)
 #ifdef THE_RECKONING
 		if (self.modelindex == soldierh_modelindex)
 		{
-			r = random(-100.f, 100.f);
-			u = random(-50.f, 50.f);
+			r = crandom(100.f);
+			u = crandom(50.f);
 		}
 		else
 		{
@@ -574,14 +577,14 @@ static void soldier_fire(entity &self, int32_t flash_number)
 		if (skill < 2)
 		{
 #endif
-			r = random(-1000.f, 1000.f);
-			u = random(-500.f, 500.f);
+			r = crandom(1000.f);
+			u = crandom(500.f);
 #ifdef ROGUE_AI
 		}
 		else
 		{
-			r = random(-500.f, 500.f);
-			u = random(-250.f, 250.f);
+			r = crandom(500.f);
+			u = crandom(250.f);
 		}
 #endif
 #ifdef THE_RECKONING
@@ -626,9 +629,9 @@ static void soldier_fire(entity &self, int32_t flash_number)
 #ifdef ROGUE_AI
 			self.wait =
 #else
-			self.monsterinfo.pause_framenum = 
+			self.monsterinfo.pause_time = 
 #endif
-				level.framenum + 300ms + random(700ms);
+				level.time + random(300ms, 1000ms);
 
 #ifdef THE_RECKONING
 		if (self.modelindex == soldierh_modelindex)
@@ -637,11 +640,11 @@ static void soldier_fire(entity &self, int32_t flash_number)
 #endif
 			monster_fire_bullet(self, start, aim, 2, 4, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, flash_index);
 
-		if (level.framenum >= 
+		if (level.time >= 
 #ifdef ROGUE_AI
 			self.wait
 #else
-			self.monsterinfo.pause_framenum
+			self.monsterinfo.pause_time
 #endif
 			)
 			self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
@@ -702,7 +705,7 @@ static void soldier_attack1_refire1(entity &self)
 	if (self.enemy->health <= 0)
 		return;
 
-	if (((skill == 3) && (random() < 0.5f)) || (range(self, self.enemy) == RANGE_MELEE))
+	if (((skill == 3) && (random() < 0.5f)) || (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE))
 		self.monsterinfo.nextframe = FRAME_attak102;
 	else
 		self.monsterinfo.nextframe = FRAME_attak110;
@@ -719,7 +722,7 @@ static void soldier_attack1_refire2(entity &self)
 	if (self.enemy->health <= 0)
 		return;
 
-	if (((skill == 3) && (random() < 0.5f)) || (range(self, self.enemy) == RANGE_MELEE))
+	if (((skill == 3) && (random() < 0.5f)) || (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE))
 		self.monsterinfo.nextframe = FRAME_attak102;
 }
 
@@ -797,7 +800,7 @@ static void soldier_attack2_refire1(entity &self)
 	if (self.enemy->health <= 0)
 		return;
 
-	if (((skill == 3) && (random() < 0.5f)) || (range(self, self.enemy) == RANGE_MELEE))
+	if (((skill == 3) && (random() < 0.5f)) || (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE))
 		self.monsterinfo.nextframe = FRAME_attak204;
 	else
 		self.monsterinfo.nextframe = FRAME_attak216;
@@ -814,7 +817,7 @@ static void soldier_attack2_refire2(entity &self)
 	if (self.enemy->health <= 0)
 		return;
 
-	if (((skill == 3) && (random() < 0.5f)) || (range(self, self.enemy) == RANGE_MELEE))
+	if (((skill == 3) && (random() < 0.5f)) || (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE))
 		self.monsterinfo.nextframe = FRAME_attak204;
 }
 
@@ -863,16 +866,16 @@ static void soldier_duck_down(entity &self)
 	if (self.monsterinfo.aiflags & AI_DUCKED)
 		return;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.maxs.z -= 32;
+	self.bounds.maxs.z -= 32;
 	self.takedamage = true;
-	self.monsterinfo.pause_framenum = level.framenum + 1 * BASE_FRAMERATE;
+	self.monsterinfo.pause_time = level.time + 1s;
 	gi.linkentity(self);
 }
 
 static void soldier_duck_up(entity &self)
 {
 	self.monsterinfo.aiflags &= ~AI_DUCKED;
-	self.maxs.z += 32;
+	self.bounds.maxs.z += 32;
 	self.takedamage = true;
 	gi.linkentity(self);
 }
@@ -889,11 +892,11 @@ static void soldier_fire3(entity &self)
 
 static void soldier_attack3_refire(entity &self)
 {
-	if ((level.framenum + 400ms) <
+	if ((level.time + 400ms) <
 #ifdef ROGUE_AI
-		self.monsterinfo.duck_wait_framenum
+		self.monsterinfo.duck_wait_time
 #else
-		self.monsterinfo.pause_framenum
+		self.monsterinfo.pause_time
 #endif
 		)
 		self.monsterinfo.nextframe = FRAME_attak303;
@@ -957,11 +960,11 @@ static void soldier_attack6_refire(entity &self)
 	if (self.enemy->health <= 0)
 		return;
 
-	if (range(self, self.enemy) <
+	if (VectorDistance(self.origin, self.enemy->origin) <
 #ifdef ROGUE_AI
-		RANGE_NEAR
+		RANGE_MELEE
 #else
-		RANGE_MID
+		RANGE_NEAR
 #endif
 		)
 		return;
@@ -993,7 +996,7 @@ constexpr mframe_t soldier_frames_attack6 [] =
 	{ ai_charge, 15 },
 	{ ai_charge, 14 },
 	{ ai_charge, 11 },
-	{ ai_charge,  8 },
+	{ ai_charge,  8, soldier_cock },
 	{ ai_charge, 11 },
 	{ ai_charge, 12 },
 	{ ai_charge, 12 },
@@ -1034,14 +1037,14 @@ static void soldier_attack(entity &self)
 		// turn on manual steering to signal both manual steering and blindfire
 		self.monsterinfo.aiflags |= AI_MANUAL_STEERING;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack1);
-		self.monsterinfo.attack_finished = level.framenum + duration_cast<gtime>(random(1.5s, 2.5s));
+		self.monsterinfo.attack_finished = level.time + duration_cast<gtime>(random(1.5s, 2.5s));
 		return;
 	}
 
 	float r = random();
 
 	if ((!(self.monsterinfo.aiflags & (AI_BLOCKED|AI_STAND_GROUND))) &&
-		(range(self, self.enemy) >= RANGE_NEAR) && 
+		(VectorDistance(self.origin, self.enemy->origin) >= RANGE_MID) && 
 		(r < (skill * 0.25) && 
 		(self.skinnum <= 3)) &&
 		(visible(self, self.enemy)))
@@ -1077,7 +1080,7 @@ static void soldier_sight(entity &self, entity &)
 	else
 		gi.sound(self, CHAN_VOICE, sound_sight2);
 
-	if (skill && self.enemy.has_value() && (range(self, self.enemy) >= RANGE_MID) && visible(self, self.enemy)) {
+	if (skill && self.enemy.has_value() && (VectorDistance(self.origin, self.enemy->origin) > RANGE_NEAR) && visible(self, self.enemy)) {
 		if (random() > 0.5f)
 #if defined(THE_RECKONING) || defined(GROUND_ZERO)
 		{
@@ -1101,7 +1104,7 @@ REGISTER_STATIC_SAVABLE(soldier_sight);
 #ifndef ROGUE_AI
 static void soldier_duck_hold(entity &self)
 {
-	if (level.framenum >= self.monsterinfo.pause_framenum)
+	if (level.time >= self.monsterinfo.pause_time)
 		self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
 	else
 		self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -1120,7 +1123,7 @@ constexpr mmove_t soldier_move_duck = { FRAME_duck01, FRAME_duck05, soldier_fram
 REGISTER_STATIC_SAVABLE(soldier_move_duck);
 
 #ifndef ROGUE_AI
-static void soldier_dodge(entity &self, entity &attacker, float eta)
+static void soldier_dodge(entity &self, entity &attacker, gtimef eta)
 {
 	float	r;
 
@@ -1140,7 +1143,7 @@ static void soldier_dodge(entity &self, entity &attacker, float eta)
 		return;
 	}
 
-	self.monsterinfo.pause_framenum = level.framenum + (int)((eta + 0.3f) * BASE_FRAMERATE);
+	self.monsterinfo.pause_time = duration_cast<gtime>(level.time + (eta + 300ms));
 	r = random();
 
 	if (skill == 1) {
@@ -1471,15 +1474,15 @@ static void soldier_die(entity &self, entity &, entity &, int32_t damage, vector
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowGib(self, "models/objects/gibs/chest/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 // regular death
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 	self.skinnum |= 1;
 
@@ -1544,7 +1547,7 @@ static void soldier_duck (entity &self, gtimef eta)
 		// PMM - stupid dodge
 		self.monsterinfo.nextframe = FRAME_duck01;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_duck);
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + 1s);
 
 #ifdef THE_RECKONING
 		soldierh_end_hyper_sound(self);
@@ -1558,13 +1561,13 @@ static void soldier_duck (entity &self, gtimef eta)
 	{
 		self.monsterinfo.nextframe = FRAME_duck01;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_duck);
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + (100ms * (3 - skill)));
 	}
 	else
 	{
 		self.monsterinfo.nextframe = FRAME_attak301;
 		self.monsterinfo.currentmove = &SAVABLE(soldier_move_attack3);
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + 1s);
 	}
 
 #ifdef THE_RECKONING

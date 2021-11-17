@@ -70,6 +70,8 @@ cvarref	sv_features;
 model_index sm_meat_index;
 sound_index snd_fry;
 
+client *clients;
+
 void InitGame()
 {
 	gi.dprintfmt("===== {} =====\n", __func__);
@@ -141,13 +143,16 @@ void InitGame()
 
 	num_entities = game.maxclients + 1;
 
-	// s.number and client must always be assigned
-	for (auto &e : entity_range(1, game.maxclients))
-	{
-		e.client = gi.TagMalloc<client>(1, TAG_GAME);
-		::new(e.client) client;
-	}
+	// allocate client storage; this is used by main.cpp as well
+	clients = gi.TagMalloc<client>(game.maxclients, TAG_GAME);
 	
+	// initialize the client entities, so the ptrs are valid
+	for (size_t i = 0; i < game.maxclients; i++)
+	{
+		::new(&clients[i]) client;
+		itoe(i + 1).__init();
+	}
+
 	InitItems();
 
 #ifdef CTF
@@ -185,27 +190,22 @@ static entity &CreateTargetChangeLevel(string new_map)
 {
 	entity &ent = G_Spawn();
 	ent.type = ET_TARGET_CHANGELEVEL;
-	level.nextmap = new_map;
-	ent.map = level.nextmap;
+	ent.map = level.nextmap = new_map;
 	return ent;
 }
 
-void EndDMLevel()
+static entity &FindTargetChangeLevel()
 {
 	// stay on same level flag
 	if (dmflags & DF_SAME_LEVEL)
-	{
-		BeginIntermission(CreateTargetChangeLevel(level.mapname));
-		return;
-	}
+		return CreateTargetChangeLevel(level.mapname);
 
 	// see if it's in the map list
 	if (sv_maplist)
 	{
 		stringlit ml = (stringlit)sv_maplist;
-		string f;
 		size_t s_offset = 0;
-		string t = strtok(ml, s_offset);
+		string t = strtok(ml, s_offset), f = t;
 
 		while (t)
 		{
@@ -213,40 +213,37 @@ void EndDMLevel()
 			{
 				// it's in the list, go to the next one
 				t = strtok(ml, s_offset);
-				if (!t)
-				{ // end of list, go to first one
-					if (!f) // there isn't a first one, same level
-						BeginIntermission(CreateTargetChangeLevel(level.mapname));
-					else
-						BeginIntermission(CreateTargetChangeLevel(f));
-				}
-				else
-					BeginIntermission(CreateTargetChangeLevel(t));
+				if (t)
+					return CreateTargetChangeLevel(t);
+				// end of list, go to first one
+				else if (!f)
+					return CreateTargetChangeLevel(f);
 
-				return;
+				// there isn't a first one, same level
+				return CreateTargetChangeLevel(level.mapname);
 			}
-			if (!f)
-				f = t;
+
 			t = strtok(ml, s_offset);
 		}
 	}
 
 	if (level.nextmap) // go to a specific map
-		BeginIntermission(CreateTargetChangeLevel(level.nextmap));
-	else
-	{  // search for a changelevel
-		entityref ent = G_FindEquals<&entity::type>(world, ET_TARGET_CHANGELEVEL);
+		return CreateTargetChangeLevel(level.nextmap);
 
-		if (!ent.has_value())
-		{
-			// the map designer didn't include a changelevel,
-			// so create a fake ent that goes back to the same level
-			BeginIntermission(CreateTargetChangeLevel(level.mapname));
-			return;
-		}
+	// search for a changelevel
+	entityref ent = G_FindEquals<&entity::type>(world, ET_TARGET_CHANGELEVEL);
 
-		BeginIntermission(ent);
-	}
+	if (ent.has_value())
+		return ent;
+
+	// the map designer didn't include a changelevel,
+	// so create a fake ent that goes back to the same level
+	return CreateTargetChangeLevel(level.mapname);
+}
+
+void EndDMLevel()
+{
+	BeginIntermission(FindTargetChangeLevel());
 }
 
 /*
@@ -279,7 +276,7 @@ CheckDMRules
 */
 static void CheckDMRules()
 {
-	if (level.intermission_framenum != gtime::zero())
+	if (level.intermission_time != gtime::zero())
 		return;
 
 #ifdef SINGLE_PLAYER
@@ -312,7 +309,7 @@ static void CheckDMRules()
 			if (!cl.inuse)
 				continue;
 
-			if (cl.client->resp.score >= fraglimit)
+			if (cl.client.resp.score >= fraglimit)
 			{
 				gi.bprint(PRINT_HIGH, "Fraglimit hit.\n");
 				EndDMLevel();
@@ -330,7 +327,7 @@ ExitLevel
 static void ExitLevel()
 {
 	level.exitintermission = 0;
-	level.intermission_framenum = gtime::zero();
+	level.intermission_time = gtime::zero();
 	
 	gi.AddCommandStringFmt("gamemap \"{}\"\n", level.changemap);
 	level.changemap = nullptr;
@@ -350,8 +347,7 @@ static void ExitLevel()
 
 void RunFrame()
 {
-	level.framenum += framerate_ms;
-	level.time = duration_cast<gtimef>(level.framenum);
+	level.time += framerate_ms;
 
 	// exit intermissions
 	if (level.exitintermission)
@@ -367,10 +363,14 @@ void RunFrame()
 	
 	//
 	// treat each object in turn
-	// even the world gets a chance to think
+	// even the world gets a chance to think.
+	// this is done in a loop since the last entity ID
+	// can move during a think.
 	//
-	for (entity &ent : entity_range(0, num_entities - 1))
+	for (uint32_t i = 0; i < num_entities; i++)
 	{
+		entity &ent = itoe(i);
+
 		if (!ent.inuse)
 			continue;
 		
@@ -390,7 +390,7 @@ void RunFrame()
 		}
 #endif
 	
-		if (ent.is_client())
+		if (ent.is_client)
 			ClientBeginServerFrame(ent);
 	
 		G_RunEntity(ent);

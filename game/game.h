@@ -162,15 +162,14 @@ extern spawn_temp st;
 //
 struct level_locals
 {
-	gtime	framenum;
-	gtimef	time;
+	gtime	time;
 
 	string	level_name;  // the descriptive name (Outer Base, etc)
 	string	mapname;     // the server name (base1, etc)
 	string	nextmap;     // go here when fraglimit is hit
 
 	// intermission state
-	gtime	intermission_framenum;  // time the intermission was started
+	gtime	intermission_time;  // time the intermission was started
 	string	changemap;
 	bool	exitintermission;
 	vector	intermission_origin;
@@ -182,11 +181,11 @@ struct level_locals
 	entityref	sight_client;	// changed once each frame for coop games
 
 	entityref	sight_entity;
-	gtime		sight_entity_framenum;
+	gtime		sight_entity_time;
 	entityref	sound_entity;
-	gtime		sound_entity_framenum;
+	gtime		sound_entity_time;
 	entityref	sound2_entity;
-	gtime		sound2_entity_framenum;
+	gtime		sound2_entity_time;
 
 	int32_t	total_secrets;
 	int32_t	found_secrets;
@@ -197,17 +196,18 @@ struct level_locals
 	int32_t	total_monsters;
 	int32_t	killed_monsters;
 
-	int32_t	power_cubes;        // ugly necessity for coop
-
 #ifdef GROUND_ZERO
 	entityref	disguise_violator;
-	gtime		disguise_violation_framenum;
+	gtime		disguise_violation_time;
 #endif
+
+	// total number of power cubes in the level
+	uint8_t	power_cubes;
 #endif
+
+	uint8_t	body_que;           // dead bodies
 
 	entityref	current_entity;	// entity running from G_RunFrame
-
-	int32_t	body_que;           // dead bodies
 };
 
 extern level_locals level;

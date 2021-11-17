@@ -11,28 +11,28 @@
 
 static void Weapon_HyperBlaster_Fire(entity &ent)
 {
-	ent.client->weapon_sound = gi.soundindex("weapons/hyprbl1a.wav");
+	ent.client.weapon_sound = gi.soundindex("weapons/hyprbl1a.wav");
 
-	if (!(ent.client->buttons & BUTTON_ATTACK))
-		ent.client->ps.gunframe++;
+	if (!(ent.client.buttons & BUTTON_ATTACK))
+		ent.client.ps.gunframe++;
 	else
 	{
-		if (!ent.client->pers.inventory[ent.client->ammo_index])
+		if (!ent.client.pers.inventory[ent.client.ammo_index])
 		{
-			if (level.framenum >= ent.pain_debounce_framenum)
+			if (level.time >= ent.pain_debounce_time)
 			{
 				gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
-				ent.pain_debounce_framenum = level.framenum + 1s;
+				ent.pain_debounce_time = level.time + 1s;
 			}
 			NoAmmoWeaponChange(ent);
 		}
 		else
 		{
-			float rotation = (ent.client->ps.gunframe - 5) * (PI / 3);
+			float rotation = (ent.client.ps.gunframe - 5) * (PI / 3);
 			vector offset = { -4.f * sinf(rotation), 0, 4.f * cosf(rotation) };
 			entity_effects effect;
 
-			if ((ent.client->ps.gunframe == 6) || (ent.client->ps.gunframe == 9))
+			if ((ent.client.ps.gunframe == 6) || (ent.client.ps.gunframe == 9))
 				effect = EF_HYPERBLASTER;
 			else
 				effect = EF_NONE;
@@ -51,31 +51,31 @@ static void Weapon_HyperBlaster_Fire(entity &ent)
 			Blaster_Fire(ent, offset, damage, true, effect);
 
 			if (!(dmflags & DF_INFINITE_AMMO))
-				ent.client->pers.inventory[ent.client->ammo_index]--;
+				ent.client.pers.inventory[ent.client.ammo_index]--;
 
-			ent.client->anim_priority = ANIM_ATTACK;
-			if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
+			ent.client.anim_priority = ANIM_ATTACK;
+			if (ent.client.ps.pmove.pm_flags & PMF_DUCKED)
 			{
 				ent.frame = FRAME_crattak1 - 1;
-				ent.client->anim_end = FRAME_crattak9;
+				ent.client.anim_end = FRAME_crattak9;
 			}
 			else
 			{
 				ent.frame = FRAME_attack1 - 1;
-				ent.client->anim_end = FRAME_attack8;
+				ent.client.anim_end = FRAME_attack8;
 			}
 		}
 
-		ent.client->ps.gunframe++;
+		ent.client.ps.gunframe++;
 
-		if (ent.client->ps.gunframe == 12 && ent.client->pers.inventory[ent.client->ammo_index])
-			ent.client->ps.gunframe = 6;
+		if (ent.client.ps.gunframe == 12 && ent.client.pers.inventory[ent.client.ammo_index])
+			ent.client.ps.gunframe = 6;
 	}
 
-	if (ent.client->ps.gunframe == 12)
+	if (ent.client.ps.gunframe == 12)
 	{
 		gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/hyprbd1a.wav"));
-		ent.client->weapon_sound = SOUND_NONE;
+		ent.client.weapon_sound = SOUND_NONE;
 	}
 }
 

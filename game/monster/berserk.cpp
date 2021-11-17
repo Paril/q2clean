@@ -153,7 +153,7 @@ REGISTER_STATIC_SAVABLE(berserk_run);
 
 static void berserk_attack_spike(entity &self)
 {
-	constexpr vector aim { MELEE_DISTANCE, 0, -24 };
+	constexpr vector aim { RANGE_MELEE, 0, -24 };
 	fire_hit(self, aim, (15 + (Q_rand() % 6)), 400);    //  Faster attack -- upwards and backwards
 }
 
@@ -178,7 +178,7 @@ REGISTER_STATIC_SAVABLE(berserk_move_attack_spike);
 
 static void berserk_attack_club(entity &self)
 {
-	const vector aim { MELEE_DISTANCE, self.bounds.mins.x, -4.f };
+	const vector aim { RANGE_MELEE, self.bounds.mins.x, -4.f };
 	fire_hit(self, aim, (5 + (Q_rand() % 6)), 400);     // Slower attack
 }
 
@@ -252,10 +252,10 @@ REGISTER_STATIC_SAVABLE(berserk_move_pain2);
 
 static void berserk_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t damage)
 {
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 	gi.sound(self, CHAN_VOICE, sound_pain);
 
 	if (skill == 3)
@@ -329,15 +329,15 @@ static void berserk_die(entity &self, entity &, entity &, int damage, vector)
 		for (n = 0; n < 4; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 	gi.sound(self, CHAN_VOICE, sound_die);
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 
 	if (damage >= 50)

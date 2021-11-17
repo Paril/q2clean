@@ -502,10 +502,10 @@ REGISTER_STATIC_SAVABLE(insane_run);
 
 static void insane_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	int32_t r = 1 + (Q_rand() & 1), l;
 
@@ -588,16 +588,16 @@ static void insane_die(entity &self, entity &, entity &, int32_t damage, vector)
 		for (n = 0; n < 4; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 	gi.sound(self, CHAN_VOICE, gi.soundindexfmt("player/male/death{}.wav", (Q_rand() % 4) + 1), ATTN_IDLE);
 
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 
 	if (self.spawnflags & CRUCIFIED) {

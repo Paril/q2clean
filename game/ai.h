@@ -8,32 +8,17 @@
 
 bool FindTarget(entity &self);
 
-enum range_t : uint8_t
-{
-	RANGE_MELEE,
-	RANGE_NEAR,
-	RANGE_MID,
-	RANGE_FAR
-};
-
 extern bool		enemy_vis;
-extern range_t	enemy_range;
+extern float	enemy_range;
 extern float	enemy_yaw;
 
-/*
-=============
-range
-
-returns the range catagorization of an entity reletive to self
-0   melee range, will become hostile even if back is turned
-1   visibility and infront, or visibility and show hostile
-2   infront and show hostile
-3   only triggered by damage
-=============
-*/
-range_t range(entity &self, entity &other);
-
-constexpr float MELEE_DISTANCE	= 80.f;
+// melee range, will become hostile even if back is turned
+constexpr float RANGE_MELEE	= 80.f;
+// visibility and infront, or visibility and show hostile
+constexpr float RANGE_NEAR = 500.f;
+// infront and show hostile
+constexpr float RANGE_MID = 1000.f;
+// otherwise, only triggered by damage
 
 /*
 =================

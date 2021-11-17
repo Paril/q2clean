@@ -33,7 +33,7 @@ static void ionripper_touch(entity &self, entity &other, vector normal, const su
 	}
 #if defined(SINGLE_PLAYER)
 
-	if (self.owner->is_client())
+	if (self.owner->is_client)
 		PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
@@ -66,14 +66,14 @@ void fire_ionripper(entity &self, vector start, vector dir, int32_t damage, int3
 	ion.sound = gi.soundindex("misc/lasfly.wav");
 	ion.owner = self;
 	ion.touch = SAVABLE(ionripper_touch);
-	ion.nextthink = level.framenum + 3s;
+	ion.nextthink = level.time + 3s;
 	ion.think = SAVABLE(ionripper_sparks);
 	ion.dmg = damage;
 	ion.dmg_radius = 100.f;
 	gi.linkentity(ion);
 
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge(self, ion.origin, dir, speed);
 #endif
 

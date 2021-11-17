@@ -50,14 +50,14 @@ static void multi_trigger(entity &ent)
 	if (ent.wait.count() > 0)
 	{
 		ent.think = SAVABLE(multi_wait);
-		ent.nextthink = duration_cast<gtime>(level.framenum + ent.wait);
+		ent.nextthink = duration_cast<gtime>(level.time + ent.wait);
 	}
 	else
 	{
 		// we can't just remove (self) here, because this is a touch function
 		// called while looping through area links...
 		ent.touch = nullptr;
-		ent.nextthink = level.framenum + 1_hz;
+		ent.nextthink = level.time + 1_hz;
 		ent.think = SAVABLE(G_FreeEdict);
 	}
 }
@@ -87,7 +87,7 @@ REGISTER_STATIC_SAVABLE(Use_Multi);
 
 static void Touch_Multi(entity &self, entity &other, vector, const surface &)
 {
-	if (other.is_client())
+	if (other.is_client)
 	{
 		if (self.spawnflags & TRIGGER_NOT_PLAYER)
 			return;
@@ -241,15 +241,15 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 {
 	if (!self.item)
 		return;
-	if (!cactivator.is_client())
+	if (!cactivator.is_client)
 		return;
 
 	int index = self.item->id;
-	if (!cactivator.client->pers.inventory[index])
+	if (!cactivator.client.pers.inventory[index])
 	{
-		if (level.framenum < self.touch_debounce_framenum)
+		if (level.time < self.touch_debounce_time)
 			return;
-		self.touch_debounce_framenum = level.framenum + 5s;
+		self.touch_debounce_time = level.time + 5s;
 		gi.centerprintfmt(cactivator, "You need the {}", self.item->pickup_name);
 		gi.sound(cactivator, CHAN_AUTO, gi.soundindex("misc/keytry.wav"));
 		return;
@@ -261,20 +261,21 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 	{
 		if (self.item->id == ITEM_POWER_CUBE)
 		{
-			int cube;
+			// find the nearest power cube ID that is free for us
+			// to "use" on this
+			uint8_t cube;
 
-			for (cube = 0; cube < 8; cube++)
-				if (cactivator.client->pers.power_cubes & (1 << cube))
+			for (cube = 0; cube < 32; cube++)
+				if (cactivator.client.pers.power_cubes.test(cube))
 					break;
 
+			// remove the power cube from everybody
 			for (entity &ent : entity_range(1, game.maxclients))
 			{
-				if (!ent.inuse)
-					continue;
-				if (ent.client->pers.power_cubes & (1 << cube))
+				if (ent.inuse && ent.client.pers.power_cubes.test(cube))
 				{
-					ent.client->pers.inventory[index]--;
-					ent.client->pers.power_cubes &= ~(1 << cube);
+					ent.client.pers.inventory[index]--;
+					ent.client.pers.power_cubes.reset(cube);
 				}
 			}
 		}
@@ -282,11 +283,11 @@ static void trigger_key_use(entity &self, entity &, entity &cactivator)
 		{
 			for (entity &ent : entity_range(1, game.maxclients))
 				if (ent.inuse)
-					ent.client->pers.inventory[index] = 0;
+					ent.client.pers.inventory[index] = 0;
 		}
 	}
 	else
-		cactivator.client->pers.inventory[index]--;
+		cactivator.client.pers.inventory[index]--;
 
 	G_UseTargets(self, cactivator);
 
@@ -429,17 +430,17 @@ static void trigger_push_touch(entity &self, entity &other, vector, const surfac
 	{
 		other.velocity = self.movedir * (self.speed * 10);
 
-		if (other.is_client())
+		if (other.is_client)
 		{
 			// don't take falling damage immediately from this
-			other.client->oldvelocity = other.velocity;
+			other.client.oldvelocity = other.velocity;
 			if (
 #ifdef GROUND_ZERO
 				!(self.spawnflags & PUSH_SILENT) && 
 #endif
-				other.fly_sound_debounce_framenum < level.framenum)
+				other.fly_sound_debounce_time < level.time)
 			{
-				other.fly_sound_debounce_framenum = duration_cast<gtime>(level.framenum + 1.5s);
+				other.fly_sound_debounce_time = duration_cast<gtime>(level.time + 1.5s);
 				gi.sound(other, CHAN_AUTO, windsound);
 			}
 		}
@@ -485,12 +486,12 @@ REGISTER_STATIC_SAVABLE(trigger_push_active);
 static void trigger_push_inactive(entity &self)
 {
 	if (self.delay > level.time)
-		self.nextthink = level.framenum + 1_hz;
+		self.nextthink = level.time + 1_hz;
 	else
 	{
 		self.touch = SAVABLE(trigger_push_touch);
 		self.think = SAVABLE(trigger_push_active);
-		self.nextthink = level.framenum + 1_hz;
+		self.nextthink = level.time + 1_hz;
 		self.delay = self.nextthink + self.wait;  
 	}
 }
@@ -501,14 +502,14 @@ static void trigger_push_active(entity &self)
 {
 	if (self.delay > level.time)
 	{
-		self.nextthink = level.framenum + 1_hz;
+		self.nextthink = level.time + 1_hz;
 		trigger_effect (self);
 	}
 	else
 	{
 		self.touch = nullptr;
 		self.think = SAVABLE(trigger_push_inactive);
-		self.nextthink = level.framenum + 1_hz;
+		self.nextthink = level.time + 1_hz;
 		self.delay = self.nextthink + self.wait;  
 	}
 }
@@ -542,7 +543,7 @@ static void SP_trigger_push(entity &self)
 			self.wait = 10s;
   
 		self.think = SAVABLE(trigger_push_active);
-		self.nextthink = level.framenum + 1_hz;
+		self.nextthink = level.time + 1_hz;
 		self.delay = self.nextthink + self.wait;
 	}
 #endif
@@ -603,16 +604,16 @@ static void hurt_touch(entity &self, entity &other, vector, const surface &)
 	if (!other.takedamage)
 		return;
 
-	if (self.timestamp > level.framenum)
+	if (self.timestamp > level.time)
 		return;
 
 	if (self.spawnflags & HURT_SLOW)
-		self.timestamp = level.framenum + 1s;
+		self.timestamp = level.time + 1s;
 	else
-		self.timestamp = level.framenum + 100ms;
+		self.timestamp = level.time + 100ms;
 
 	if (!(self.spawnflags & HURT_SILENT))
-		if ((level.framenum % 1000ms) == gtime::zero())
+		if ((level.time % 1000ms) == gtime::zero())
 			gi.sound(other, CHAN_AUTO, self.noise_index);
 
 	damage_flags dflags;

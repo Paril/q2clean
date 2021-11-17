@@ -17,15 +17,16 @@ registered_savable<void *> *registered_data_head;
 registered_savable<void(*)()> *registered_functions_head;
 
 #ifdef JSON_SAVE_FORMAT
-#define CJSON_HIDE_SYMBOLS
-#include "debug/cJSON.h"
+#include "save/json.hpp"
+using nlohmann::json;
 #endif
 
 #ifdef JSON_SAVE_FORMAT
 using serializer = struct json_serializer;
+using maybe_json = std::optional<::json>;
 
-using write_func = cJSON *(*)(serializer &, const void *);
-using read_func = void(*)(cJSON *, serializer &, void *);
+using write_func = maybe_json (*)(serializer &, const void *);
+using read_func = void(*)(const json &, serializer &, void *);
 #else
 using serializer = struct binary_serializer;
 
@@ -50,12 +51,12 @@ struct save_struct
 #ifdef JSON_SAVE_FORMAT
 struct json_serializer
 {
-	cJSON *json;
+	json json;
 	bool load;
 	stringref filename;
 	
 	json_serializer(stringref filename, bool load) :
-		json(nullptr),
+		json(),
 		load(load),
 		filename(filename)
 	{	
@@ -66,69 +67,51 @@ struct json_serializer
 			if (!f.is_open())
 				gi.error("No file");
 
-			f.seekg(0, std::ios::end);   
-			string str(f.tellg());
-			f.seekg(0, std::ios::beg);
-
-			char *o = (char *) str.ptr();
-			
-			for (auto it = std::istreambuf_iterator<char>(f); it != std::istreambuf_iterator<char>(); it++)
-				*o++ = *it;
-
-			*o++ = 0;
-
-			json = cJSON_Parse(str.ptr());
+			f >> json;
 		}
 		else
 		{
-			json = cJSON_CreateObject();
+			json = json::object();
 		}
 	}
 
 	~json_serializer()
 	{
 		if (!load)
-		{
-			char *js = cJSON_Print(json);
-			std::fstream f(filename.ptr(), std::fstream::out | std::fstream::trunc);
-			f.write(js, strlen(js));
-			free(js);
-		}
-
-		cJSON_Delete(json);
+			std::fstream { filename.ptr(), std::fstream::out | std::fstream::trunc } << json;
 	}
 
-	cJSON *write_struct(const save_struct &struc, const void *ptr, const bool &defaultable = false)
+	maybe_json write_struct(const save_struct &struc, const void *ptr, const bool &defaultable = false)
 	{
-		cJSON *object = cJSON_CreateObject();
+		::json object = json::object();
 
 		for (auto member = struc.members; member != struc.members + struc.num_members; member++)
 		{
-			cJSON* obj = member->write(*this, ptr);
+			maybe_json obj = member->write(*this, ptr);
 
-			if (obj)
-				cJSON_AddItemToObject(object, member->name, obj);
+			if (obj.has_value())
+				object.push_back({ member->name, obj.value() });
 		}
 
-		if (defaultable && !object->child)
-		{
-			cJSON_Delete(object);
-			return nullptr;
-		}
+		if (defaultable && object.empty())
+			return std::nullopt;
 
 		return object;
 	}
 
-	void read_struct(cJSON *obj, const save_struct &struc, void *ptr)
+	void read_struct(const ::json &obj, const save_struct &struc, void *ptr)
 	{
-		for (auto child = obj->child; child; child = child->next)
+		if (!obj.is_object())
+			throw std::bad_cast();
+
+		for (const auto &child : obj.items())
 		{
 			for (auto member = struc.members; member != struc.members + struc.num_members; member++)
 			{
-				if (strcmp(child->string, member->name))
+				if (strcmp(child.key().c_str(), member->name))
 					continue;
 
-				member->read(child, *this, ptr);
+				member->read(child.value(), *this, ptr);
 				break;
 			}
 		}
@@ -140,161 +123,213 @@ template<typename T>
 static constexpr bool is_number = !std::is_pointer_v<T> && (std::is_integral_v<T> || std::is_floating_point_v<T> || std::is_enum_v<T>);
 	
 template<typename T> requires is_number<T>
-inline cJSON *json_serializer_write(serializer&, const T &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const T &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateNumber((double) v);
+	return ::json(v);
 }
 
 template<typename T> requires std::is_same_v<T, sound_index> || std::is_same_v<T, image_index> || std::is_same_v<T, model_index> || std::is_same_v<T, player_stat>
-inline cJSON *json_serializer_write(serializer&, const T &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const T &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateNumber((double) (int32_t) v);
+	return ::json((int32_t) v);
 }
 
-inline cJSON *json_serializer_write(serializer&, const bool &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const bool &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateTrue();
+	return ::json(true);
 }
 
-inline cJSON *json_serializer_write(serializer&, const stringref &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const stringref &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateString(v.ptr());
+	return ::json(v.ptr());
 }
 
-inline cJSON *json_serializer_write(serializer&, const string &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const string &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateString(v.ptr());
+	return ::json(v.ptr());
 }
 
-inline cJSON *json_serializer_write(serializer&, const entityref &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const entityref &v, const bool& defaultable = false)
 {
 	if (defaultable && !v.has_value())
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateNumber((double)v->number);
+	return ::json(v->number);
 }
 
-inline cJSON *json_serializer_write(serializer&, const itemref &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const itemref &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateString(v->classname);
+	return ::json(v->classname);
 }
 
-inline cJSON *json_serializer_write(serializer&, const entity_type_ref &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const entity_type_ref &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateString(v->id);
+	return ::json(v->id);
 }
 
-inline cJSON *json_serializer_write(serializer&, const vector &v, const bool& defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const vector &v, const bool& defaultable = false)
 {
 	if (defaultable && !v)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateFloatArray(&v.x, 3);
+	return ::json({ v.x, v.y, v.z });
 }
 
-inline cJSON *json_serializer_write(serializer&, const bbox &v, const bool &defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const bbox &v, const bool &defaultable = false)
 {
 	if (defaultable && !v.mins && !v.maxs)
-		return nullptr;
+		return std::nullopt;
 
-	return cJSON_CreateFloatArray(&v.mins.x, 6);
+	return ::json({ v.mins.x, v.mins.y, v.mins.z, v.maxs.x, v.maxs.y, v.maxs.z });
 }
 
 template<typename T>
-inline cJSON *json_serializer_write(serializer&, const savable<T> &str, const bool &defaultable = false)
+inline maybe_json json_serializer_write(serializer&, const savable<T> &str, const bool &defaultable = false)
 {
 	if (str)
-		return cJSON_CreateString(str.registry->name);
+		return ::json(str.registry->name);
+	else if (defaultable)
+		return std::nullopt;
 
-	return defaultable ? nullptr : cJSON_CreateStringReference("");
+	return ::json("");
 }
 
 template<typename T, size_t N>
-inline cJSON *json_serializer_write(serializer &stream, const array<T, N> &arr, const bool &defaultable = false)
+inline maybe_json json_serializer_write(serializer &stream, const array<T, N> &arr, const bool &defaultable = false)
 {
 	static array<T, N> default_val;
 
 	if (defaultable && arr == default_val)
-		return nullptr;
+		return std::nullopt;
 
-	cJSON *array = cJSON_CreateArray();
+	::json array = json::array();
 
 	for (auto &v : arr)
-		cJSON_AddItemToArray(array, json_serializer_write(stream, v));
+		array.push_back(json_serializer_write(stream, v).value());
+
+	return array;
+}
+
+template<size_t N>
+inline maybe_json json_serializer_write(serializer &stream, const bitset<N> &arr, const bool &defaultable = false)
+{
+	if (defaultable && !arr.any())
+		return std::nullopt;
+
+	::json array = json::array();
+
+	for (size_t i = 0; i < N; i++)
+		array.push_back(json_serializer_write(stream, arr[i]).value());
 
 	return array;
 }
 
 template<typename rep, typename period>
-inline cJSON *json_serializer_write(serializer &stream, const duration<rep, period> &v, const bool &defaultable = false)
+inline maybe_json json_serializer_write(serializer &stream, const duration<rep, period> &v, const bool &defaultable = false)
 {
 	return json_serializer_write(stream, v.count(), defaultable);
 }
 
 template<typename T> requires is_number<T>
-inline void json_serializer_read(cJSON *json, serializer &, T &str)
+inline void json_serializer_read(const json &json, serializer &, T &str)
 {
-	str = (T) cJSON_GetNumberValue(json);
+	if constexpr (std::is_floating_point_v<T>)
+	{
+		if (!json.is_number_float())
+			throw std::bad_cast();
+	}
+	else if constexpr (std::is_unsigned_v<T>)
+	{
+		if (!json.is_number_unsigned())
+			throw std::bad_cast();
+	}
+	else
+	{
+		if (!json.is_number())
+			throw std::bad_cast();
+	}
+
+	str = json.get<T>();
 }
 
 template<typename T> requires std::is_same_v<T, sound_index> || std::is_same_v<T, image_index> || std::is_same_v<T, model_index> || std::is_same_v<T, player_stat>
-inline void json_serializer_read(cJSON *json, serializer &, T &str)
+inline void json_serializer_read(const json &json, serializer &, T &str)
 {
-	str = (T) (int32_t) cJSON_GetNumberValue(json);
+	if (!json.is_number_integer())
+		throw std::bad_cast();
+
+	str = { json.get<int32_t>() };
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, bool &str)
+inline void json_serializer_read(const json &json, serializer &, bool &str)
 {
-	str = cJSON_IsTrue(json) ? true : false;
+	if (!json.is_boolean())
+		throw std::bad_cast();
+
+	str = json.get<bool>();
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, stringref &str)
+inline void json_serializer_read(const json &json, serializer &, stringref &str)
 {
-	str = cJSON_GetStringValue(json);
+	if (!json.is_string())
+		throw std::bad_cast();
+
+	str = string(json.get<std::string>().c_str());
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, string &str)
+inline void json_serializer_read(const json &json, serializer &, string &str)
 {
-	str = cJSON_GetStringValue(json);
+	if (!json.is_string())
+		throw std::bad_cast();
+
+	str = string(json.get<std::string>().c_str());
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, entityref &str)
+inline void json_serializer_read(const json &json, serializer &, entityref &str)
 {
-	if (cJSON_IsNull(json))
+	if (json.is_null())
 		str = entityref();
+	else if (!json.is_number_unsigned())
+		throw std::bad_cast();
 	else
-		str = itoe((size_t) cJSON_GetNumberValue(json));
+		str = itoe(json.get<size_t>());
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, itemref &str)
+inline void json_serializer_read(const json &json, serializer &, itemref &str)
 {
-	str = FindItemByClassname(cJSON_GetStringValue(json));
+	if (!json.is_string())
+		throw std::bad_cast();
+
+	str = FindItemByClassname(json.get<std::string>().c_str());
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, entity_type_ref &str)
+inline void json_serializer_read(const json &json, serializer &, entity_type_ref &str)
 {
-	const char *s = cJSON_GetStringValue(json);
+	if (!json.is_string())
+		throw std::bad_cast();
+
+	stringlit s = json.get<std::string>().c_str();
 
 	for (const entity_type *x = &ET_UNKNOWN; x; x = x->next)
 	{
@@ -309,29 +344,65 @@ inline void json_serializer_read(cJSON *json, serializer &, entity_type_ref &str
 	str = ET_UNKNOWN;
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, vector &str)
+inline void json_serializer_read(const json &json, serializer &, vector &str)
 {
-	for (int32_t i = 0; i < 3; i++)
-		str[i] = (float) cJSON_GetNumberValue(cJSON_GetArrayItem(json, i));
+	if (!json.is_array() || json.size() != 3)
+		throw std::bad_cast();
+
+	int32_t i = 0;
+
+	for (auto &v : json)
+	{
+		if (!v.is_number())
+			throw std::bad_cast();
+
+		str[i++] = v.get<float>();
+	}
 }
 
-inline void json_serializer_read(cJSON *json, serializer &, bbox &str)
+inline void json_serializer_read(const json &json, serializer &, bbox &str)
 {
-	for (int32_t i = 0; i < 6; i++)
-		(i < 3 ? str.mins : str.maxs)[i % 3] = (float) cJSON_GetNumberValue(cJSON_GetArrayItem(json, i));
+	if (!json.is_array() || json.size() != 6)
+		throw std::bad_cast();
+
+	int32_t i = 0;
+	
+	for (auto &v : json)
+	{
+		if (!v.is_number())
+			throw std::bad_cast();
+
+		(i < 3 ? str.mins : str.maxs)[i % 3] = v.get<float>();
+		i++;
+	}
 }
 
 template<typename T, size_t N>
-inline void json_serializer_read(cJSON *json, serializer &stream, array<T, N> &arr)
+inline void json_serializer_read(const json &json, serializer &stream, array<T, N> &arr)
 {
-	int i = 0;
+	if (!json.is_array() || json.size() != N)
+		throw std::bad_cast();
 
-	for (auto &v : arr)
-		json_serializer_read(cJSON_GetArrayItem(json, i++), stream, v);
+	for (size_t i = 0; i < N; i++)
+		json_serializer_read(json[i], stream, arr[i]);
+}
+
+template<size_t N>
+inline void json_serializer_read(const json &json, serializer &stream, bitset<N> &arr)
+{
+	if (!json.is_array() || json.size() != N)
+		throw std::bad_cast();
+
+	for (size_t i = 0; i < N; i++)
+	{
+		bool is_set;
+		json_serializer_read(json[i], stream, is_set);
+		arr.set(i, is_set);
+	}
 }
 
 template<typename rep, typename period>
-inline void json_serializer_read(cJSON *json, serializer &stream, duration<rep, period> &arr)
+inline void json_serializer_read(const json &json, serializer &stream, duration<rep, period> &arr)
 {
 	rep r;
 	json_serializer_read<rep>(json, stream, r);
@@ -339,7 +410,7 @@ inline void json_serializer_read(cJSON *json, serializer &stream, duration<rep, 
 }
 
 template<typename T>
-inline void json_serializer_read(cJSON *json, serializer &stream, savable<T> &str)
+inline void json_serializer_read(const json &json, serializer &stream, savable<T> &str)
 {
 	string s;
 
@@ -384,11 +455,21 @@ inline void json_serializer_read(cJSON *json, serializer &stream, savable<T> &st
 #else
 struct binary_serializer
 {
+	template<typename Type>
+	struct is_bitset : std::false_type { };
+
+	template<std::size_t N>
+	struct is_bitset<bitset<N>> : std::true_type { };
+
+	template<typename T>
+	static constexpr bool is_bitset_v = is_bitset<T>::value;
+
 	// The following types can be written/read directly without any extra work.
 	template<typename T>
 	static constexpr bool is_trivial = !std::is_pointer_v<T> && (std::is_integral_v<T> || std::is_floating_point_v<T> || std::is_enum_v<T> ||
 		std::is_same_v<T, sound_index> || std::is_same_v<T, image_index> || std::is_same_v<T, model_index> || std::is_same_v<T, player_stat> ||
-		std::is_same_v<T, vector> || std::is_same_v<T, bbox> || std::is_same_v<T, pmove_state> || std::is_same_v<T, player_state> || std::is_same_v<T, entity_state>);
+		std::is_same_v<T, vector> || std::is_same_v<T, bbox> || std::is_same_v<T, pmove_state> || std::is_same_v<T, player_state> || std::is_same_v<T, entity_state>) ||
+		is_bitset_v<T>;
 
 	std::fstream stream;
 
@@ -431,7 +512,7 @@ struct binary_serializer
 
 	inline void operator<<(const entityref &str)
 	{
-		int32_t entity_id = str.has_value() ? str.number : -1;
+		int32_t entity_id = str.has_value() ? str->number : -1;
 
 		stream.write((char *) &entity_id, sizeof(entity_id));
 	}
@@ -446,7 +527,18 @@ struct binary_serializer
 	template<typename TFunc>
 	inline void operator<<(const savable<TFunc> &str)
 	{
-		this->operator<<(stringref(str ? str.func->name : ""));
+		this->operator<<(stringref(str ? str.registry->name : ""));
+	}
+
+	template<typename rep, typename period>
+	inline void operator<<(const duration<rep, period> &str)
+	{
+		this->operator<<(str.count());
+	}
+
+	inline void operator<<(const entity_type_ref &v)
+	{
+		this->operator<<(stringref(v ? v->id : nullptr));
 	}
 
 	// read operators
@@ -551,6 +643,39 @@ struct binary_serializer
 			gi.errorfmt("No data matching {}\n", s);
 		}
 	}
+
+	template<typename rep, typename period>
+	inline void operator>>(duration<rep, period> &str)
+	{
+		rep p;
+		this->operator>>(p);
+		str = duration<rep, period>(p);
+	}
+
+	inline void operator>>(entity_type_ref &str)
+	{
+		string s;
+
+		this->operator>>(s);
+
+		if (!s)
+		{
+			str = ET_UNKNOWN;
+			return;
+		}
+
+		for (const entity_type *x = &ET_UNKNOWN; x; x = x->next)
+		{
+			if (strcmp(x->id, s) == 0)
+			{
+				str = *x;
+				return;
+			}
+		}
+
+		gi.dprintfmt("Warning: unknown entity type {}\n", s);
+		str = ET_UNKNOWN;
+	}
 	
 	// structs
 	void write_struct(const save_struct &struc, const void *ptr)
@@ -571,14 +696,14 @@ struct binary_serializer
 #define SAVE_MEMBER(type, member) \
 	{ #member, \
 		[](serializer &stream, const void *struc) { return json_serializer_write(stream, ((type *) struc)->member, true); }, \
-		[](cJSON *json, serializer &stream, void *struc) { json_serializer_read(json, stream, ((type *) struc)->member); } }
+		[](const json &json, serializer &stream, void *struc) { json_serializer_read(json, stream, ((type *) struc)->member); } }
 
 // A few things in our code rely on getters/setters to hide
 // protocol-based behavior.
 #define SAVE_MEMBER_PROPERTY(type, member) \
 	{ #member, \
 		[](serializer &stream, const void *struc) { return json_serializer_write(stream, ((type *) struc)->get_##member(), true); }, \
-		[](cJSON *json, serializer &stream, void *struc) { std::invoke_result_t<decltype(&type::get_##member), type> temp; json_serializer_read(json, stream, temp); ((type *) struc)->set_##member(temp); } }
+		[](const json &json, serializer &stream, void *struc) { std::invoke_result_t<decltype(&type::get_##member), type> temp; json_serializer_read(json, stream, temp); ((type *) struc)->set_##member(temp); } }
 #else
 #define SAVE_MEMBER(type, member) \
 	{ #member, \
@@ -603,8 +728,8 @@ struct binary_serializer
 #ifdef JSON_SAVE_FORMAT
 #define CREATE_STRUCTURE_SERIALIZE_FUNCS(type) \
 	DEFINE_SAVE_STRUCTURE(type); \
-	inline cJSON *json_serializer_write(serializer &stream, const type &str, const bool &) { return stream.write_struct(type##_save, &str, true); } \
-	inline void json_serializer_read(cJSON *json, serializer &stream, type &str) { stream.read_struct(json, type##_save, &str); }
+	inline maybe_json json_serializer_write(serializer &stream, const type &str, const bool &) { return stream.write_struct(type##_save, &str, true); } \
+	inline void json_serializer_read(const json &json, serializer &stream, type &str) { stream.read_struct(json, type##_save, &str); }
 #else
 #define CREATE_STRUCTURE_SERIALIZE_FUNCS(type) \
 	DEFINE_SAVE_STRUCTURE(type); \
@@ -627,14 +752,13 @@ static save_member game_locals_members[] = {
 DEFINE_SAVE_STRUCTURE(game_locals);
 
 static save_member level_locals_members[] = {
-	SAVE_MEMBER(level_locals, framenum),
 	SAVE_MEMBER(level_locals, time),
 	
 	SAVE_MEMBER(level_locals, level_name),
 	SAVE_MEMBER(level_locals, mapname),
 	SAVE_MEMBER(level_locals, nextmap),
 	
-	SAVE_MEMBER(level_locals, intermission_framenum),
+	SAVE_MEMBER(level_locals, intermission_time),
 	SAVE_MEMBER(level_locals, changemap),
 	SAVE_MEMBER(level_locals, exitintermission),
 	SAVE_MEMBER(level_locals, intermission_origin),
@@ -646,11 +770,11 @@ static save_member level_locals_members[] = {
 	SAVE_MEMBER(level_locals, sight_client),
 	
 	SAVE_MEMBER(level_locals, sight_entity),
-	SAVE_MEMBER(level_locals, sight_entity_framenum),
+	SAVE_MEMBER(level_locals, sight_entity_time),
 	SAVE_MEMBER(level_locals, sound_entity),
-	SAVE_MEMBER(level_locals, sound_entity_framenum),
+	SAVE_MEMBER(level_locals, sound_entity_time),
 	SAVE_MEMBER(level_locals, sound2_entity),
-	SAVE_MEMBER(level_locals, sound2_entity_framenum),
+	SAVE_MEMBER(level_locals, sound2_entity_time),
 
 	SAVE_MEMBER(level_locals, total_secrets),
 	SAVE_MEMBER(level_locals, found_secrets),
@@ -801,7 +925,7 @@ static save_member client_members[] = {
 	SAVE_MEMBER(client, oldviewangles),
 	SAVE_MEMBER(client, oldvelocity),
 	
-	SAVE_MEMBER(client, next_drown_framenum),
+	SAVE_MEMBER(client, next_drown_time),
 	SAVE_MEMBER(client, old_waterlevel),
 	SAVE_MEMBER(client, breather_sound),
 	
@@ -812,37 +936,37 @@ static save_member client_members[] = {
 	SAVE_MEMBER(client, anim_duck),
 	SAVE_MEMBER(client, anim_run),
 	
-	SAVE_MEMBER(client, quad_framenum),
-	SAVE_MEMBER(client, invincible_framenum),
-	SAVE_MEMBER(client, breather_framenum),
-	SAVE_MEMBER(client, enviro_framenum),
+	SAVE_MEMBER(client, quad_time),
+	SAVE_MEMBER(client, invincible_time),
+	SAVE_MEMBER(client, breather_time),
+	SAVE_MEMBER(client, enviro_time),
 	
 	SAVE_MEMBER(client, grenade_blew_up),
-	SAVE_MEMBER(client, grenade_framenum),
+	SAVE_MEMBER(client, grenade_time),
 	
 	SAVE_MEMBER(client, silencer_shots),
 	SAVE_MEMBER(client, weapon_sound),
 
-	SAVE_MEMBER(client, pickup_msg_framenum),
+	SAVE_MEMBER(client, pickup_msg_time),
 	
 	SAVE_MEMBER(client, flood_locktill),
 	SAVE_MEMBER(client, flood_when),
 	SAVE_MEMBER(client, flood_whenhead),
 
-	SAVE_MEMBER(client, respawn_framenum),
+	SAVE_MEMBER(client, respawn_time),
 	
 	SAVE_MEMBER(client, chase_target),
 	SAVE_MEMBER(client, update_chase),
 	
 #ifdef THE_RECKONING
-	SAVE_MEMBER(client, quadfire_framenum),
+	SAVE_MEMBER(client, quadfire_time),
 #endif
 
 #ifdef GROUND_ZERO
-	SAVE_MEMBER(client, double_framenum),
-	SAVE_MEMBER(client, ir_framenum),
-	SAVE_MEMBER(client, nuke_framenum),
-	SAVE_MEMBER(client, tracker_pain_framenum),
+	SAVE_MEMBER(client, double_time),
+	SAVE_MEMBER(client, ir_time),
+	SAVE_MEMBER(client, nuke_time),
+	SAVE_MEMBER(client, tracker_pain_time),
 #endif
 
 #ifdef HOOK_CODE
@@ -907,24 +1031,25 @@ static save_member monsterinfo_members[] = {
 	SAVE_MEMBER(monsterinfo, checkattack),
 	SAVE_MEMBER(monsterinfo, reacttodamage),
 
-	SAVE_MEMBER(monsterinfo, pause_framenum),
+	SAVE_MEMBER(monsterinfo, pause_time),
 	SAVE_MEMBER(monsterinfo, attack_finished),
 
 	SAVE_MEMBER(monsterinfo, saved_goal),
-	SAVE_MEMBER(monsterinfo, search_framenum),
-	SAVE_MEMBER(monsterinfo, trail_framenum),
+	SAVE_MEMBER(monsterinfo, search_time),
+	SAVE_MEMBER(monsterinfo, trail_time),
 	SAVE_MEMBER(monsterinfo, last_sighting),
 	SAVE_MEMBER(monsterinfo, attack_state),
 	SAVE_MEMBER(monsterinfo, lefty),
-	SAVE_MEMBER(monsterinfo, idle_framenum),
+	SAVE_MEMBER(monsterinfo, idle_time),
 	SAVE_MEMBER(monsterinfo, linkcount),
 
 	SAVE_MEMBER(monsterinfo, power_armor_type),
 	SAVE_MEMBER(monsterinfo, power_armor_power),
+	SAVE_MEMBER(monsterinfo, surprise_time),
 
 #ifdef ROGUE_AI
 	SAVE_MEMBER(monsterinfo, blocked),
-	SAVE_MEMBER(monsterinfo, last_hint_framenum),
+	SAVE_MEMBER(monsterinfo, last_hint_time),
 	SAVE_MEMBER(monsterinfo, goal_hint),
 	SAVE_MEMBER(monsterinfo, medicTries),
 	SAVE_MEMBER(monsterinfo, badMedic1),
@@ -934,8 +1059,8 @@ static save_member monsterinfo_members[] = {
 	SAVE_MEMBER(monsterinfo, unduck),
 	SAVE_MEMBER(monsterinfo, sidestep),
 	SAVE_MEMBER(monsterinfo, base_height),
-	SAVE_MEMBER(monsterinfo, next_duck_framenum),
-	SAVE_MEMBER(monsterinfo, duck_wait_framenum),
+	SAVE_MEMBER(monsterinfo, next_duck_time),
+	SAVE_MEMBER(monsterinfo, duck_wait_time),
 	SAVE_MEMBER(monsterinfo, last_player_enemy),
 	SAVE_MEMBER(monsterinfo, blindfire),
 	SAVE_MEMBER(monsterinfo, blind_fire_framedelay),
@@ -946,9 +1071,9 @@ static save_member monsterinfo_members[] = {
 	SAVE_MEMBER(monsterinfo, monster_used),
 	SAVE_MEMBER(monsterinfo, commander),
 	SAVE_MEMBER(monsterinfo, summon_type),
-	SAVE_MEMBER(monsterinfo, quad_framenum),
-	SAVE_MEMBER(monsterinfo, invincible_framenum),
-	SAVE_MEMBER(monsterinfo, double_framenum)
+	SAVE_MEMBER(monsterinfo, quad_time),
+	SAVE_MEMBER(monsterinfo, invincible_time),
+	SAVE_MEMBER(monsterinfo, double_time)
 #endif
 };
 
@@ -1019,7 +1144,7 @@ static save_member entity_members[] = {
 	SAVE_MEMBER(entity, velocity),
 	SAVE_MEMBER(entity, avelocity),
 	SAVE_MEMBER(entity, mass),
-	SAVE_MEMBER(entity, air_finished_framenum),
+	SAVE_MEMBER(entity, air_finished_time),
 	SAVE_MEMBER(entity, gravity),
 	
 	SAVE_MEMBER(entity, goalentity),
@@ -1037,11 +1162,11 @@ static save_member entity_members[] = {
 	SAVE_MEMBER(entity, pain),
 	SAVE_MEMBER(entity, die),
 	
-	SAVE_MEMBER(entity, touch_debounce_framenum),
-	SAVE_MEMBER(entity, pain_debounce_framenum),
-	SAVE_MEMBER(entity, damage_debounce_framenum),
-	SAVE_MEMBER(entity, fly_sound_debounce_framenum),
-	SAVE_MEMBER(entity, last_move_framenum),
+	SAVE_MEMBER(entity, touch_debounce_time),
+	SAVE_MEMBER(entity, pain_debounce_time),
+	SAVE_MEMBER(entity, damage_debounce_time),
+	SAVE_MEMBER(entity, fly_sound_debounce_time),
+	SAVE_MEMBER(entity, last_move_time),
 	
 	SAVE_MEMBER(entity, health),
 	SAVE_MEMBER(entity, max_health),
@@ -1051,7 +1176,7 @@ static save_member entity_members[] = {
 
 	SAVE_MEMBER(entity, show_hostile),
 
-	SAVE_MEMBER(entity, powerarmor_framenum),
+	SAVE_MEMBER(entity, powerarmor_time),
 	
 	SAVE_MEMBER(entity, map),
 	SAVE_MEMBER(entity, viewheight),
@@ -1084,7 +1209,7 @@ static save_member entity_members[] = {
 	SAVE_MEMBER(entity, delay),
 	SAVE_MEMBER(entity, rand),
 		
-	SAVE_MEMBER(entity, last_sound_framenum),
+	SAVE_MEMBER(entity, last_sound_time),
 
 	SAVE_MEMBER(entity, watertype),
 	SAVE_MEMBER(entity, waterlevel),
@@ -1107,7 +1232,7 @@ static save_member entity_members[] = {
 #ifdef GROUND_ZERO
 	SAVE_MEMBER(entity, plat2flags),
 	SAVE_MEMBER(entity, offset),
-	SAVE_MEMBER(entity, last_move_framenum),
+	SAVE_MEMBER(entity, last_move_time),
 #endif
 		
 	SAVE_MEMBER(entity, moveinfo),
@@ -1119,35 +1244,30 @@ static save_member entity_members[] = {
 
 DEFINE_SAVE_STRUCTURE(entity);
 
-#ifdef JSON_SAVE_FORMAT
 inline void WriteGameStream(stringlit filename)
 {
 	serializer stream(filename, false);
+	
+#ifdef JSON_SAVE_FORMAT
+	stream.json["date"] = __DATE__;
 
-	cJSON_AddStringToObject(stream.json, "date", __DATE__);
+	stream.json["game_locals"] = stream.write_struct(game_locals_save, &game).value_or(json());
 
-	cJSON_AddItemToObject(stream.json, "game_locals", stream.write_struct(game_locals_save, &game));
-
-	cJSON *clients = cJSON_CreateArray();
+	json clients = json::array();
 
 	for (auto &e : entity_range(1, game.maxclients))
-		cJSON_AddItemToArray(clients, stream.write_struct(client_save, e.client));
+		clients.push_back(stream.write_struct(client_save, &e.client).value_or(json()));
 
-	cJSON_AddItemToObject(stream.json, "clients", clients);
-}
+	stream.json["clients"] = clients;
 #else
-inline void WriteGameStream(stringlit filename)
-{
-	serializer stream(filename, false);
-
 	stream << stringref(__DATE__);
 
 	stream.write_struct(game_locals_save, &game);
 
 	for (auto &e : entity_range(1, game.maxclients))
-		stream.write_struct(client_save, e.client);
-}
+		stream.write_struct(client_save, &e.client);
 #endif
+}
 
 void WriteGame(stringlit filename, qboolean autosave [[maybe_unused]])
 {
@@ -1165,24 +1285,27 @@ void WriteGame(stringlit filename, qboolean autosave [[maybe_unused]])
 #endif
 }
 
-#ifdef JSON_SAVE_FORMAT
 inline void ReadGameStream(stringlit filename)
 {
 	serializer stream(filename, true);
 
 	WipeEntities();
 
-	stream.read_struct(cJSON_GetObjectItem(stream.json, "game_locals"), game_locals_save, &game);
+#ifdef JSON_SAVE_FORMAT
+	if (stream.json.contains("game_locals"))
+		stream.read_struct(stream.json["game_locals"], game_locals_save, &game);
 
-	cJSON *clients = cJSON_GetObjectItem(stream.json, "clients");
+	if (stream.json.contains("clients"))
+	{
+		const json &clients = stream.json["clients"];
 
-	for (auto &e : entity_range(1, game.maxclients))
-		stream.read_struct(cJSON_GetArrayItem(clients, e.number - 1), client_save, e.client);
-}
+		if (!clients.is_array() || clients.size() != game.maxclients)
+			throw std::bad_cast();
+
+		for (auto &e : entity_range(1, game.maxclients))
+			stream.read_struct(clients[e.number - 1], client_save, &e.client);
+	}
 #else
-inline void ReadGameStream(stringlit filename)
-{
-	serializer stream(filename, true);
 	string date;
 
 	stream >> date;
@@ -1190,43 +1313,41 @@ inline void ReadGameStream(stringlit filename)
 	if (date != __DATE__)
 		gi.error("Savegame from an older version.\n");
 
-	WipeEntities();
-
 	stream.read_struct(game_locals_save, &game);
 
 	for (auto &e : entity_range(1, game.maxclients))
-		stream.read_struct(client_save, e.client);
-}
+		stream.read_struct(client_save, &e.client);
 #endif
+}
 
 void ReadGame(stringlit filename)
 {
 	ReadGameStream(filename);
 }
 
-#ifdef JSON_SAVE_FORMAT
 inline void WriteLevelStream(stringlit filename)
 {
 	serializer stream(filename, false);
-
-	cJSON_AddNumberToObject(stream.json, "entity_size", sizeof(entity));
+	
+#ifdef JSON_SAVE_FORMAT
+	stream.json["entity_size"] = sizeof(entity);
 
 	// write out level_locals_t
-	cJSON_AddItemToObject(stream.json, "level_locals", stream.write_struct(level_locals_save, &level));
+	stream.json["level_locals"] = stream.write_struct(level_locals_save, &level).value_or(json());
 
-	cJSON *entities_obj = cJSON_CreateObject();
+	json entities_obj = json::object();
 
 	for (auto &ent : entity_range(0, num_entities - 1))
 		if (ent.inuse)
-			cJSON_AddItemToObject(entities_obj, format("{}", ent.number).data(), stream.write_struct(entity_save, &ent));
+		{
+			auto s = stream.write_struct(entity_save, &ent);
 
-	cJSON_AddItemToObject(stream.json, "entities", entities_obj);
-}
+			if (s.has_value())
+				entities_obj.push_back({ format("{}", ent.number).data(), s.value() });
+		}
+
+	stream.json["entities"] = entities_obj;
 #else
-inline void WriteLevelStream(stringlit filename)
-{
-	serializer stream(filename, false);
-
 	stream << sizeof(entity);
 
 	// write out level_locals_t
@@ -1242,51 +1363,26 @@ inline void WriteLevelStream(stringlit filename)
 	}
 
 	stream << (uint32_t) -1;
-}
 #endif
+}
 
 void WriteLevel(stringlit filename)
 {
 	WriteLevelStream(filename);
 }
 
+inline uint32_t ReadLevelStream(stringlit filename)
+{
+	serializer stream(filename, true);
+
+	uint32_t file_edicts;
+	
 #ifdef JSON_SAVE_FORMAT
-inline uint32_t ReadLevelStream(stringlit filename)
-{
-	serializer stream(filename, true);
-
 	// load the level locals
-	stream.read_struct(cJSON_GetObjectItem(stream.json, "level_locals"), level_locals_save, &level);
-
-	uint32_t file_edicts = game.maxclients;
-
-	cJSON *entities_obj = cJSON_GetObjectItem(stream.json, "entities");
-
-	for (cJSON *cent = entities_obj->child; cent; cent = cent->next)
-	{
-		uint32_t entnum = atoi(cent->string);
-
-		if ((uint32_t) entnum >= file_edicts)
-			file_edicts = entnum + 1;
-
-		entity &ent = itoe(entnum);
-
-		ent.__init();
-
-		ent.inuse = true;
-
-		stream.read_struct(cent, entity_save, &ent);
-
-		// let the server rebuild world links for this ent
-		gi.linkentity(ent);
-	}
-
-	return file_edicts;
-}
+	if (stream.json.contains("level_locals"))
+		stream.read_struct(stream.json["level_locals"], level_locals_save, &level);
 #else
-inline uint32_t ReadLevelStream(stringlit filename)
-{
-	serializer stream(filename, true);
+
 	size_t entity_size;
 
 	stream >> entity_size;
@@ -1296,36 +1392,57 @@ inline uint32_t ReadLevelStream(stringlit filename)
 
 	// load the level locals
 	stream.read_struct(level_locals_save, &level);
+#endif
 
-	uint32_t file_edicts = game.maxclients;
-
-	while (true)
+	file_edicts = game.maxclients;
+	
+#ifdef JSON_SAVE_FORMAT
+	if (stream.json.contains("entities"))
 	{
-		uint32_t id;
+		const json &entities_obj = stream.json["entities"];
 
-		stream >> id;
+		if (!entities_obj.is_object())
+			throw std::bad_cast();
 
-		if (id == (uint32_t) -1)
-			break;
+		for (const auto &cent : entities_obj.items())
+		{
+			uint32_t id = atoi(cent.key().c_str());
+#else
 
-		if ((uint32_t) id >= file_edicts)
-			file_edicts = id + 1;
+		while (true)
+		{
+			uint32_t id;
 
-		entity &ent = itoe(id);
+			stream >> id;
 
-		ent.__init();
+			if (id == (uint32_t) -1)
+				break;
+#endif
 
-		ent.inuse = true;
+			if ((uint32_t) id >= file_edicts)
+				file_edicts = id + 1;
 
-		stream.read_struct(entity_save, &ent);
+			entity &ent = itoe(id);
 
-		// let the server rebuild world links for this ent
-		gi.linkentity(ent);
+			ent.__init();
+
+			ent.inuse = true;
+		
+#ifdef JSON_SAVE_FORMAT
+			stream.read_struct(cent.value(), entity_save, &ent);
+#else
+			stream.read_struct(entity_save, &ent);
+#endif
+
+			// let the server rebuild world links for this ent
+			gi.linkentity(ent);
+		}
+#ifdef JSON_SAVE_FORMAT
 	}
+#endif
 
 	return file_edicts;
 }
-#endif
 
 void ReadLevel(stringlit filename)
 {
@@ -1336,7 +1453,7 @@ void ReadLevel(stringlit filename)
 #ifdef SINGLE_PLAYER
 	// mark all clients as unconnected
 	for (entity &ent : entity_range(1, game.maxclients))
-		ent.client->pers.connected = false;
+		ent.client.pers.connected = false;
 
 	// do any load time things at this point
 	for (uint32_t i = 0; i < num_entities; i++)
@@ -1348,7 +1465,7 @@ void ReadLevel(stringlit filename)
 
 		// fire any cross-level triggers
 		if (ent.type == ET_TARGET_CROSSLEVEL_TARGET)
-			ent.nextthink = duration_cast<gtime>(level.framenum + ent.delay);
+			ent.nextthink = duration_cast<gtime>(level.time + ent.delay);
 	}
 #endif
 }

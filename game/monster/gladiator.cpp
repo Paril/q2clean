@@ -138,7 +138,7 @@ REGISTER_STATIC_SAVABLE(gladiator_run);
 
 static void GaldiatorMelee(entity &self)
 {
-	const vector aim { MELEE_DISTANCE, self.bounds.mins.x, -4 };
+	const vector aim { RANGE_MELEE, self.bounds.mins.x, -4 };
 
 	if (fire_hit(self, aim, (20 + (Q_rand() % 5)), 300))
 		gi.sound(self, CHAN_AUTO, sound_cleaver_hit);
@@ -261,7 +261,7 @@ static void gladiator_attack(entity &self)
 	// a small safe zone
 	v = self.origin - self.enemy->origin;
 	range = VectorLength(v);
-	if (range <= (MELEE_DISTANCE + 32))
+	if (range <= (RANGE_MELEE + 32))
 		return;
 
 	// charge up the railgun
@@ -305,14 +305,14 @@ REGISTER_STATIC_SAVABLE(gladiator_move_pain_air);
 
 static void gladiator_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t)
 {
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 	{
 		if ((self.velocity[2] > 100) && (self.monsterinfo.currentmove == &gladiator_move_pain))
 			self.monsterinfo.currentmove = &SAVABLE(gladiator_move_pain_air);
 		return;
 	}
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	if (random() < 0.5f)
 		gi.sound(self, CHAN_VOICE, sound_pain1);
@@ -383,16 +383,16 @@ static void gladiator_die(entity &self, entity &, entity &, int32_t damage, vect
 		for (n = 0; n < 4; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 // regular death
 	gi.sound(self, CHAN_VOICE, sound_die);
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 
 	self.monsterinfo.currentmove = &SAVABLE(gladiator_move_death);

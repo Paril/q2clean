@@ -6,3 +6,6 @@
 
 template<typename TKey, size_t N>
 using array = std::array<TKey, N>;
+
+template<size_t N>
+using bitset = std::bitset<N>;

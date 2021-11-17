@@ -35,20 +35,20 @@ static void Trap_Gib_Think(entity &ent)
 
 	gi.linkentity(ent);
 
-	ent.nextthink = level.framenum + 1_hz;
+	ent.nextthink = level.time + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(Trap_Gib_Think);
 
 static void Trap_Think(entity &ent)
 {
-	if (ent.timestamp < level.framenum)
+	if (ent.timestamp < level.time)
 	{
 		BecomeExplosion1(ent);
 		return;
 	}
 
-	ent.nextthink = level.framenum + 100ms;
+	ent.nextthink = level.time + 100ms;
 
 	if (ent.groundentity == null_entity)
 		return;
@@ -87,13 +87,13 @@ static void Trap_Think(entity &ent)
 
 					best.dmg_radius = (360.0f / 3) * i;
 					best.think = SAVABLE(Trap_Gib_Think);
-					best.nextthink = level.framenum + 1_hz;
+					best.nextthink = level.time + 1_hz;
 					best.angles = ent.angles;
 					best.solid = SOLID_NOT;
 					best.takedamage = true;
 					best.movetype = MOVETYPE_NONE;
 					best.svflags |= SVF_MONSTER;
-					best.deadflag = DEAD_DEAD;
+					best.deadflag = true;
 					best.owner = ent;
 					best.watertype = gi.pointcontents(best.origin);
 					if (best.watertype & MASK_WATER)
@@ -114,7 +114,7 @@ static void Trap_Think(entity &ent)
 		ent.frame++;
 		if (ent.frame == 8)
 		{
-			ent.nextthink = level.framenum + 1s;
+			ent.nextthink = level.time + 1s;
 			ent.think = SAVABLE(G_FreeEdict);
 
 			entity &best = G_Spawn();
@@ -147,7 +147,7 @@ static void Trap_Think(entity &ent)
 	{
 		if (target == ent)
 			continue;
-		if (!(target.svflags & SVF_MONSTER) && !target.is_client())
+		if (!(target.svflags & SVF_MONSTER) && !target.is_client)
 			continue;
 		if (target.health <= 0)
 			continue;
@@ -181,7 +181,7 @@ static void Trap_Think(entity &ent)
 	float len = VectorLength(vec);
 
 #ifdef SINGLE_PLAYER
-	if (best->is_client())
+	if (best->is_client)
 	{
 #endif
 		VectorNormalize(vec);
@@ -209,7 +209,7 @@ static void Trap_Think(entity &ent)
 		ent.enemy = best;
 		ent.volume = 64.f;
 		ent.old_origin = ent.origin;
-		ent.timestamp = level.framenum + 30s;
+		ent.timestamp = level.time + 30s;
 		ent.mass = (int) (best->mass * (
 #ifdef SINGLE_PLAYER
 			(!deathmatch) ? 0.1f :
@@ -226,7 +226,7 @@ static void Trap_Think(entity &ent)
 REGISTER_STATIC_SAVABLE(Trap_Think);
 
 // RAFAEL
-void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float damage_radius, bool held)
+void fire_trap(entity &self, vector start, vector aimdir, int32_t speed, bool held)
 {
 	vector dir = vectoangles(aimdir);
 	vector right, up;
@@ -236,7 +236,7 @@ void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_
 	trap.origin = start;
 	trap.velocity = aimdir * speed;
 	trap.velocity += random(190.f, 210.f) * up;
-	trap.velocity += random(-10.f, 10.f) * right;
+	trap.velocity += crandom(10.f) * right;
 	trap.avelocity = { 0, 300, 0 };
 	trap.movetype = MOVETYPE_BOUNCE;
 	trap.clipmask = MASK_SHOT;
@@ -247,10 +247,8 @@ void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_
 	};
 	trap.modelindex = gi.modelindex("models/weapons/z_trap/tris.md2");
 	trap.owner = self;
-	trap.nextthink = level.framenum + 1s;
+	trap.nextthink = level.time + 1s;
 	trap.think = SAVABLE(Trap_Think);
-	trap.dmg = damage;
-	trap.dmg_radius = damage_radius;
 	trap.type = ET_GRENADE;
 	trap.sound = gi.soundindex("weapons/traploop.wav");
 	if (held)
@@ -260,6 +258,6 @@ void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_
 
 	gi.linkentity(trap);
 
-	trap.timestamp = level.framenum + 30s;
+	trap.timestamp = level.time + 30s;
 }
 #endif

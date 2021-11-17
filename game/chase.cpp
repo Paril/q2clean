@@ -9,27 +9,27 @@ constexpr gtime chase_update_period { 320 };
 
 void UpdateChaseCam(entity &ent)
 {
-	entityref targ = ent.client->chase_target;
+	entityref targ = ent.client.chase_target;
 
 	// is our chase target gone?
-	if (!targ->inuse || targ->client->resp.spectator)
+	if (!targ->inuse || targ->client.resp.spectator)
 	{
 		ChaseNext(ent);
 
-		if (ent.client->chase_target == targ)
+		if (ent.client.chase_target == targ)
 		{
-			ent.client->chase_target = nullptr;
-			ent.client->ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
+			ent.client.chase_target = nullptr;
+			ent.client.ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
 			return;
 		}
 
-		targ = ent.client->chase_target;
+		targ = ent.client.chase_target;
 	}
 
 	vector ownerv = targ->origin;
 	ownerv.z += targ->viewheight;
 
-	vector angles = targ->client->v_angle;
+	vector angles = targ->client.v_angle;
 	if (angles[PITCH] > 56)
 		angles[PITCH] = 56.f;
 
@@ -69,50 +69,50 @@ void UpdateChaseCam(entity &ent)
 	}
 
 	if (targ->deadflag)
-		ent.client->ps.pmove.pm_type = PM_DEAD;
+		ent.client.ps.pmove.pm_type = PM_DEAD;
 	else
-		ent.client->ps.pmove.pm_type = PM_FREEZE;
+		ent.client.ps.pmove.pm_type = PM_FREEZE;
 
 	ent.origin = goal;
-	ent.client->ps.pmove.set_delta_angles(targ->client->v_angle - ent.client->resp.cmd_angles);
+	ent.client.ps.pmove.set_delta_angles(targ->client.v_angle - ent.client.resp.cmd_angles);
 
 	if (targ->deadflag)
 	{
-		ent.client->ps.viewangles[ROLL] = 40.f;
-		ent.client->ps.viewangles[PITCH] = -15.f;
-		ent.client->ps.viewangles[YAW] = targ->client->killer_yaw;
+		ent.client.ps.viewangles[ROLL] = 40.f;
+		ent.client.ps.viewangles[PITCH] = -15.f;
+		ent.client.ps.viewangles[YAW] = targ->client.killer_yaw;
 	}
 	else
 	{
-		ent.client->ps.viewangles = targ->client->v_angle;
-		ent.client->v_angle = targ->client->v_angle;
+		ent.client.ps.viewangles = targ->client.v_angle;
+		ent.client.v_angle = targ->client.v_angle;
 	}
 
 	ent.viewheight = 0;
-	ent.client->ps.pmove.pm_flags |= PMF_NO_PREDICTION;
+	ent.client.ps.pmove.pm_flags |= PMF_NO_PREDICTION;
 	gi.linkentity(ent);
 
-	if (ent.client->update_chase || (!ent.client->showscores &&
+	if (ent.client.update_chase || (!ent.client.showscores &&
 #ifdef PMENU
 		!ent.client.menu.open &&
 #endif
-		!ent.client->showinventory &&
+		!ent.client.showinventory &&
 #ifdef SINGLE_PLAYER
-		!ent.client->showhelp &&
+		!ent.client.showhelp &&
 #endif
-		(level.framenum % chase_update_period) == gtime::zero()))
+		(level.time % chase_update_period) == gtime::zero()))
 	{
-		ent.client->update_chase = false;
-		gi.ConstructMessage(svc_layout, format("xv 0 yb -68 string2 \"Chasing {0}\"", targ->client->pers.netname)).unicast(ent, false);
+		ent.client.update_chase = false;
+		gi.ConstructMessage(svc_layout, format("xv 0 yb -68 string2 \"Chasing {0}\"", targ->client.pers.netname)).unicast(ent, false);
 	}
 }
 
 void ChaseNext(entity &ent)
 {
-	if (!ent.client->chase_target.has_value())
+	if (!ent.client.chase_target.has_value())
 		return;
 
-	uint32_t i = ent.client->chase_target->number;
+	uint32_t i = ent.client.chase_target->number;
 	entityref e;
 
 	do
@@ -123,20 +123,20 @@ void ChaseNext(entity &ent)
 		e = itoe(i);
 		if (!e->inuse)
 			continue;
-		if (!e->client->resp.spectator)
+		if (!e->client.resp.spectator)
 			break;
-	} while (e != ent.client->chase_target);
+	} while (e != ent.client.chase_target);
 
-	ent.client->chase_target = e;
-	ent.client->update_chase = true;
+	ent.client.chase_target = e;
+	ent.client.update_chase = true;
 }
 
 void ChasePrev(entity &ent)
 {
-	if (!ent.client->chase_target.has_value())
+	if (!ent.client.chase_target.has_value())
 		return;
 
-	uint32_t i = ent.client->chase_target->number;
+	uint32_t i = ent.client.chase_target->number;
 	entityref e;
 	
 	do
@@ -147,22 +147,22 @@ void ChasePrev(entity &ent)
 		e = itoe(i);
 		if (!e->inuse)
 			continue;
-		if (!e->client->resp.spectator)
+		if (!e->client.resp.spectator)
 			break;
-	} while (e != ent.client->chase_target);
+	} while (e != ent.client.chase_target);
 	
-	ent.client->chase_target = e;
-	ent.client->update_chase = true;
+	ent.client.chase_target = e;
+	ent.client.update_chase = true;
 }
 
 void GetChaseTarget(entity &ent)
 {
 	for (entity &other : entity_range(1, game.maxclients))
 	{
-		if (other.inuse && !other.client->resp.spectator)
+		if (other.inuse && !other.client.resp.spectator)
 		{
-			ent.client->chase_target = other;
-			ent.client->update_chase = true;
+			ent.client.chase_target = other;
+			ent.client.update_chase = true;
 			UpdateChaseCam(ent);
 			return;
 		}

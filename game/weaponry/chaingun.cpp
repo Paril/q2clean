@@ -17,60 +17,55 @@ static void Chaingun_Fire(entity &ent)
 	vector	forward, right, up;
 	float	r, u;
 	vector	offset;
-	int32_t	kick = 2;
+	const int32_t kick = 2 * damage_multiplier;
 #ifdef SINGLE_PLAYER
-	int32_t	damage;
-
-	if (!deathmatch)
-		damage = 8;
-	else
-		damage = 6;
+	const int32_t damage = (!deathmatch ? 8 : 6) * damage_multiplier;
 #else
-	int32_t	damage = 6;
+	const int32_t damage = 6 * damage_multiplier;
 #endif
 
-	if (ent.client->ps.gunframe == 5)
+	if (ent.client.ps.gunframe == 5)
 		gi.sound(ent, gi.soundindex("weapons/chngnu1a.wav"), ATTN_IDLE);
 
-	if ((ent.client->ps.gunframe == 14) && !(ent.client->buttons & BUTTON_ATTACK))
+	if ((ent.client.ps.gunframe == 14) && !(ent.client.buttons & BUTTON_ATTACK))
 	{
-		ent.client->ps.gunframe = 32;
-		ent.client->weapon_sound = SOUND_NONE;
+		ent.client.ps.gunframe = 32;
+		ent.client.weapon_sound = SOUND_NONE;
 		return;
 	}
-	else if ((ent.client->ps.gunframe == 21) && (ent.client->buttons & BUTTON_ATTACK)
-		&& ent.client->pers.inventory[ent.client->ammo_index])
-		ent.client->ps.gunframe = 15;
+	else if ((ent.client.ps.gunframe == 21) && (ent.client.buttons & BUTTON_ATTACK)
+		&& ent.client.pers.inventory[ent.client.ammo_index])
+		ent.client.ps.gunframe = 15;
 	else
-		ent.client->ps.gunframe++;
+		ent.client.ps.gunframe++;
 
-	if (ent.client->ps.gunframe == 22)
+	if (ent.client.ps.gunframe == 22)
 	{
-		ent.client->weapon_sound = SOUND_NONE;
+		ent.client.weapon_sound = SOUND_NONE;
 		gi.sound(ent, gi.soundindex("weapons/chngnd1a.wav"), ATTN_IDLE);
 	}
 	else
-		ent.client->weapon_sound = gi.soundindex("weapons/chngnl1a.wav");
+		ent.client.weapon_sound = gi.soundindex("weapons/chngnl1a.wav");
 
-	ent.client->anim_priority = ANIM_ATTACK;
-	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
+	ent.client.anim_priority = ANIM_ATTACK;
+	if (ent.client.ps.pmove.pm_flags & PMF_DUCKED)
 	{
-		ent.frame = FRAME_crattak1 - (ent.client->ps.gunframe & 1);
-		ent.client->anim_end = FRAME_crattak9;
+		ent.frame = FRAME_crattak1 - (ent.client.ps.gunframe & 1);
+		ent.client.anim_end = FRAME_crattak9;
 	}
 	else
 	{
-		ent.frame = FRAME_attack1 - (ent.client->ps.gunframe & 1);
-		ent.client->anim_end = FRAME_attack8;
+		ent.frame = FRAME_attack1 - (ent.client.ps.gunframe & 1);
+		ent.client.anim_end = FRAME_attack8;
 	}
 
 	int32_t shots;
 
-	if (ent.client->ps.gunframe <= 9)
+	if (ent.client.ps.gunframe <= 9)
 		shots = 1;
-	else if (ent.client->ps.gunframe <= 14)
+	else if (ent.client.ps.gunframe <= 14)
 	{
-		if (ent.client->buttons & BUTTON_ATTACK)
+		if (ent.client.buttons & BUTTON_ATTACK)
 			shots = 2;
 		else
 			shots = 1;
@@ -78,35 +73,29 @@ static void Chaingun_Fire(entity &ent)
 	else
 		shots = 3;
 
-	if (ent.client->pers.inventory[ent.client->ammo_index] < shots)
-		shots = ent.client->pers.inventory[ent.client->ammo_index];
+	if (ent.client.pers.inventory[ent.client.ammo_index] < shots)
+		shots = ent.client.pers.inventory[ent.client.ammo_index];
 
 	if (!shots)
 	{
-		if (level.framenum >= ent.pain_debounce_framenum)
+		if (level.time >= ent.pain_debounce_time)
 		{
 			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
-			ent.pain_debounce_framenum = level.framenum + 1s;
+			ent.pain_debounce_time = level.time + 1s;
 		}
 		NoAmmoWeaponChange(ent);
 		return;
 	}
 
-	if (is_quad)
-	{
-		damage *= damage_multiplier;
-		kick *= damage_multiplier;
-	}
-
-	ent.client->kick_origin = randomv({ -0.35f, -0.35f, -0.35f }, { 0.35f, 0.35f, 0.35f });
-	ent.client->kick_angles = randomv({ -0.7f, -0.7f, -0.7f }, { 0.7f, 0.7f, 0.7f });
+	ent.client.kick_origin = crandomv({ 0.35f, 0.35f, 0.35f });
+	ent.client.kick_angles = crandomv({ 0.7f, 0.7f, 0.7f });
 
 	for (int32_t i = 0; i < shots; i++)
 	{
 		// get start / end positions
-		AngleVectors(ent.client->v_angle, &forward, &right, &up);
+		AngleVectors(ent.client.v_angle, &forward, &right, &up);
 		r = random(3.f, 11.f);
-		u = random(-4.f, 4.f);
+		u = crandom(4.f);
 		offset = { 0, r, u + ent.viewheight - 8 };
 		start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
@@ -121,7 +110,7 @@ static void Chaingun_Fire(entity &ent)
 #endif
 
 	if (!(dmflags & DF_INFINITE_AMMO))
-		ent.client->pers.inventory[ent.client->ammo_index] -= shots;
+		ent.client.pers.inventory[ent.client.ammo_index] -= shots;
 }
 
 void Weapon_Chaingun(entity &ent)

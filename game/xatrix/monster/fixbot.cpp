@@ -194,7 +194,7 @@ static void use_scanner(entity &self)
 			// remove the old one
 			if (self.goalentity->type == ET_BOT_GOAL)
 			{
-				self.goalentity->nextthink = level.framenum + 1_hz;
+				self.goalentity->nextthink = level.time + 1_hz;
 				self.goalentity->think = SAVABLE(G_FreeEdict);
 			}	
 					
@@ -221,7 +221,7 @@ static void use_scanner(entity &self)
 			self.monsterinfo.currentmove = &SAVABLE(fixbot_move_weld_start);
 		else 
 		{
-			self.goalentity->nextthink = level.framenum + 1_hz;
+			self.goalentity->nextthink = level.time + 1_hz;
 			self.goalentity->think = SAVABLE(G_FreeEdict);
 			self.goalentity = self.enemy = 0;
 			self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
@@ -240,7 +240,7 @@ static void use_scanner(entity &self)
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 	else 
 	{
-		self.goalentity->nextthink = level.framenum + 1_hz;
+		self.goalentity->nextthink = level.time + 1_hz;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
 		self.goalentity = self.enemy = 0;
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
@@ -551,7 +551,7 @@ static void fly_vertical2(entity &self)
 	
 	if (len < 32)
 	{
-		self.goalentity->nextthink = level.framenum + 1_hz;
+		self.goalentity->nextthink = level.time + 1_hz;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 		self.goalentity = self.enemy = 0;
@@ -565,108 +565,7 @@ static void fly_vertical2(entity &self)
 	decend translated along the z the current
 	frames are at 10fps
 */ 
-static void blastoff(entity &self, vector start, vector aimdir, int32_t damage, int32_t kick, temp_event te_impact, int32_t hspread, int32_t vspread)
-{
-	hspread += (self.frame - FRAME_takeoff_01);
-	vspread += (self.frame - FRAME_takeoff_01);
-
-	trace	tr = gi.traceline (self.origin, start, self, MASK_SHOT);
-
-	vector	water_start = vec3_origin;
-	bool	water = false;
-
-	if (!(tr.fraction < 1.0))
-	{
-		vector dir = vectoangles (aimdir);
-		vector forward, right, up;
-		AngleVectors (dir, &forward, &right, &up);
-
-		float r = crandom()*hspread;
-		float u = crandom()*vspread;
-		vector end = start + (forward * 8192);
-		end += right * r;
-		end += up * u;
-
-		content_flags content_mask = MASK_SHOT | MASK_WATER;
-
-		if (gi.pointcontents (start) & MASK_WATER)
-		{
-			water = true;
-			water_start = start;
-			content_mask &= ~MASK_WATER;
-		}
-
-		tr = gi.traceline(start, end, self, content_mask);
-
-		// see if we hit water
-		if (tr.contents & MASK_WATER)
-		{
-			splash_type	color;
-
-			water = true;
-			water_start = tr.endpos;
-
-			if (start != tr.endpos)
-			{
-				if (tr.contents & CONTENTS_WATER)
-				{
-					if (tr.surface.name == "*brwater")
-						color = SPLASH_BROWN_WATER;
-					else
-						color = SPLASH_BLUE_WATER;
-				}
-				else if (tr.contents & CONTENTS_SLIME)
-					color = SPLASH_SLIME;
-				else if (tr.contents & CONTENTS_LAVA)
-					color = SPLASH_LAVA;
-				else
-					color = SPLASH_UNKNOWN;
-
-				if (color != SPLASH_UNKNOWN)
-					gi.ConstructMessage(svc_temp_entity, TE_SPLASH, uint8_t { 8 }, tr.endpos, vecdir { tr.normal }, color).multicast (tr.endpos, MULTICAST_PVS);
-
-				// change bullet's course when it enters water
-				dir = end - start;
-				dir = vectoangles (dir);
-				AngleVectors (dir, &forward, &right, &up);
-				r = crandom()*hspread*2;
-				u = crandom()*vspread*2;
-				end = water_start + (forward * 8192);
-				end += right * u;
-				end += up * u;
-			}
-
-			// re-trace ignoring water this time
-			tr = gi.traceline(water_start, end, self, MASK_SHOT);
-		}
-	}
-
-	// send gun puff / flash
-	if (tr.fraction < 1.0 && !(tr.surface.flags & SURF_SKY))
-	{
-		if (tr.ent.takedamage)
-			T_Damage (tr.ent, self, self, aimdir, tr.endpos, tr.normal, damage, kick, { .sparks = TE_BULLET_SPARKS });
-		else if (strncmp (tr.surface.name, "sky", 3) != 0)
-			gi.ConstructMessage(svc_temp_entity, te_impact, tr.endpos, vecdir { tr.normal }).multicast (tr.endpos, MULTICAST_PVS);
-	}
-
-	// if went through water, determine where the end and make a bubble trail
-	if (water)
-	{
-		vector dir = tr.endpos - water_start;
-		VectorNormalize (dir);
-		vector pos = tr.endpos + (dir * -2);
-		if (gi.pointcontents (pos) & MASK_WATER)
-			tr.endpos = pos;
-		else
-			tr = gi.traceline (pos, water_start, tr.ent, MASK_WATER);
-
-		pos = water_start + tr.endpos;
-		pos *= 0.5f;
-
-		gi.ConstructMessage(svc_temp_entity, TE_BUBBLETRAIL, water_start, tr.endpos).multicast(pos, MULTICAST_PVS);
-	}
-}
+#include "game/ballistics/bullet.h"
 
 static void fly_vertical(entity &self)
 {
@@ -676,7 +575,7 @@ static void fly_vertical(entity &self)
 	
 	if (self.frame == FRAME_landing_58 || self.frame == FRAME_takeoff_16)
 	{
-		self.goalentity->nextthink = level.framenum + 1_hz;
+		self.goalentity->nextthink = level.time + 1_hz;
 		self.goalentity->think = SAVABLE(G_FreeEdict);
 		self.monsterinfo.currentmove = &SAVABLE(fixbot_move_stand);
 		self.goalentity = self.enemy = null_entity;
@@ -689,9 +588,8 @@ static void fly_vertical(entity &self)
 	vector forward;
 	AngleVectors (tempvec, &forward, nullptr, nullptr);
 	vector start = self.origin;
-	
-	for (int32_t i = 0; i < 10; i++)
-		blastoff (self, start, forward, 2, 1, TE_SHOTGUN, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD);
+
+	fire_shotgun(self, start, forward, 2, 1, DEFAULT_SHOTGUN_HSPREAD, DEFAULT_SHOTGUN_VSPREAD, 10, MOD_DEFAULT);
 }
 
 /*
@@ -983,10 +881,10 @@ REGISTER_STATIC_SAVABLE(fixbot_walk);
 
 static void fixbot_reacttodamage(entity &self, entity &, entity &, int32_t, int32_t damage)
 {
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + (gtime)(3 * BASE_FRAMERATE);
+	self.pain_debounce_time = level.time + 3s;
 	gi.sound (self, CHAN_VOICE, sound_pain1);
 
 	if (damage <= 10)

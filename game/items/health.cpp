@@ -54,7 +54,7 @@ void MegaHealth_think(entity &self)
 #endif
 		)
 	{
-		self.nextthink = level.framenum + 1s;
+		self.nextthink = level.time + 1s;
 		self.owner->health -= 1;
 		return;
 	}
@@ -101,7 +101,7 @@ bool Pickup_Health(entity &ent, entity &other)
 		)
 	{
 		ent.think = SAVABLE(MegaHealth_think);
-		ent.nextthink = level.framenum + 5s;
+		ent.nextthink = level.time + 5s;
 		ent.owner = other;
 		ent.flags |= FL_RESPAWN;
 		ent.svflags |= SVF_NOCLIENT;

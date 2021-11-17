@@ -39,8 +39,8 @@ static void fd_secret_use(entity &self, entity &, entity &)
 {
 	// trigger all paired doors
 	if (!(self.flags & FL_TEAMSLAVE))
-		for (entityref ent = self; ent.has_value(); ent = ent->teamchain)
-			Move_Calc(ent, ent->moveinfo.start_origin, SAVABLE(fd_secret_move1));
+		for (entity &ent : G_IterateChain<&entity::teamchain>(self))
+			Move_Calc(ent, ent.moveinfo.start_origin, SAVABLE(fd_secret_move1));
 }
 
 REGISTER_STATIC_SAVABLE(fd_secret_use);
@@ -65,7 +65,7 @@ REGISTER_STATIC_SAVABLE(fd_secret_move2);
 // Wait after first movement...
 static void fd_secret_move1(entity &self)
 {
-	self.nextthink = level.framenum + (gtime)(1 * BASE_FRAMERATE);
+	self.nextthink = level.time + 1s;
 	self.think = SAVABLE(fd_secret_move2);
 }
 
@@ -88,7 +88,7 @@ static void fd_secret_move3(entity &self)
 {
 	if (!(self.spawnflags & SEC_OPEN_ONCE))
 	{
-		self.nextthink = duration_cast<gtime>(level.framenum + self.wait);
+		self.nextthink = duration_cast<gtime>(level.time + self.wait);
 		self.think = SAVABLE(fd_secret_move4);
 	}
 }
@@ -110,7 +110,7 @@ REGISTER_STATIC_SAVABLE(fd_secret_move6);
 // Wait 1 second...
 static void fd_secret_move5(entity &self)
 {
-	self.nextthink = level.framenum + 1s;
+	self.nextthink = level.time + 1s;
 	self.think = SAVABLE(fd_secret_move6);
 }
 
@@ -153,13 +153,13 @@ static void secret_touch(entity &self, entity &other, vector, const surface &)
 	if (other.health <= 0)
 		return;
 
-	if (!other.is_client())
+	if (!other.is_client)
 		return;
 
-	if (self.touch_debounce_framenum > level.framenum)
+	if (self.touch_debounce_time > level.time)
 		return;
 
-	self.touch_debounce_framenum = level.framenum + (gtime)(2 * BASE_FRAMERATE);
+	self.touch_debounce_time = level.time + 2s;
 	
 	if (self.message)
 		gi.centerprint(other, self.message);
@@ -279,7 +279,7 @@ static void force_wall_think(entity &self)
 		gi.ConstructMessage(svc_temp_entity, TE_FORCEWALL, self.pos1, self.pos2, (uint8_t) self.style).multicast(self.offset, MULTICAST_PVS);
 
 	self.think = SAVABLE(force_wall_think);
-	self.nextthink = level.framenum + 1_hz;
+	self.nextthink = level.time + 1_hz;
 }
 
 static void force_wall_use(entity &self, entity &, entity &)
@@ -296,7 +296,7 @@ static void force_wall_use(entity &self, entity &, entity &)
 	{
 		self.wait = gtime::zero();
 		self.think = SAVABLE(force_wall_think);
-		self.nextthink = level.framenum + 1_hz;
+		self.nextthink = level.time + 1_hz;
 		self.solid = SOLID_BSP;
 		KillBox(self);		// Is this appropriate?
 		gi.linkentity (self);
@@ -347,7 +347,7 @@ static void SP_func_force_wall(entity &ent)
 	{
 		ent.solid = SOLID_BSP;
 		ent.think = SAVABLE(force_wall_think);
-		ent.nextthink = level.framenum + 1_hz;
+		ent.nextthink = level.time + 1_hz;
 	}
 	else
 		ent.solid = SOLID_NOT;
@@ -387,7 +387,7 @@ void plat2_spawn_danger_area(entity &ent)
 
 void plat2_kill_danger_area(entity &ent)
 {
-	for (auto &t : G_IterateEquals<&entity::type>(ET_BAD_AREA))
+	for (entity &t : G_IterateEquals<&entity::type>(ET_BAD_AREA))
 		if (t.owner == ent)
 			G_FreeEdict(t);
 }
@@ -411,27 +411,27 @@ static void plat2_hit_top(entity &ent)
 		if (!(ent.spawnflags & PLAT2_TOGGLE))
 		{
 			ent.think = SAVABLE(plat2_go_down);
-			ent.nextthink = level.framenum + 5s;
+			ent.nextthink = level.time + 5s;
 		}
 
 #ifdef SINGLE_PLAYER
 		if (!deathmatch)
-			ent.last_move_framenum = level.framenum - 2s;
+			ent.last_move_time = level.time - 2s;
 		else
 #endif
-			ent.last_move_framenum = level.framenum - 1s;
+			ent.last_move_time = level.time - 1s;
 	}
 	else if (!(ent.spawnflags & PLAT2_TOP) && !(ent.spawnflags & PLAT2_TOGGLE))
 	{
 		ent.plat2flags = PLAT2_NONE;
 		ent.think = SAVABLE(plat2_go_down);
-		ent.nextthink = level.framenum + 2s;
-		ent.last_move_framenum = level.framenum;
+		ent.nextthink = level.time + 2s;
+		ent.last_move_time = level.time;
 	}
 	else
 	{
 		ent.plat2flags = PLAT2_NONE;
-		ent.last_move_framenum = level.framenum;
+		ent.last_move_time = level.time;
 	}
 
 	G_UseTargets (ent, ent);
@@ -456,27 +456,27 @@ static void plat2_hit_bottom(entity &ent)
 		if (!(ent.spawnflags & PLAT2_TOGGLE))
 		{
 			ent.think = SAVABLE(plat2_go_up);
-			ent.nextthink = level.framenum + 5s;
+			ent.nextthink = level.time + 5s;
 		}
 #ifdef SINGLE_PLAYER
 
 		if (!deathmatch)
-			ent.last_move_framenum = level.framenum - 2s;
+			ent.last_move_time = level.time - 2s;
 		else
 #endif
-			ent.last_move_framenum = level.framenum - 1s;
+			ent.last_move_time = level.time - 1s;
 	}
 	else if ((ent.spawnflags & PLAT2_TOP) && !(ent.spawnflags & PLAT2_TOGGLE))
 	{
 		ent.plat2flags = PLAT2_NONE;
 		ent.think = SAVABLE(plat2_go_up);
-		ent.nextthink = level.framenum + 2s;
-		ent.last_move_framenum = level.framenum;
+		ent.nextthink = level.time + 2s;
+		ent.last_move_time = level.time;
 	}
 	else
 	{
 		ent.plat2flags = PLAT2_NONE;
-		ent.last_move_framenum = level.framenum;
+		ent.last_move_time = level.time;
 	}
 
 #ifdef ROGUE_AI
@@ -525,7 +525,7 @@ static void plat2_operate(entity &trigger, entity &other)
 	if (ent.plat2flags & PLAT2_MOVING)
 		return;
 
-	if ((ent.last_move_framenum + 2s) > level.framenum)
+	if ((ent.last_move_time + 2s) > level.time)
 		return;
 
 	float platCenter = (trigger.absbounds.mins[2] + trigger.absbounds.maxs[2]) / 2;
@@ -572,14 +572,14 @@ static void plat2_operate(entity &trigger, entity &other)
 		pauseTime = 100ms;
 	}
 
-	ent.last_move_framenum = level.framenum;
+	ent.last_move_time = level.time;
 	
 	if (ent.moveinfo.state == STATE_BOTTOM)
 		ent.think = SAVABLE(plat2_go_up);
 	else
 		ent.think = SAVABLE(plat2_go_down);
 
-	ent.nextthink = level.framenum + pauseTime;
+	ent.nextthink = level.time + pauseTime;
 }
 
 static void Touch_Plat_Center2(entity &ent, entity &other, vector, const surface &)
@@ -588,7 +588,7 @@ static void Touch_Plat_Center2(entity &ent, entity &other, vector, const surface
 		return;
 
 	// PMM - don't let non-monsters activate plat2s
-	if (!(other.svflags & SVF_MONSTER) && !other.is_client())
+	if (!(other.svflags & SVF_MONSTER) && !other.is_client)
 		return;
 	
 	plat2_operate(ent, other);
@@ -598,7 +598,7 @@ REGISTER_STATIC_SAVABLE(Touch_Plat_Center2);
 
 static void plat2_blocked(entity &self, entity &other)
 {
-	if (!(other.svflags & SVF_MONSTER) && !other.is_client())
+	if (!(other.svflags & SVF_MONSTER) && !other.is_client)
 	{
 		// give it a chance to go away on it's own terms (like gibs)
 		T_Damage (other, self, self, vec3_origin, other.origin, vec3_origin, 100000, 1, { DAMAGE_NONE }, MOD_CRUSH);
@@ -627,7 +627,7 @@ static void Use_Plat2(entity &ent, entity &, entity &cactivator)
 { 
 	if (ent.moveinfo.state > STATE_BOTTOM)
 		return;
-	if ((ent.last_move_framenum + 2s) > level.framenum)
+	if ((ent.last_move_time + 2s) > level.time)
 		return;
 
 	for (entity &trigger : entity_range(game.maxclients + 1, num_entities - 1))

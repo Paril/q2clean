@@ -110,22 +110,20 @@ struct game_export
 
 static game_export ge;
 entityref world;
+extern client *clients;
 
 void entity::__init()
 {
-	::client *cl = client;
-	new(this) entity();
-	this->number = (uint32_t) (this - ge.edicts);
-	this->client = cl;
+	uint32_t n = (uint32_t) (this - ge.edicts);
+	new(this) entity((n - 1) >= game.maxclients ? nullptr : &clients[n - 1]);
+	this->number = n;
 }
 
 void entity::__free()
 {
-	::client *cl = client;
 	this->~entity();
 	memset(this, 0, sizeof(*this));
 	this->number = (uint32_t) (this - ge.edicts);
-	this->client = cl;
 }
 
 entity &itoe(size_t index)
@@ -155,6 +153,8 @@ entity *entity_range_iterable::end()
 	return last;
 }
 
+// FIXME: if end isn't specified, have it run until num_entities
+// but not as a fixed value - or perhaps use a different sentinel?
 entity_range_iterable entity_range(size_t start, size_t end)
 {
 	if (end < start)

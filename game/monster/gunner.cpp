@@ -264,10 +264,10 @@ static void gunner_reacttodamage(entity &self, entity &, entity &, int32_t, int3
 	monster_done_dodge (self);
 #endif
 
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	if (Q_rand() & 1)
 		gi.sound(self, CHAN_VOICE, sound_pain);
@@ -336,16 +336,16 @@ static void gunner_die(entity &self, entity &, entity &, int32_t damage, vector)
 		for (n = 0; n < 4; n++)
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2", damage, GIB_ORGANIC);
 		ThrowHead(self, "models/objects/gibs/head2/tris.md2", damage, GIB_ORGANIC);
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 // regular death
 	gi.sound(self, CHAN_VOICE, sound_death);
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 	self.monsterinfo.currentmove = &SAVABLE(gunner_move_death);
 }
@@ -369,11 +369,11 @@ static void gunner_duck_down(entity &self)
 
 #ifdef ROGUE_AI
 	self.bounds.maxs[2] = self.monsterinfo.base_height - 32;
-	if (self.monsterinfo.duck_wait_framenum < level.framenum)
-		self.monsterinfo.duck_wait_framenum = level.framenum + 1s;
+	if (self.monsterinfo.duck_wait_time < level.time)
+		self.monsterinfo.duck_wait_time = level.time + 1s;
 #else
-	self.maxs.z -= 32;
-	self.monsterinfo.pause_framenum = level.framenum + 1 * BASE_FRAMERATE;
+	self.bounds.maxs.z -= 32;
+	self.monsterinfo.pause_time = level.time + 1s;
 #endif
 	gi.linkentity(self);
 }
@@ -384,7 +384,7 @@ static void gunner_duck_down(entity &self)
 #else
 static void gunner_duck_hold(entity &self)
 {
-	if (level.framenum >= self.monsterinfo.pause_framenum)
+	if (level.time >= self.monsterinfo.pause_time)
 		self.monsterinfo.aiflags &= ~AI_HOLD_FRAME;
 	else
 		self.monsterinfo.aiflags |= AI_HOLD_FRAME;
@@ -393,7 +393,7 @@ static void gunner_duck_hold(entity &self)
 static void gunner_duck_up(entity &self)
 {
 	self.monsterinfo.aiflags &= ~AI_DUCKED;
-	self.maxs.z += 32;
+	self.bounds.maxs.z += 32;
 	self.takedamage = true;
 	gi.linkentity(self);
 }
@@ -414,7 +414,7 @@ constexpr mmove_t gunner_move_duck = { FRAME_duck01, FRAME_duck08, gunner_frames
 REGISTER_STATIC_SAVABLE(gunner_move_duck);
 
 #ifndef ROGUE_AI
-static void gunner_dodge(entity &self, entity &attacker, float)
+static void gunner_dodge(entity &self, entity &attacker, gtimef)
 {
 	if (random() > 0.25f)
 		return;
@@ -727,7 +727,7 @@ static void gunner_attack(entity &self)
 		{
 			// if the check passes, go for the attack
 			self.monsterinfo.currentmove = &SAVABLE(gunner_move_attack_grenade);
-			self.monsterinfo.attack_finished = level.framenum + random(2s);
+			self.monsterinfo.attack_finished = level.time + random(2s);
 		}
 
 		// turn off blindfire flag
@@ -736,9 +736,9 @@ static void gunner_attack(entity &self)
 	}
 
 	// gunner needs to use his chaingun if he's being attacked by a tesla.
-	if ((range (self, self.enemy) == RANGE_MELEE) || self.bad_area.has_value())
+	if ((VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE) || self.bad_area.has_value())
 #else
-	if (range(self, self.enemy) == RANGE_MELEE)
+	if (VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE)
 #endif
 		self.monsterinfo.currentmove = &SAVABLE(gunner_move_attack_chain);
 	else
@@ -886,9 +886,9 @@ static void gunner_duck (entity &self, gtimef eta)
 
 	if (!skill)
 		// PMM - stupid dodge
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + 1s);
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + 1s);
 	else
-		self.monsterinfo.duck_wait_framenum = duration_cast<gtime>(level.framenum + eta + (100ms * (3 - skill)));
+		self.monsterinfo.duck_wait_time = duration_cast<gtime>(level.time + eta + (100ms * (3 - skill)));
 
 	// has to be done immediately otherwise he can get stuck
 	gunner_duck_down(self);

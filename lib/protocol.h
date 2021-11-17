@@ -1342,11 +1342,15 @@ struct server_entity : public entity_state
 private:
 	// an error here means you're using entity as a value type. Always use entity&
 	// to pass things around.
-	server_entity() { }
+	server_entity(client *cl) :
+		client(*cl),
+		is_client(cl)
+	{
+	}
 
 	// Entities can also not be copied; use a.copy(b)
 	// to do a proper copy, which resets members that would break the game.
-	server_entity(server_entity &) { };
+	server_entity(server_entity &) = delete;
 
 	// move constructor not allowed; entities can't be "deleted"
 	// so move constructor would be weird
@@ -1354,7 +1358,7 @@ private:
 
 public:
 	// this data is shared between the game and engine
-	client			*client;
+	client			&client;
 	qboolean		inuse;
 	int32_t			linkcount;
 
@@ -1379,18 +1383,15 @@ public:
 	content_flags	clipmask;
 	entityref		owner;
 
+	// check whether this entity is a client and
+	// has a client field that can be dereferenced.
+	const bool is_client;
+
 	// check whether this entity is the world entity.
 	// for QC compatibility mostly.
 	inline bool is_world() const
 	{
 		return number == 0;
-	}
-
-	// check whether this entity is a client and
-	// has a client field that can be dereferenced.
-	inline bool is_client() const
-	{
-		return client;
 	}
 
 	// check whether this entity is currently linked

@@ -60,7 +60,7 @@ struct vector
 
 	using callback_func = float(*)(float);
 
-	inline vector each(callback_func f)
+	constexpr vector each(callback_func f) const
 	{
 		return {
 			f(x),
@@ -188,6 +188,13 @@ constexpr float STOP_EPSILON = 0.1f;
 	return out;
 }
 
+[[nodiscard]] constexpr vector CrossProduct(const vector &v1, const vector &v2)
+{
+	return { v1.y * v2.z - v1.z * v2.y,
+		v1.z * v2.x - v1.x * v2.z,
+		v1.x * v2.y - v1.y * v2.x };
+}
+
 template<typename T>
 concept is_vecdir_pointer_or_null_pointer = std::is_same_v<T, vector *> || std::is_null_pointer_v<T>;
 
@@ -279,11 +286,4 @@ inline void AngleVectors(const vector &angles, TF forward, TR right, TU up)
 		yaw += 360.f;
 
 	return yaw;
-}
-
-[[nodiscard]] constexpr vector CrossProduct(const vector &v1, const vector &v2)
-{
-	return { v1.y * v2.z - v1.z * v2.y,
-			v1.z * v2.x - v1.x * v2.z,
-			v1.x * v2.y - v1.y * v2.x };
 }

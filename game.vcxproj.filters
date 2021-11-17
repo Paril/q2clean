@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="debug\cJSON.h">
-      <Filter>debug</Filter>
-    </ClInclude>
-    <ClInclude Include="debug\cJSON_Utils.h">
-      <Filter>debug</Filter>
-    </ClInclude>
     <ClInclude Include="game\ballistics\bfg.h">
       <Filter>game\ballistics</Filter>
     </ClInclude>
@@ -356,6 +350,9 @@
     <ClInclude Include="lib\std.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="game\save\json.hpp">
+      <Filter>game\save</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -403,12 +400,6 @@
     </ClCompile>
     <ClCompile Include="game\ai.cpp">
       <Filter>game</Filter>
-    </ClCompile>
-    <ClCompile Include="debug\cJSON.c">
-      <Filter>debug</Filter>
-    </ClCompile>
-    <ClCompile Include="debug\cJSON_Utils.c">
-      <Filter>debug</Filter>
     </ClCompile>
     <ClCompile Include="game\monster\soldier.cpp">
       <Filter>game\monster</Filter>
@@ -644,6 +635,9 @@
     <ClCompile Include="game\monster\gladiator.cpp">
       <Filter>game\monster</Filter>
     </ClCompile>
+    <ClCompile Include="game\rogue\target.cpp">
+      <Filter>game\rogue</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="game.def" />
@@ -654,9 +648,6 @@
     </Filter>
     <Filter Include="game">
       <UniqueIdentifier>{556c6885-c7c6-4af0-8c0b-6bffede326aa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="debug">
-      <UniqueIdentifier>{ddbe8874-f3a1-4e94-97bb-f9a89f088257}</UniqueIdentifier>
     </Filter>
     <Filter Include="game\monster">
       <UniqueIdentifier>{f2e71e64-35a0-4782-aff7-9aba7538e13d}</UniqueIdentifier>
@@ -702,6 +693,9 @@
     </Filter>
     <Filter Include="game\rogue\weaponry">
       <UniqueIdentifier>{5c189b9b-8c6b-4127-868c-4a30315fb7a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="game\save">
+      <UniqueIdentifier>{97fcadf2-c8bd-481e-9a47-010431daa1b9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

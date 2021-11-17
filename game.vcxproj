@@ -20,8 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
-    <ClInclude Include="debug\cJSON.h" />
-    <ClInclude Include="debug\cJSON_Utils.h" />
     <ClInclude Include="game\ai.h" />
     <ClInclude Include="game\ballistics.h" />
     <ClInclude Include="game\chase.h" />
@@ -111,6 +109,7 @@
     <ClInclude Include="game\rogue\weaponry\heatbeam.h" />
     <ClInclude Include="game\rogue\weaponry\tesla.h" />
     <ClInclude Include="game\savables.h" />
+    <ClInclude Include="game\save\json.hpp" />
     <ClInclude Include="game\spawn.h" />
     <ClInclude Include="game\statusbar.h" />
     <ClInclude Include="game\svcmds.h" />
@@ -168,6 +167,7 @@
     <ClCompile Include="game\rogue\func.cpp" />
     <ClCompile Include="game\rogue\items.cpp" />
     <ClCompile Include="game\rogue\monster.cpp" />
+    <ClCompile Include="game\rogue\target.cpp" />
     <ClCompile Include="game\rogue\weaponry\chainfist.cpp" />
     <ClCompile Include="game\rogue\weaponry\disruptor.cpp" />
     <ClCompile Include="game\rogue\weaponry\etf_rifle.cpp" />
@@ -282,8 +282,6 @@
     <ClInclude Include="lib\types\enum.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="debug\cJSON.c" />
-    <ClCompile Include="debug\cJSON_Utils.c" />
     <ClCompile Include="game\ai.cpp" />
     <ClCompile Include="game\chase.cpp" />
     <ClCompile Include="game\cmds.cpp" />
@@ -318,14 +316,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
     <EnableASAN>false</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
     <EnableASAN>false</EnableASAN>
@@ -333,13 +331,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>

@@ -22,7 +22,7 @@ constexpr means_of_death MOD_HANDGRENADE { .other_kill_fmt = "{0} caught {3}'s h
 void Grenade_Explode(entity &ent)
 {
 #ifdef SINGLE_PLAYER
-	if (ent.owner->is_client())
+	if (ent.owner->is_client)
 		PlayerNoise(ent.owner, ent.origin, PNOISE_IMPACT);
 
 #endif
@@ -96,7 +96,7 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	grenade.velocity = aimdir * speed;
 	scale = random(190.f, 210.f);
 	grenade.velocity += (scale * up);
-	scale = random(-10.f, 10.f);
+	scale = crandom(10.f);
 	grenade.velocity += (scale * right);
 	grenade.avelocity = { 300, 300, 300 };
 	grenade.movetype = MOVETYPE_BOUNCE;
@@ -106,7 +106,7 @@ void fire_grenade(entity &self, vector start, vector aimdir, int32_t damage, int
 	grenade.modelindex = gi.modelindex("models/objects/grenade/tris.md2");
 	grenade.owner = self;
 	grenade.touch = SAVABLE(Grenade_Touch);
-	grenade.nextthink = duration_cast<gtime>(level.framenum + timer);
+	grenade.nextthink = duration_cast<gtime>(level.time + timer);
 	grenade.think = SAVABLE(Grenade_Explode);
 	grenade.dmg = damage;
 	grenade.dmg_radius = damage_radius;
@@ -129,7 +129,7 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	grenade.velocity = aimdir * speed;
 	scale = random(190.f, 210.f);
 	grenade.velocity += (scale * up);
-	scale = random(-10.f, 10.f);
+	scale = crandom(10.f);
 	grenade.velocity += (scale * right);
 	grenade.avelocity = { 300, 300, 300 };
 	grenade.movetype = MOVETYPE_BOUNCE;
@@ -139,7 +139,7 @@ void fire_grenade2(entity &self, vector start, vector aimdir, int32_t damage, in
 	grenade.modelindex = gi.modelindex("models/objects/grenade2/tris.md2");
 	grenade.owner = self;
 	grenade.touch = SAVABLE(Grenade_Touch);
-	grenade.nextthink = duration_cast<gtime>(level.framenum + timer);
+	grenade.nextthink = duration_cast<gtime>(level.time + timer);
 	grenade.think = SAVABLE(Grenade_Explode);
 	grenade.dmg = damage;
 	grenade.dmg_radius = damage_radius;

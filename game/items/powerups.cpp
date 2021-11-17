@@ -11,12 +11,12 @@
 
 inline void AdjustAmmoMax(entity &other, const ammo_id &ammo, const int32_t &new_max)
 {
-	other.client->pers.max_ammo[ammo] = max(other.client->pers.max_ammo[ammo], new_max);
+	other.client.pers.max_ammo[ammo] = max(other.client.pers.max_ammo[ammo], new_max);
 }
 
 inline void AddAndCapAmmo(entity &other, const gitem_t &ammo)
 {
-	other.client->pers.inventory[ammo.id] = min(other.client->pers.inventory[ammo.id] + ammo.quantity, other.client->pers.max_ammo[ammo.ammotag]);
+	other.client.pers.inventory[ammo.id] = min(other.client.pers.inventory[ammo.id] + ammo.quantity, other.client.pers.max_ammo[ammo.ammotag]);
 }
 
 bool Pickup_Bandolier(entity &ent, entity &other)
@@ -90,7 +90,7 @@ static gtime quad_drop_timeout_hack;
 
 void Use_Quad(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
 	gtime timeout;
@@ -103,60 +103,60 @@ void Use_Quad(entity &ent, const gitem_t &it)
 	else
 		timeout = 30s;
 
-	if (ent.client->quad_framenum > level.framenum)
-		ent.client->quad_framenum += timeout;
+	if (ent.client.quad_time > level.time)
+		ent.client.quad_time += timeout;
 	else
-		ent.client->quad_framenum = level.framenum + timeout;
+		ent.client.quad_time = level.time + timeout;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage.wav"));
 }
 
 void Use_Breather(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->breather_framenum > level.framenum)
-		ent.client->breather_framenum += 30s;
+	if (ent.client.breather_time > level.time)
+		ent.client.breather_time += 30s;
 	else
-		ent.client->breather_framenum = level.framenum + 30s;
+		ent.client.breather_time = level.time + 30s;
 }
 
 void Use_Envirosuit(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->enviro_framenum > level.framenum)
-		ent.client->enviro_framenum += 30s;
+	if (ent.client.enviro_time > level.time)
+		ent.client.enviro_time += 30s;
 	else
-		ent.client->enviro_framenum = level.framenum + 30s;
+		ent.client.enviro_time = level.time + 30s;
 }
 
 void Use_Invulnerability(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->invincible_framenum > level.framenum)
-		ent.client->invincible_framenum += 30s;
+	if (ent.client.invincible_time > level.time)
+		ent.client.invincible_time += 30s;
 	else
-		ent.client->invincible_framenum = level.framenum + 30s;
+		ent.client.invincible_time = level.time + 30s;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect.wav"));
 }
 
 void Use_Silencer(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
-	ent.client->silencer_shots += 30;
+	ent.client.silencer_shots += 30;
 }
 
 bool Pickup_Powerup(entity &ent, entity &other)
 {
 #ifdef SINGLE_PLAYER
-	const int32_t &quantity = other.client->pers.inventory[ent.item->id];
+	const int32_t &quantity = other.client.pers.inventory[ent.item->id];
 
 	if ((skill == 1 && quantity >= 2) || (skill >= 2 && quantity >= 1))
 		return false;
@@ -165,7 +165,7 @@ bool Pickup_Powerup(entity &ent, entity &other)
 		return false;
 #endif
 
-	other.client->pers.inventory[ent.item->id]++;
+	other.client.pers.inventory[ent.item->id]++;
 
 #ifdef SINGLE_PLAYER
 	if (!deathmatch)
@@ -184,10 +184,10 @@ bool Pickup_Powerup(entity &ent, entity &other)
 		if (ent.spawnflags & DROPPED_PLAYER_ITEM)
 		{
 			if (ent.item->use == Use_Quad)
-				quad_drop_timeout_hack = ent.nextthink - level.framenum;
+				quad_drop_timeout_hack = ent.nextthink - level.time;
 #ifdef THE_RECKONING
 			else if (ent.item->use == Use_QuadFire)
-				quad_fire_drop_timeout_hack = ent.nextthink - level.framenum;
+				quad_fire_drop_timeout_hack = ent.nextthink - level.time;
 #endif
 		}
 

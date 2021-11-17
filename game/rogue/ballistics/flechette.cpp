@@ -24,7 +24,7 @@ static void flechette_touch(entity &self, entity &other, vector normal, const su
 	}
 #if defined(SINGLE_PLAYER)
 
-	if (self.is_client())
+	if (self.is_client)
 		PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
@@ -57,7 +57,7 @@ void fire_flechette(entity &self, vector start, vector dir, int32_t damage, int3
 
 	flechette.owner = self;
 	flechette.touch = SAVABLE(flechette_touch);
-	flechette.nextthink = level.framenum + seconds(8000 / speed);
+	flechette.nextthink = level.time + seconds(8000 / speed);
 	flechette.think = SAVABLE(G_FreeEdict);
 	flechette.dmg = damage;
 	flechette.dmg_radius = (float)kick;
@@ -65,7 +65,7 @@ void fire_flechette(entity &self, vector start, vector dir, int32_t damage, int3
 	gi.linkentity (flechette);
 	
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge (self, flechette.origin, dir, speed);
 #endif
 }

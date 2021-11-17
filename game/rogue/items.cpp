@@ -12,7 +12,7 @@
 bool Pickup_Nuke(entity &ent, entity &other)
 {
 	const gitem_t &citem = ent.item;
-	int32_t quantity = other.client->pers.inventory[citem.id];
+	int32_t quantity = other.client.pers.inventory[citem.id];
 
 	if (quantity >= 1)
 		return false;
@@ -22,7 +22,7 @@ bool Pickup_Nuke(entity &ent, entity &other)
 		return false;
 #endif
 
-	other.client->pers.inventory[citem.id]++;
+	other.client.pers.inventory[citem.id]++;
 
 #ifdef SINGLE_PLAYER
 	if (deathmatch && !(ent.spawnflags & DROPPED_ITEM))
@@ -36,38 +36,38 @@ bool Pickup_Nuke(entity &ent, entity &other)
 
 void Use_IR(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem(ent);
 
-	if (ent.client->ir_framenum > level.framenum)
-		ent.client->ir_framenum += 60s;
+	if (ent.client.ir_time > level.time)
+		ent.client.ir_time += 60s;
 	else
-		ent.client->ir_framenum = level.framenum + 60s;
+		ent.client.ir_time = level.time + 60s;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ir_start.wav"));
 }
 
 void Use_Double(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem (ent);
 
-	if (ent.client->double_framenum > level.framenum)
-		ent.client->double_framenum += 30s;
+	if (ent.client.double_time > level.time)
+		ent.client.double_time += 30s;
 	else
-		ent.client->double_framenum = level.framenum + 30s;
+		ent.client.double_time = level.time + 30s;
 
 	gi.sound(ent, CHAN_ITEM, gi.soundindex("misc/ddamage1.wav"));
 }
 
 void Use_Nuke(entity &ent, const gitem_t &it)
 {
-	ent.client->pers.inventory[it.id]--;
+	ent.client.pers.inventory[it.id]--;
 	ValidateSelectedItem (ent);
 
 	vector forward;
 
-	AngleVectors (ent.client->v_angle, &forward, nullptr, nullptr);
+	AngleVectors (ent.client.v_angle, &forward, nullptr, nullptr);
 
 	fire_nuke (ent, ent.origin, forward, 100.f);
 }

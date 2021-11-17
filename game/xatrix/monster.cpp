@@ -39,7 +39,7 @@ static void heat_think(entity &self)
 	{
 		if (self.owner == target)
 			continue;
-		if ((target.svflags & SVF_MONSTER) || !target.is_client())
+		if ((target.svflags & SVF_MONSTER) || !target.is_client)
 			continue;
 		if (target.health <= 0)
 			continue;
@@ -68,7 +68,7 @@ static void heat_think(entity &self)
 		self.velocity = vec * 500;
 	}
 
-	self.nextthink = level.framenum + 1_hz;
+	self.nextthink = level.time + 1_hz;
 }
 
 REGISTER_STATIC_SAVABLE(heat_think);
@@ -76,7 +76,7 @@ REGISTER_STATIC_SAVABLE(heat_think);
 inline void fire_heat(entity &self, vector start, vector dir, int32_t damage, int32_t speed, float damage_radius, int32_t radius_damage)
 {
 	entity &heat = fire_rocket(self, start, dir, damage, speed, damage_radius, radius_damage);
-	heat.nextthink = level.framenum + 1_hz;
+	heat.nextthink = level.time + 1_hz;
 	heat.think = SAVABLE(heat_think);
 }
 
@@ -109,11 +109,11 @@ static void dabeam_hit(entity &self)
 			// when player is at 100 health
 			// just undo health fix
 			// keeping fx
-			if (tr.ent.is_client() && tr.ent.health > 100)
+			if (tr.ent.is_client && tr.ent.health > 100)
 				tr.ent.health += self.dmg;
 
 		// if we hit something that's not a monster or player or is immune to lasers, we're done
-		if (!(tr.ent.svflags & SVF_MONSTER) && (!tr.ent.is_client()))
+		if (!(tr.ent.svflags & SVF_MONSTER) && (!tr.ent.is_client))
 		{
 			if (self.spawnflags & (spawn_flag) 0x80000000)
 			{
@@ -129,7 +129,7 @@ static void dabeam_hit(entity &self)
 	} while (1);
 
 	self.old_origin = tr.endpos;
-	self.nextthink = level.framenum + 1_hz;
+	self.nextthink = level.time + 1_hz;
 	self.think = SAVABLE(G_FreeEdict);
 }
 
@@ -155,7 +155,7 @@ void monster_dabeam(entity &self)
 		vector point = self.enemy->absbounds.center();
 
 		if (self.owner->monsterinfo.aiflags & AI_MEDIC)
-			point[0] += sin(level.time.count()) * 8;
+			point[0] += sin(gtimef(level.time).count()) * 8;
 
 		self.movedir = point - self.origin;
 		VectorNormalize(self.movedir);
@@ -167,7 +167,7 @@ void monster_dabeam(entity &self)
 		G_SetMovedir(self.angles, self.movedir);
 
 	self.think = SAVABLE(dabeam_hit);
-	self.nextthink = level.framenum + 1_hz;
+	self.nextthink = level.time + 1_hz;
 	self.bounds = bbox::sized(8.f);
 	gi.linkentity(self);
 

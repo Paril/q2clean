@@ -60,7 +60,7 @@ static void fire_beams(entity &self, vector start, vector aimdir, int32_t damage
 			gi.ConstructMessage(svc_temp_entity, TE_HEATBEAM_STEAM, tr.endpos, vecdir { tr.normal }).multicast(tr.endpos, MULTICAST_PVS);
 #if defined(SINGLE_PLAYER)
 
-			if (self.is_client())
+			if (self.is_client)
 				PlayerNoise(self, tr.endpos, PNOISE_IMPACT);
 #endif
 		}

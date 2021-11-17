@@ -82,14 +82,6 @@ using usefunc = void(*)(entity &, entity &, entity &);
 using painfunc = void(*)(entity &, entity &, float, int32_t);
 using diefunc = void(*)(entity &, entity &, entity &, int32_t, vector);
 
-enum dead_flag : uint8_t
-{
-	DEAD_NO,
-	DEAD_DYING,
-	DEAD_DEAD,
-	DEAD_RESPAWNABLE 
-};
-
 using mendfunc = void(*)(entity &);
 
 // global monster functions
@@ -129,7 +121,7 @@ struct mmove_t
 		frames(frames),
 		endfunc(endfunc)
 	{
-		if (last < first || N != (uint32_t) (last - first + 1))
+		if (N != (uint32_t) ((first <= last) ? (last - first + 1) : (first - last + 1)))
 			throw std::exception("invalid frames");
 	}
 };
@@ -202,7 +194,7 @@ using mduckfunc = void(*)(entity &, gtimef);
 using munduckfunc = void(*)(entity &);
 using msidestepfunc = void(*)(entity &);
 #else
-using mdodgefunc = void(*)(entity &, entity &, float);
+using mdodgefunc = void(*)(entity &, entity &, gtimef);
 #endif
 
 using monster_func = void(*)(entity &);
@@ -252,6 +244,7 @@ struct moveinfo
 	savable<mendfunc>	endfunc;
 };
 
+#ifdef SINGLE_PLAYER
 struct monsterinfo
 {
 	savable<const mmove_t>	currentmove;
@@ -259,13 +252,13 @@ struct monsterinfo
 	int         nextframe;
 	float       scale;
 
-	savable<monster_func>	stand;
-	savable<monster_func>	idle;
-	savable<monster_func>	search;
-	savable<monster_func>	walk;
-	savable<monster_func>	run;
-	savable<monster_func>	attack;
-	savable<monster_func>	melee;
+	savable<monster_func> stand;
+	savable<monster_func> idle;
+	savable<monster_func> search;
+	savable<monster_func> walk;
+	savable<monster_func> run;
+	savable<monster_func> attack;
+	savable<monster_func> melee;
 
 	savable<mdodgefunc>	dodge;
 
@@ -274,24 +267,26 @@ struct monsterinfo
 
 	savable<monster_reacttodamage>	reacttodamage;
 
-	gtime	pause_framenum;
+	gtime	pause_time;
 	gtime	attack_finished;
 
-	vector				saved_goal;
-	gtime				search_framenum;
-	gtime				trail_framenum;
-	vector				last_sighting;
-	ai_attack_state		attack_state;
-	bool				lefty;
-	gtime				idle_framenum;
-	int					linkcount;
+	vector			saved_goal;
+	gtime			search_time;
+	gtime			trail_time;
+	vector			last_sighting;
+	ai_attack_state	attack_state;
+	bool			lefty;
+	gtime			idle_time;
+	int				linkcount;
 
 	gitem_id	power_armor_type;
 	int			power_armor_power;
 
+	gtime		surprise_time;
+
 #ifdef ROGUE_AI
 	savable<mblockedfunc> blocked;
-	gtime		last_hint_framenum;		// last time the monster checked for hintpaths.
+	gtime		last_hint_time;		// last time the monster checked for hintpaths.
 	entityref	goal_hint;			// which hint_path we're trying to get to
 	int32_t		medicTries;
 	entityref	badMedic1, badMedic2;	// these medics have declared this monster "unhealable"
@@ -300,8 +295,8 @@ struct monsterinfo
 	savable<munduckfunc>	unduck;
 	savable<msidestepfunc>	sidestep;
 	float	base_height;
-	gtime	next_duck_framenum;
-	gtime	duck_wait_framenum;
+	gtime	next_duck_time;
+	gtime	duck_wait_time;
 	entityref	last_player_enemy;
 	// blindfire stuff .. the boolean says whether the monster will do it, and blind_fire_time is the timing
 	// (set in the monster) of the next shot
@@ -316,11 +311,12 @@ struct monsterinfo
 	entityref	commander;
 	int32_t		summon_type;
 	// powerup timers, used by widow, our friend
-	gtime	quad_framenum;
-	gtime	invincible_framenum;
-	gtime	double_framenum;
+	gtime	quad_time;
+	gtime	invincible_time;
+	gtime	double_time;
 #endif
 };
+#endif
 
 #ifdef GROUND_ZERO
 enum plat2flags : uint8_t
@@ -354,6 +350,7 @@ friend server_entity;
 friend void WipeEntities();
 friend void G_InitEdict(entity &);
 friend void G_FreeEdict(entity &);
+friend void InitGame();
 #ifdef SAVING
 friend uint32_t ReadLevelStream(stringlit filename);
 #endif
@@ -361,14 +358,7 @@ friend uint32_t ReadLevelStream(stringlit filename);
 private:
 	// an error here means you're using entity as a value type. Always use entity&
 	// to pass things around.
-	entity() { }
-	// Entities can also not be copied; use a.copy(b)
-	// to do a proper copy, which resets members that would break the game.
-	entity(entity&) { };
-
-	// move constructor not allowed; entities can't be "deleted"
-	// so move constructor would be weird
-	entity(entity&&) = delete;
+	using server_entity::server_entity;
 
 	// internal use only
 	void __init();
@@ -405,7 +395,7 @@ public:
 	vector	velocity;
 	vector	avelocity;
 	int32_t	mass;
-	gtime	air_finished_framenum;
+	gtime	air_finished_time;
 	float	gravity;
 
 	entityref	goalentity;
@@ -423,21 +413,21 @@ public:
 	savable<painfunc>		pain;
 	savable<diefunc>		die;
 
-	gtime	touch_debounce_framenum;
-	gtime	pain_debounce_framenum;
-	gtime	damage_debounce_framenum;
-	gtime	fly_sound_debounce_framenum;
-	gtime	last_move_framenum;
+	gtime	touch_debounce_time;
+	gtime	pain_debounce_time;
+	gtime	damage_debounce_time;
+	gtime	fly_sound_debounce_time;
+	gtime	last_move_time;
 
 	int32_t	health;
 	int32_t	max_health;
 	int32_t	gib_health;
 
-	dead_flag	deadflag;
+	bool	deadflag;
 
 	gtime	show_hostile;
 
-	gtime	powerarmor_framenum;
+	gtime	powerarmor_time;
 
 	string	map;
 	float	viewheight;
@@ -470,7 +460,7 @@ public:
 	gtimef	delay;
 	gtimef	rand;
 
-	gtime	last_sound_framenum;
+	gtime	last_sound_time;
 
 	content_flags	watertype;
 	water_level		waterlevel;
@@ -498,6 +488,7 @@ public:
 
 #ifdef SINGLE_PLAYER
 	monsterinfo monsterinfo;
+	uint8_t power_cube_id;
 #endif
 
 	// used to store pre-push state

@@ -56,7 +56,7 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 		if (!tr.ent.takedamage)
 			return false;
 		// if it will hit any client/monster then hit the one we wanted to hit
-		if ((tr.ent.svflags & SVF_MONSTER) || (tr.ent.is_client()))
+		if ((tr.ent.svflags & SVF_MONSTER) || (tr.ent.is_client))
 			hit_entity = self.enemy;
 	}
 
@@ -67,7 +67,7 @@ bool fire_hit(entity &self, vector aim, int32_t damage, int32_t kick)
 	// do the damage
 	T_Damage(hit_entity, self, self, dir, point, vec3_origin, damage, kick / 2, { DAMAGE_NO_KNOCKBACK }, MOD_HIT);
 
-	if (!(hit_entity->svflags & SVF_MONSTER) && (!hit_entity->is_client()))
+	if (!(hit_entity->svflags & SVF_MONSTER) && (!hit_entity->is_client))
 		return false;
 
 	// do our special form of knockback here

@@ -45,7 +45,7 @@ static bool gekk_check_melee(entity &self)
 	if (!self.enemy.has_value() || self.enemy->health <= 0)
 		return false;
 
-	return range(self, self.enemy) == RANGE_MELEE;
+	return VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE;
 }
 
 static bool gekk_check_jump(entity &self)
@@ -155,7 +155,7 @@ static void gekk_search(entity &self)
 	else
 		gi.sound (self, CHAN_VOICE, sound_search);
 
-	self.health += (int32_t) random(10.f, 20.f);
+	self.health += Q_rand_uniform(10, 20);
 	if (self.health > self.max_health)
 		self.health = self.max_health;
 
@@ -188,7 +188,7 @@ static void gekk_jump_touch(entity &self, entity &other, vector, const surface &
 		VectorNormalize(normal);
 
 		vector point = self.origin + (normal * self.bounds.maxs[0]);
-		int damage = (int32_t) random(10.f, 20.f);
+		int damage = Q_rand_uniform(10, 20);
 
 		T_Damage (other, self, self, self.velocity, point, normal, damage, damage, { DAMAGE_NONE }, MOD_GEKK);
 	}
@@ -232,7 +232,7 @@ static void gekk_jump_takeoff(entity &self)
 
 	self.groundentity = null_entity;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.monsterinfo.attack_finished = level.framenum + 3s;
+	self.monsterinfo.attack_finished = level.time + 3s;
 	self.touch = SAVABLE(gekk_jump_touch);
 }
 
@@ -258,7 +258,7 @@ static void gekk_jump_takeoff2(entity &self)
 
 	self.groundentity = null_entity;
 	self.monsterinfo.aiflags |= AI_DUCKED;
-	self.monsterinfo.attack_finished = level.framenum + 3s;
+	self.monsterinfo.attack_finished = level.time + 3s;
 	self.touch = SAVABLE(gekk_jump_touch);
 }
 
@@ -279,7 +279,7 @@ static void gekk_check_landing(entity &self)
 		return;
 	}
 
-	if (level.framenum > self.monsterinfo.attack_finished)
+	if (level.time > self.monsterinfo.attack_finished)
 		self.monsterinfo.nextframe = FRAME_leapatk_11;
 	else
 		self.monsterinfo.nextframe = FRAME_leapatk_12;
@@ -368,7 +368,7 @@ static void gekk_swim_loop(entity &self)
 
 static void gekk_hit_left(entity &self)
 {
-	vector aim { MELEE_DISTANCE, self.bounds.mins[0], 8 };
+	vector aim { RANGE_MELEE, self.bounds.mins[0], 8 };
 
 	if (fire_hit (self, aim, (15 + (Q_rand() %5)), 100))
 		gi.sound (self, CHAN_WEAPON, sound_hit);
@@ -378,7 +378,7 @@ static void gekk_hit_left(entity &self)
 
 static void gekk_hit_right(entity &self)
 {
-	vector aim { MELEE_DISTANCE, self.bounds.maxs[0], 8 };
+	vector aim { RANGE_MELEE, self.bounds.maxs[0], 8 };
 
 	if (fire_hit (self, aim, (15 + (Q_rand() %5)), 100))
 		gi.sound (self, CHAN_WEAPON, sound_hit2);
@@ -388,7 +388,7 @@ static void gekk_hit_right(entity &self)
 
 static void gekk_bite(entity &self)
 {
-	constexpr vector aim { MELEE_DISTANCE, 0, 0 };
+	constexpr vector aim { RANGE_MELEE, 0, 0 };
 	fire_hit(self, aim, 5, 0);
 }
 
@@ -476,15 +476,15 @@ static void ai_stand2(entity &self, float dist)
 	{
 		ai_move (self, dist);
 
-		if (!(self.spawnflags & 1) && (self.monsterinfo.idle) && (level.framenum > self.monsterinfo.idle_framenum))
+		if (!(self.spawnflags & 1) && (self.monsterinfo.idle) && (level.time > self.monsterinfo.idle_time))
 		{
-			if (self.monsterinfo.idle_framenum != gtime::zero())
+			if (self.monsterinfo.idle_time != gtime::zero())
 			{
 				self.monsterinfo.idle (self);
-				self.monsterinfo.idle_framenum = level.framenum + random(15s, 30s);
+				self.monsterinfo.idle_time = level.time + random(15s, 30s);
 			}
 			else
-				self.monsterinfo.idle_framenum = level.framenum + random(15s);
+				self.monsterinfo.idle_time = level.time + random(15s);
 		}
 	}
 	else
@@ -775,7 +775,7 @@ static void fire_loogie(entity &self, vector start, vector dir, int32_t damage, 
 	loogie.modelindex = gi.modelindex ("models/objects/loogy/tris.md2");
 	loogie.owner = self;
 	loogie.touch = SAVABLE(loogie_touch);
-	loogie.nextthink = level.framenum + (2 * BASE_FRAMETIME);
+	loogie.nextthink = level.time + 2s;
 	loogie.think = SAVABLE(G_FreeEdict);
 	loogie.dmg = damage;
 	gi.linkentity (loogie);
@@ -818,7 +818,7 @@ static void reloogie(entity &self)
 	}
 		
 	if (self.enemy->health >= 0)
-		if (random() > 0.7 && (range(self, self.enemy) == RANGE_NEAR))
+		if (random() > 0.7 && (VectorDistance(self.origin, self.enemy->origin) < RANGE_NEAR))
 			do_spit(self);
 }
 
@@ -885,7 +885,7 @@ static void gekk_check_refire(entity &self)
 	if (!self.enemy.has_value() || !self.enemy->inuse || self.enemy->health <= 0)
 		return;
 
-	if (random() < ((int32_t) skill * 0.1f) && range (self, self.enemy) == RANGE_MELEE)
+	if (random() < ((int32_t) skill * 0.1f) && VectorDistance(self.origin, self.enemy->origin) < RANGE_MELEE)
 	{
 		if (self.frame == FRAME_clawatk3_09)
 			self.monsterinfo.currentmove = &SAVABLE(gekk_move_attack2);
@@ -971,7 +971,7 @@ static void gekk_jump(entity &self)
 		return;
 	}
 
-	if (random() > 0.5 && (range (self, self.enemy) >= RANGE_NEAR))
+	if (random() > 0.5 && (VectorDistance (self.origin, self.enemy->origin) > RANGE_MELEE))
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_spit);
 	else if (random() > 0.8)
 		self.monsterinfo.currentmove = &SAVABLE(gekk_move_spit);
@@ -1058,10 +1058,10 @@ static void gekk_reacttodamage(entity &self, entity &, entity &, int32_t, int32_
 		return;
 	}
 
-	if (level.framenum < self.pain_debounce_framenum)
+	if (level.time < self.pain_debounce_time)
 		return;
 
-	self.pain_debounce_framenum = level.framenum + 3s;
+	self.pain_debounce_time = level.time + 3s;
 
 	gi.sound (self, CHAN_VOICE, sound_pain1);
 
@@ -1116,7 +1116,7 @@ inline void gekk_gibfest(entity &self)
 	
 	ThrowHeadACID (self, "models/objects/gekkgib/head/tris.md2", damage, GIB_ORGANIC);
 
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 }
 
 static void isgibfest(entity &self)
@@ -1266,15 +1266,15 @@ static void gekk_die(entity &self, entity &, entity &, int32_t damage, vector)
 	
 		ThrowHeadACID (self, "models/objects/gekkgib/head/tris.md2", damage, GIB_ORGANIC);
 
-		self.deadflag = DEAD_DEAD;
+		self.deadflag = true;
 		return;
 	}
 
-	if (self.deadflag == DEAD_DEAD)
+	if (self.deadflag)
 		return;
 
 	gi.sound (self, CHAN_VOICE, sound_death);
-	self.deadflag = DEAD_DEAD;
+	self.deadflag = true;
 	self.takedamage = true;
 	self.skinnum = 2;
 
@@ -1365,7 +1365,7 @@ static void gekk_dodge(entity &self, entity &attacker, gtimef eta)
 		return;
 	}
 
-	self.monsterinfo.pause_framenum = duration_cast<gtime>(level.framenum + eta + 0.3s);
+	self.monsterinfo.pause_time = duration_cast<gtime>(level.time + eta + 0.3s);
 
 	if (skill == 1)
 	{

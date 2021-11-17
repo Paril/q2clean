@@ -43,7 +43,7 @@ static void bfg_explode(entity &self)
 		}
 	}
 
-	self.nextthink = level.framenum + 100ms;
+	self.nextthink = level.time + 100ms;
 	self.frame++;
 	if (self.frame == 5)
 		self.think = SAVABLE(G_FreeEdict);
@@ -63,7 +63,7 @@ static void bfg_touch(entity &self, entity &other, vector normal, const surface 
 	}
 #ifdef SINGLE_PLAYER
 
-	if (self.owner->is_client())
+	if (self.owner->is_client)
 		PlayerNoise(self.owner, self.origin, PNOISE_IMPACT);
 #endif
 
@@ -82,7 +82,7 @@ static void bfg_touch(entity &self, entity &other, vector normal, const surface 
 	self.sound = SOUND_NONE;
 	self.effects &= ~EF_ANIM_ALLFAST;
 	self.think = SAVABLE(bfg_explode);
-	self.nextthink = level.framenum + 100ms;
+	self.nextthink = level.time + 100ms;
 	self.enemy = other;
 
 	gi.ConstructMessage(svc_temp_entity, TE_BFG_BIGEXPLOSION, self.origin).multicast(self.origin, MULTICAST_PVS);
@@ -114,7 +114,7 @@ static void bfg_think(entity &self)
 		if (!ent.takedamage)
 			continue;
 
-		if (!(ent.svflags & SVF_MONSTER) && !ent.is_client()
+		if (!(ent.svflags & SVF_MONSTER) && !ent.is_client
 #ifdef SINGLE_PLAYER
 			&& ent.type != ET_MISC_EXPLOBOX
 #endif
@@ -149,7 +149,7 @@ static void bfg_think(entity &self)
 				T_Damage(tr.ent, self, self.owner, dir, tr.endpos, vec3_origin, dmg, 1, { DAMAGE_ENERGY}, MOD_BFG_LASER);
 
 			// if we hit something that's not a monster or player we're done
-			if (!(tr.ent.svflags & SVF_MONSTER) && !tr.ent.is_client()
+			if (!(tr.ent.svflags & SVF_MONSTER) && !tr.ent.is_client
 #ifdef GROUND_ZERO
 				&& !(tr.ent.flags & FL_DAMAGEABLE)
 #endif
@@ -166,7 +166,7 @@ static void bfg_think(entity &self)
 		gi.ConstructMessage(svc_temp_entity, TE_BFG_LASER, self.origin, tr.endpos).multicast(self.origin, MULTICAST_PHS);
 	}
 
-	self.nextthink = level.framenum + 100ms;
+	self.nextthink = level.time + 100ms;
 }
 
 REGISTER_STATIC_SAVABLE(bfg_think);
@@ -184,17 +184,17 @@ void fire_bfg(entity &self, vector start, vector dir, int32_t damage, int32_t sp
 	bfg.modelindex = gi.modelindex("sprites/s_bfg1.sp2");
 	bfg.owner = self;
 	bfg.touch = SAVABLE(bfg_touch);
-	bfg.nextthink = level.framenum + seconds(8000 / speed);
+	bfg.nextthink = level.time + seconds(8000 / speed);
 	bfg.think = SAVABLE(G_FreeEdict);
 	bfg.radius_dmg = damage;
 	bfg.dmg_radius = damage_radius;
 	bfg.sound = gi.soundindex("weapons/bfg__l1a.wav");
 
 	bfg.think = SAVABLE(bfg_think);
-	bfg.nextthink = level.framenum + 100ms;
+	bfg.nextthink = level.time + 100ms;
 
 #ifdef SINGLE_PLAYER
-	if (self.is_client())
+	if (self.is_client)
 		check_dodge(self, bfg.origin, dir, speed);
 #endif
 

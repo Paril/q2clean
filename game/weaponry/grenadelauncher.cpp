@@ -18,23 +18,19 @@ static void weapon_grenadelauncher_fire(entity &ent)
 	vector	forward, right;
 	vector	start;
 #ifdef GROUND_ZERO
-	bool	is_prox = ent.client->pers.weapon->id == ITEM_PROX_LAUNCHER;
-	int32_t	damage = is_prox ? 90 : 120;
+	bool	is_prox = ent.client.pers.weapon->id == ITEM_PROX_LAUNCHER;
+	const int32_t damage = (is_prox ? 90 : 120) * damage_multiplier;
 #else
-	int32_t	damage = 120;
+	const int32_t damage = 120 * damage_multiplier;
 #endif
-	float	radius;
-
-	radius = damage + 40.f;
-	if (is_quad)
-		damage *= damage_multiplier;
+	const float radius = (damage / damage_multiplier) + 40.f;
 
 	offset = { 8, 8, ent.viewheight - 8.f };
-	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+	AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 	start = P_ProjectSource(ent, ent.origin, offset, forward, right);
 
-	ent.client->kick_origin = forward * -2;
-	ent.client->kick_angles[0] = -1.f;
+	ent.client.kick_origin = forward * -2;
+	ent.client.kick_angles[0] = -1.f;
 
 #ifdef GROUND_ZERO
 	if (is_prox)
@@ -45,14 +41,14 @@ static void weapon_grenadelauncher_fire(entity &ent)
 
 	gi.ConstructMessage(svc_muzzleflash, ent, MZ_GRENADE | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
-	ent.client->ps.gunframe++;
+	ent.client.ps.gunframe++;
 #ifdef SINGLE_PLAYER
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
 	if (!(dmflags & DF_INFINITE_AMMO))
-		ent.client->pers.inventory[ent.client->ammo_index]--;
+		ent.client.pers.inventory[ent.client.ammo_index]--;
 }
 
 void Weapon_GrenadeLauncher(entity &ent)

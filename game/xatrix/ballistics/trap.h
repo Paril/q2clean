@@ -5,5 +5,5 @@
 #include "lib/types.h"
 #include "lib/math/vector.h"
 
-void fire_trap(entity &self, vector start, vector aimdir, int32_t damage, int32_t speed, float damage_radius, bool held);
+void fire_trap(entity &self, vector start, vector aimdir, int32_t speed, bool held);
 #endif

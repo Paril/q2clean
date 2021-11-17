@@ -11,36 +11,18 @@
 static void weapon_railgun_fire(entity &ent)
 {
 #ifdef SINGLE_PLAYER
-	int32_t	damage;
-	int32_t	kick;
-
-	if (deathmatch)
-	{
-		// normal damage is too extreme in dm
-		damage = 100;
-		kick = 200;
-	}
-	else
-	{
-		damage = 150;
-		kick = 250;
-	}
+	const int32_t damage = (!deathmatch ? 150 : 100) * damage_multiplier;
+	const int32_t kick = (!deathmatch ? 250 : 200) * damage_multiplier;
 #else
-	int32_t damage = 100;
-	int32_t kick = 200;
+	constexpr int32_t damage = 100 * damage_multiplier;
+	constexpr int32_t kick = 200 * damage_multiplier;
 #endif
 
-	if (is_quad)
-	{
-		damage *= damage_multiplier;
-		kick *= damage_multiplier;
-	}
-
 	vector forward, right;
-	AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+	AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 
-	ent.client->kick_origin = forward * -3;
-	ent.client->kick_angles[0] = -3.f;
+	ent.client.kick_origin = forward * -3;
+	ent.client.kick_angles[0] = -3.f;
 
 	vector offset = { 0, 7, ent.viewheight - 8.f };
 	vector start = P_ProjectSource(ent, ent.origin, offset, forward, right);
@@ -49,13 +31,13 @@ static void weapon_railgun_fire(entity &ent)
 	// send muzzle flash
 	gi.ConstructMessage(svc_muzzleflash, ent, MZ_RAILGUN | is_silenced).multicast(ent.origin, MULTICAST_PVS);
 
-	ent.client->ps.gunframe++;
+	ent.client.ps.gunframe++;
 #ifdef SINGLE_PLAYER
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
 	if (!(dmflags & DF_INFINITE_AMMO))
-		ent.client->pers.inventory[ent.client->ammo_index]--;
+		ent.client.pers.inventory[ent.client.ammo_index]--;
 }
 
 void Weapon_Railgun(entity &ent)

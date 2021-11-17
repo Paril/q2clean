@@ -12,39 +12,33 @@
 static void weapon_etf_rifle_fire(entity &ent)
 {
 	// PGM - adjusted to use the quantity entry in the weapon structure.
-	if (ent.client->pers.inventory[ent.client->ammo_index] < ent.client->pers.weapon->quantity)
+	if (ent.client.pers.inventory[ent.client.ammo_index] < ent.client.pers.weapon->quantity)
 	{
-		ent.client->kick_origin = ent.client->kick_angles = vec3_origin;
-		ent.client->ps.gunframe = 8;
+		ent.client.kick_origin = ent.client.kick_angles = vec3_origin;
+		ent.client.ps.gunframe = 8;
 
-		if (level.framenum >= ent.pain_debounce_framenum)
+		if (level.time >= ent.pain_debounce_time)
 		{
 			gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"));
-			ent.pain_debounce_framenum = level.framenum + 1s;
+			ent.pain_debounce_time = level.time + 1s;
 		}
 
 		NoAmmoWeaponChange (ent);
 		return;
 	}
 
-	int	damage = 10;
-	int	kick = 3;
+	const int32_t damage = 10 * damage_multiplier;
+	const int32_t kick = 3 * damage_multiplier;
 
-	if (is_quad)
-	{
-		damage *= damage_multiplier;
-		kick *= damage_multiplier;
-	}
-
-	ent.client->kick_origin = randomv({ -0.85f, -0.85f, -0.85f }, { 0.85f, 0.85f, 0.85f });
-	ent.client->kick_angles = randomv({ -0.85f, -0.85f, -0.85f }, { 0.85f, 0.85f, 0.85f });
+	ent.client.kick_origin = crandomv({ 0.85f, 0.85f, 0.85f });
+	ent.client.kick_angles = crandomv({ 0.85f, 0.85f, 0.85f });
 
 	// get start / end positions
 	vector forward, right, up;
-	AngleVectors (ent.client->v_angle, &forward, &right, &up);
+	AngleVectors (ent.client.v_angle, &forward, &right, &up);
 
 	vector offset;
-	if (ent.client->ps.gunframe == 6)			// right barrel
+	if (ent.client.ps.gunframe == 6)			// right barrel
 		offset = { 15, 8, -8 };
 	else										// left barrel
 		offset = { 15, 6, -8 };
@@ -61,32 +55,32 @@ static void weapon_etf_rifle_fire(entity &ent)
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 #endif
 
-	ent.client->ps.gunframe++;
+	ent.client.ps.gunframe++;
 	if (!(dmflags & DF_INFINITE_AMMO))
-		ent.client->pers.inventory[ent.client->ammo_index] -= ent.client->pers.weapon->quantity;
+		ent.client.pers.inventory[ent.client.ammo_index] -= ent.client.pers.weapon->quantity;
 
-	ent.client->anim_priority = ANIM_ATTACK;
-	if (ent.client->ps.pmove.pm_flags & PMF_DUCKED)
+	ent.client.anim_priority = ANIM_ATTACK;
+	if (ent.client.ps.pmove.pm_flags & PMF_DUCKED)
 	{
 		ent.frame = FRAME_crattak1 - 1;
-		ent.client->anim_end = FRAME_crattak9;
+		ent.client.anim_end = FRAME_crattak9;
 	}
 	else
 	{
 		ent.frame = FRAME_attack1 - 1;
-		ent.client->anim_end = FRAME_attack8;
+		ent.client.anim_end = FRAME_attack8;
 	}
 }
 
 void Weapon_ETF_Rifle(entity &ent)
 {
-	if (ent.client->weaponstate == WEAPON_FIRING &&
-		ent.client->pers.inventory[ent.client->ammo_index] <= 0)
-		ent.client->ps.gunframe = 8;
+	if (ent.client.weaponstate == WEAPON_FIRING &&
+		ent.client.pers.inventory[ent.client.ammo_index] <= 0)
+		ent.client.ps.gunframe = 8;
 
 	Weapon_Generic(ent, 4, 7, 37, 41, G_FrameIsOneOf<18, 28>, G_FrameIsOneOf<6, 7>, weapon_etf_rifle_fire);
 
-	if (ent.client->ps.gunframe == 8 && (ent.client->buttons & BUTTON_ATTACK))
-		ent.client->ps.gunframe = 6;
+	if (ent.client.ps.gunframe == 8 && (ent.client.buttons & BUTTON_ATTACK))
+		ent.client.ps.gunframe = 6;
 }
 #endif

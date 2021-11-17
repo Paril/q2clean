@@ -11,11 +11,10 @@ using fire_func = void(*)(entity &);
 inline vector P_ProjectSource(entity &ent, vector point, vector distance, vector forward, vector right, vector up = MOVEDIR_UP)
 {
 	constexpr float handedness_scales[] = { 1, -1, 0 };
-	vector scaled_dist = { distance[0], distance[1] * handedness_scales[ent.client->pers.hand], distance[2] };
+	vector scaled_dist = { distance[0], distance[1] * handedness_scales[ent.client.pers.hand], distance[2] };
 	return G_ProjectSource(point, scaled_dist, forward, right, up);
 }
 
-extern bool			is_quad;
 extern muzzleflash	is_silenced;
 
 extern int32_t	damage_multiplier;

@@ -38,11 +38,11 @@ struct client_persistant
 
 	int32_t			health;
 	int32_t			max_health;
-	int32_t			power_cubes;    // used for tracking the cubes in coop games
 	entity_flags	savedFlags;
 	int32_t			helpchanged;
 	int32_t			game_helpchanged;
 	int32_t			score;          // for calculating total unit score in coop games
+	bitset<32>		power_cubes;    // used for tracking the cubes in coop games
 #endif
 	
 	bool	spectator;      // client is a spectator
@@ -64,7 +64,7 @@ struct client_respawn
 	client_persistant coop_respawn;   // what to set client.pers to on a respawn
 #endif
 
-	gtime	enterframe;		// level.framenum the client entered the game
+	gtime	enterframe;		// level.time the client entered the game
 	int32_t	score;			// frags, etc
 	vector	cmd_angles;		// angles sent over in the last command
 
@@ -189,7 +189,7 @@ struct client : public server_client
 	vector	oldviewangles;
 	vector	oldvelocity;
 	
-	gtime	next_drown_framenum;
+	gtime	next_drown_time;
 	int32_t	old_waterlevel;
 	bool	breather_sound;
 	
@@ -202,37 +202,37 @@ struct client : public server_client
 	bool			anim_run;
 	
 	// powerup timers
-	gtime	quad_framenum;
-	gtime	invincible_framenum;
-	gtime	breather_framenum;
-	gtime	enviro_framenum;
+	gtime	quad_time;
+	gtime	invincible_time;
+	gtime	breather_time;
+	gtime	enviro_time;
 	
 	bool	grenade_blew_up;
-	gtime	grenade_framenum;
+	gtime	grenade_time;
 
 	int32_t	silencer_shots;
 	sound_index	weapon_sound;
 	
-	gtime	pickup_msg_framenum;
+	gtime	pickup_msg_time;
 	
 	gtimef				flood_locktill;     // locked from talking
 	array<gtimef, 10>	flood_when;     // when messages were said
 	size_t				flood_whenhead;     // head pointer for when said
 	
-	gtime	respawn_framenum;   // can respawn when time > this
+	gtime	respawn_time;   // can respawn when time > this
 	
 	entityref	chase_target;      // player we are chasing
 	bool		update_chase;       // need to update chase info?
 
 #ifdef THE_RECKONING
-	gtime	quadfire_framenum;
+	gtime	quadfire_time;
 #endif
 
 #ifdef GROUND_ZERO
-	gtime		double_framenum;
-	gtime		ir_framenum;
-	gtime		nuke_framenum;
-	gtime		tracker_pain_framenum;
+	gtime		double_time;
+	gtime		ir_time;
+	gtime		nuke_time;
+	gtime		tracker_pain_time;
 	int32_t		chainfist_last_sequence;
 #endif
 

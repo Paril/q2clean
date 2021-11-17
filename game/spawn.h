@@ -44,6 +44,10 @@ public:
 	entity_type ET_##enttype(#n); \
 	static spawnable_entities _##n({ .classname = #n, .func = SP_##n, .type = ET_##enttype })
 
+#define REGISTER_ENTITY_NOSPAWN(enttype, n) \
+	entity_type ET_##enttype(#n); \
+	static spawnable_entities _##n({ .classname = #n, .func = nullptr, .type = ET_##enttype })
+
 #define REGISTER_ENTITY_INHERIT(enttype, n, inherittype) \
 	entity_type ET_##enttype(#n, inherittype); \
 	static spawnable_entities _##n({ .classname = #n, .func = SP_##n, .type = ET_##enttype })

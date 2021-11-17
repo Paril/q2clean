@@ -64,14 +64,14 @@ void SetRespawn(entity &ent, gtimef delay)
 	ent.flags |= FL_RESPAWN;
 	ent.svflags |= SVF_NOCLIENT;
 	ent.solid = SOLID_NOT;
-	ent.nextthink = duration_cast<gtime>(level.framenum + delay);
+	ent.nextthink = duration_cast<gtime>(level.time + delay);
 	ent.think = SAVABLE(DoRespawn);
 	gi.linkentity(ent);
 }
 
 void Touch_Item(entity &ent, entity &other, vector, const surface &)
 {
-	if (!other.is_client())
+	if (!other.is_client)
 		return;
 	if (other.health < 1)
 		return;     // dead people can't pickup
@@ -83,16 +83,16 @@ void Touch_Item(entity &ent, entity &other, vector, const surface &)
 	if (taken)
 	{
 		// flash the screen
-		other.client->bonus_alpha = 0.25f;
+		other.client.bonus_alpha = 0.25f;
 
 		// show icon and name on status bar
-		other.client->ps.stats[STAT_PICKUP_ICON] = gi.imageindex(ent.item->icon);
-		other.client->ps.stats[STAT_PICKUP_STRING] = CS_ITEMS + (config_string) ent.item->id;
-		other.client->pickup_msg_framenum = level.framenum + 3s;
+		other.client.ps.stats[STAT_PICKUP_ICON] = gi.imageindex(ent.item->icon);
+		other.client.ps.stats[STAT_PICKUP_STRING] = CS_ITEMS + (config_string) ent.item->id;
+		other.client.pickup_msg_time = level.time + 3s;
 
 		// change selected item
 		if (ent.item->use)
-			other.client->ps.stats[STAT_SELECTED_ITEM] = other.client->pers.selected_item = ent.item->id;
+			other.client.ps.stats[STAT_SELECTED_ITEM] = other.client.pers.selected_item = ent.item->id;
 
 		if (ent.item->pickup_sound)
 			gi.sound(other, CHAN_ITEM, gi.soundindex(ent.item->pickup_sound));
@@ -137,7 +137,7 @@ static void drop_make_touchable(entity &ent)
 	if (deathmatch)
 	{
 #endif
-		ent.nextthink = level.framenum + 29s;
+		ent.nextthink = level.time + 29s;
 		ent.think = SAVABLE(G_FreeEdict);
 #ifdef SINGLE_PLAYER
 	}
@@ -167,10 +167,10 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 
 	vector forward;
 
-	if (ent.is_client())
+	if (ent.is_client)
 	{
 		vector right;
-		AngleVectors(ent.client->v_angle, &forward, &right, nullptr);
+		AngleVectors(ent.client.v_angle, &forward, &right, nullptr);
 		dropped.origin = G_ProjectSource(ent.origin, { 24, 0, -16 }, forward, right);
 
 		trace tr = gi.trace(ent.origin, dropped.bounds, dropped.origin, ent, CONTENTS_SOLID);
@@ -186,7 +186,7 @@ entity &Drop_Item(entity &ent, const gitem_t &it)
 	dropped.velocity.z = 300.f;
 
 	dropped.think = SAVABLE(drop_make_touchable);
-	dropped.nextthink = level.framenum + 1s;
+	dropped.nextthink = level.time + 1s;
 
 	gi.linkentity(dropped);
 	return dropped;
@@ -262,7 +262,7 @@ void droptofloor(entity &ent)
 
 		if (ent == ent.teammaster)
 		{
-			ent.nextthink = level.framenum + 1_hz;
+			ent.nextthink = level.time + 1_hz;
 			ent.think = SAVABLE(DoRespawn);
 		}
 	}
@@ -367,14 +367,7 @@ void SpawnItem(entity &ent, const gitem_t &it)
 {
 	ent.type = it.type;
 
-	if (ent.spawnflags
-#ifdef GROUND_ZERO
-		> ITEM_TRIGGER_SPAWN
-#endif
-#ifdef SINGLE_PLAYER
-		&& it.id != ITEM_POWER_CUBE
-#endif
-		)
+	if (ent.spawnflags >= DROPPED_ITEM)
 	{
 		ent.spawnflags = NO_SPAWNFLAGS;
 		gi.dprintfmt("{}: invalid spawnflags set\n", ent);
@@ -416,13 +409,16 @@ void SpawnItem(entity &ent, const gitem_t &it)
 #ifdef SINGLE_PLAYER
 	if (coop && it.id == ITEM_POWER_CUBE)
 	{
-		ent.spawnflags |= (spawn_flag) (1 << (8 + level.power_cubes));
-		level.power_cubes++;
+		if (level.power_cubes == 32) {
+			gi.error("Too many power cubes in level!\n");
+		} else {
+			ent.power_cube_id = level.power_cubes++;
+		}
 	}
 
 	// don't let them drop items that stay in a coop game
+	// FIXME
 	if (coop && (it.flags & IT_STAY_COOP))
-		// FIXME
 		const_cast<gitem_t &>(it).drop = nullptr;
 #endif
 
@@ -438,7 +434,7 @@ void SpawnItem(entity &ent, const gitem_t &it)
 #endif
 
 	ent.item = it;
-	ent.nextthink = level.framenum + 2_hz;    // items start after other solids
+	ent.nextthink = level.time + 2_hz;    // items start after other solids
 	ent.think = SAVABLE(droptofloor);
 	ent.effects = it.world_model_flags;
 	ent.renderfx = RF_GLOW;

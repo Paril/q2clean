@@ -11,21 +11,13 @@
 static void weapon_tracker_fire(entity &self)
 {
 #ifdef SINGLE_PLAYER
-	int32_t	 damage;
-
-	if (!deathmatch)
-		damage = 45;
-	else
-		damage = 30;
+	const int32_t damage = (!deathmatch ? 45 : 30) * damage_multiplier;
 #else
-	int32_t damage = 30;
+	constexpr int32_t damage = 30 * damage_multiplier;
 #endif
 
-	if (is_quad)
-		damage *= damage_multiplier;		//pgm
-
 	vector forward, right;
-	AngleVectors (self.client->v_angle, &forward, &right, nullptr);
+	AngleVectors (self.client.v_angle, &forward, &right, nullptr);
 
 	vector offset { 24, 8, self.viewheight - 8.f };
 	vector start = P_ProjectSource (self, self.origin, offset, forward, right);
@@ -38,12 +30,12 @@ static void weapon_tracker_fire(entity &self)
 		tr = gi.trace (start, bbox::sized(16.f), end, self, MASK_SHOT);
 
 	if (!tr.ent.is_world())
-		if ((tr.ent.svflags & SVF_MONSTER) || tr.ent.is_client() || (tr.ent.flags & FL_DAMAGEABLE))
+		if ((tr.ent.svflags & SVF_MONSTER) || tr.ent.is_client || (tr.ent.flags & FL_DAMAGEABLE))
 			if (tr.ent.health > 0)
 				enemy = tr.ent;
 
-	self.client->kick_origin = forward * -2;
-	self.client->kick_angles[0] = -1.f;
+	self.client.kick_origin = forward * -2;
+	self.client.kick_angles[0] = -1.f;
 
 	fire_tracker(self, start, forward, damage, 1000, enemy);
 
@@ -54,9 +46,9 @@ static void weapon_tracker_fire(entity &self)
 	PlayerNoise(self, start, PNOISE_WEAPON);
 #endif
 
-	self.client->ps.gunframe++;
+	self.client.ps.gunframe++;
 	if (!(dmflags & DF_INFINITE_AMMO))
-		self.client->pers.inventory[self.client->ammo_index] -= self.client->pers.weapon->quantity;
+		self.client.pers.inventory[self.client.ammo_index] -= self.client.pers.weapon->quantity;
 }
 
 void Weapon_Disruptor(entity &ent)
