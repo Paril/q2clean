@@ -547,7 +547,7 @@ bool M_CheckAttack(entity &self)
 		if (!skill && random() > 0.25f)
 			return false;
 
-		if (self.monsterinfo.melee && !(Q_rand_uniform(4) % (skill + 1)))
+		if (self.monsterinfo.melee && (!self.monsterinfo.attack || !(Q_rand_uniform(4) % (skill + 1))))
 			self.monsterinfo.attack_state = AS_MELEE;
 		else
 			self.monsterinfo.attack_state = AS_MISSILE;
