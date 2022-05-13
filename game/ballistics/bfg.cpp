@@ -72,7 +72,7 @@ static void bfg_touch(entity &self, entity &other, vector normal, const surface 
 		T_Damage(other, self, self.owner, self.velocity, self.origin, normal, 200, 0, { DAMAGE_NONE }, MOD_BFG_BLAST);
 	T_RadiusDamage(self, self.owner, 200, other, 100, MOD_BFG_BLAST);
 
-	gi.sound(self, CHAN_VOICE, gi.soundindex("weapons/bfg_.x1b.wav"));
+	gi.sound(self, CHAN_VOICE, gi.soundindex("weapons/bfg__x1b.wav"));
 	self.solid = SOLID_NOT;
 	self.touch = nullptr;
 	self.origin += (-FRAMETIME.count() * self.velocity);
