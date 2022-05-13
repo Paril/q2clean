@@ -34,7 +34,7 @@ template<std::integral T = int64_t>
 
 	// resolves constraint N4659 29.6.1.1
 	if constexpr(std::is_same_v<std::make_signed_t<T>, int8_t>)
-		return (T) std::uniform_int_distribution<copy_signedness<T, int16_t>::type>(min, max - 1)(internal::rng);
+		return (T) std::uniform_int_distribution<typename copy_signedness<T, int16_t>::type>(min, max - 1)(internal::rng);
 	else
 		return std::uniform_int_distribution<T>(min, max - 1)(internal::rng);
 }

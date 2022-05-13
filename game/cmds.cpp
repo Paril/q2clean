@@ -791,12 +791,12 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 	mutable_string text;
 
 	if (team)
-		format_to_n(text, max_length, "({}): ", ent.client.pers.netname);
+		format_to(text, "({}): ", ent.client.pers.netname);
 	else
-		format_to_n(text, max_length, "{}: ", ent.client.pers.netname);
+		format_to(text, "{}: ", ent.client.pers.netname);
 
 	if (arg0)
-		format_to_n(text, max_length, "{} {}", gi.argv(0), gi.args());
+		format_to(text, "{} {}", gi.argv(0), gi.args());
 	else
 	{
 		string p = gi.args();
@@ -804,8 +804,11 @@ static void Cmd_Say_f(entity &ent, bool team, bool arg0)
 		if (p[0] == '"')
 			p = substr(p, 1, strlen(p) - 2);
 
-		format_to_n(text, max_length, "{}", p);
+		format_to(text, "{}", p);
 	}
+
+	if (text.size() > max_length)
+		text.resize(max_length);
 
 	text += '\n';
 
@@ -833,7 +836,7 @@ static void Cmd_PlayerList_f(entity &ent)
 		if (!e2.inuse)
 			continue;
 
-		mutable_string str = format("{:02}:{:02} {:4} {:3} {}{}\n",
+		mutable_string str = ::format("{:02}:{:02} {:4} {:3} {}{}\n",
 			(level.time - e2.client.resp.enterframe) / 600,
 			((level.time - e2.client.resp.enterframe) % 600) / 10,
 			e2.client.ping,

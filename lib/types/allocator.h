@@ -13,7 +13,7 @@ namespace internal
 	void *alloc(size_t len, mem_tag tag);
 	void free(void *ptr);
 	bool is_ready();
-	extern uint32_t non_game_count, game_count;
+	extern size_t non_game_count, game_count;
 }
 
 // a game_allocator directs memory for STL allocations over to

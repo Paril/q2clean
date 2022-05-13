@@ -170,10 +170,10 @@ public:
 	}
 
 	// broadcast print, but with string formatter
-	template<typename ...Args>
-	inline void bprintfmt(print_level printlevel, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void bprintfmt(print_level printlevel, T &&fmt, Args &&...args)
 	{
-		impl.bprintf(printlevel, "%s", format(fmt, std::forward<const Args>(args)...).data());
+		impl.bprintf(printlevel, "%s", format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// debug print; prints only to console or listen server host
@@ -183,10 +183,10 @@ public:
 	}
 
 	// debug print, but with string formatter
-	template<typename ...Args>
-	inline void dprintfmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void dprintfmt(T &&fmt, Args &&...args)
 	{
-		impl.dprintf("%s", format(fmt, std::forward<const Args>(args)...).data());
+		impl.dprintf("%s", format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// client print; prints to one client
@@ -196,10 +196,10 @@ public:
 	}
 
 	// client print, but with string formatter
-	template<typename ...Args>
-	inline void cprintfmt(const entity &ent, print_level printlevel, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void cprintfmt(const entity &ent, print_level printlevel, T &&fmt, Args &&...args)
 	{
-		impl.cprintf(const_cast<entity *>(&ent), printlevel, "%s", format(fmt, std::forward<const Args>(args)...).data());
+		impl.cprintf(const_cast<entity *>(&ent), printlevel, "%s", format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// center print; prints on center of screen to client
@@ -209,10 +209,10 @@ public:
 	}
 
 	// center print, but with string formatter
-	template<typename ...Args>
-	inline void centerprintfmt(const entity &ent, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void centerprintfmt(const entity &ent, T &&fmt, Args &&...args)
 	{
-		impl.centerprintf(const_cast<entity *>(&ent), "%s", format(fmt, std::forward<const Args>(args)...).data());
+		impl.centerprintf(const_cast<entity *>(&ent), "%s", format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// sounds
@@ -221,10 +221,10 @@ public:
 	sound_index soundindex(const stringref &name);
 
 	// fetch sound index, but formatted input
-	template<typename ...Args>
-	inline sound_index soundindexfmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline sound_index soundindexfmt(T &&fmt, Args &&...args)
 	{
-		return (sound_index) impl.soundindex(format(fmt, std::forward<const Args>(args)...).data());
+		return (sound_index) impl.soundindex(format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// sound; play soundindex on specified entity on channel at specified volume/attn with a time offset of timeofs
@@ -292,10 +292,10 @@ public:
 	model_index modelindex(const stringref &name);
 	
 	// fetch model index, but formatted input
-	template<typename ...Args>
-	inline model_index modelindexfmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline model_index modelindexfmt(T &&fmt, Args &&...args)
 	{
-		return (model_index) impl.modelindex(format(fmt, std::forward<const Args>(args)...).data());
+		return (model_index) impl.modelindex(format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 	
 	// set model to specified string value; use this for bmodels, also sets mins/maxs
@@ -307,10 +307,10 @@ public:
 	image_index imageindex(const stringref &name);
 
 	// fetch image index, but formatted input
-	template<typename ...Args>
-	inline image_index imageindexfmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline image_index imageindexfmt(T &&fmt, const Args &...args)
 	{
-		return (image_index) impl.imageindex(format(fmt, std::forward<const Args>(args)...).data());
+		return (image_index) impl.imageindex(format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// entities
@@ -356,10 +356,10 @@ public:
 	{
 		WriteString(s.ptr());
 	}
-	template<typename ...Args>
-	inline void WriteStringFmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void WriteStringFmt(T &&fmt, Args &&...args)
 	{
-		WriteString(format(fmt, std::forward<const Args>(args)...).data());
+		WriteString(format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 	void WritePosition(vector pos);
 	void WriteDir(vector dir);
@@ -444,10 +444,10 @@ public:
 	void configstring(config_string num, const stringref &string);
 
 	// configstring but formatted
-	template<typename ...Args>
-	inline void configstringfmt(config_string num, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void configstringfmt(config_string num, T &&fmt, Args &&...args)
 	{
-		configstring(num, format(fmt, std::forward<const Args &>(args)...).data());
+		configstring(num, format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	// parameters for ClientCommand and ServerCommand
@@ -466,22 +466,22 @@ public:
 	cvar &cvar(stringlit var_name, const stringref &value, cvar_flags flags);
 
 	// formatted versions
-	template<typename ...Args>
-	inline ::cvar &cvar_forcesetfmt(stringlit var_name, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline ::cvar &cvar_forcesetfmt(stringlit var_name, T &&fmt, Args &&...args)
 	{
-		return cvar_forceset(var_name, format(fmt, std::forward<const Args &>(args)...).data());
+		return cvar_forceset(var_name, format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
-	template<typename ...Args>
-	inline ::cvar &cvar_setfmt(stringlit var_name, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline ::cvar &cvar_setfmt(stringlit var_name, T &&fmt, Args &&...args)
 	{
-		return cvar_set(var_name, format(fmt, std::forward<const Args &>(args)...).data());
+		return cvar_set(var_name, format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
-	template<typename ...Args>
-	inline ::cvar &cvarfmt(stringlit var_name, cvar_flags flags, stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline ::cvar &cvarfmt(stringlit var_name, cvar_flags flags, T &&fmt, Args &&...args)
 	{
-		return cvar(var_name, format(fmt, std::forward<const Args &>(args)...).data(), flags);
+		return cvar(var_name, format(std::forward<T>(fmt), std::forward<Args>(args)...).data(), flags);
 	}
 
 	// misc
@@ -491,10 +491,10 @@ public:
 	void AddCommandString(const stringref &text);
 
 	// add command string but formatted
-	template<typename ...Args>
-	inline void AddCommandStringFmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	inline void AddCommandStringFmt(T &&fmt, Args &&...args)
 	{
-		AddCommandString(format(fmt, std::forward<const Args &>(args)...).data());
+		AddCommandString(format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 
 	void DebugGraph(float value, int color);
@@ -505,10 +505,10 @@ public:
 		impl.error("%s", str);
 	}
 
-	template<typename ...Args>
-	[[noreturn]] inline void errorfmt(stringlit fmt, const Args &...args)
+	template<typename T, typename ...Args>
+	[[noreturn]] inline void errorfmt(T &&fmt, Args &&...args)
 	{
-		error(format(fmt, std::forward<const Args &>(args)...).data());
+		error(format(std::forward<T>(fmt), std::forward<Args>(args)...).data());
 	}
 };
 

@@ -10,25 +10,18 @@
 // format the specified string, using the C++20 format lib.
 // returns a mutable string, which you can convert into other
 // strings types, move it.
-template<typename ...Args>
-inline mutable_string format(stringlit fmt, const Args &...args)
+template<typename T, typename ...Args>
+inline mutable_string format(T &&fmt, Args &&...args)
 {
 	mutable_string buffer;
-	std::format_to(std::back_inserter(buffer), fmt, std::forward<const Args>(args)...);
+	std::vformat_to(std::back_inserter(buffer), std::forward<T>(fmt), std::make_format_args(args...));
 	return buffer;
 }
 
-template<typename ...Args>
-inline mutable_string &format_to(mutable_string &str, stringlit fmt, const Args &...args)
+template<typename T, typename ...Args>
+inline mutable_string &format_to(mutable_string &str, T &&fmt, Args &&...args)
 {
-	std::format_to(std::back_inserter(str), fmt, std::forward<const Args>(args)...);
-	return str;
-}
-
-template<typename ...Args>
-inline mutable_string &format_to_n(mutable_string &str, size_t max, stringlit fmt, const Args &...args)
-{
-	std::format_to_n(std::back_inserter(str), max, fmt, std::forward<const Args>(args)...);
+	std::vformat_to(std::back_inserter(str), std::forward<T>(fmt), std::make_format_args(args...));
 	return str;
 }
 

@@ -71,7 +71,7 @@ void DeathmatchScoreboardMessage(entity &ent, entityref killer, bool reliable)
 		}
 
 		// send the layout
-		mutable_string entry = format("client {} {} {} {} {} {} ", x, y, sorted[i]->number - 1, cl_ent->client.resp.score, cl_ent->client.ping, ((level.time - cl_ent->client.resp.enterframe) / 600));
+		mutable_string entry = ::format("client {} {} {} {} {} {} ", x, y, sorted[i]->number - 1, cl_ent->client.resp.score, cl_ent->client.ping, ((level.time - cl_ent->client.resp.enterframe) / 600));
 		size_t j = strlen(entry);
 
 		if (stringlength + j > 1024)

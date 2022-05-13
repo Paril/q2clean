@@ -178,7 +178,7 @@ inline bool WeaponIsChained(const gitem_t &it, const gitem_t &chain)
 
 constexpr gitem_id NextInChain(gitem_id id)
 {
-	return (gitem_id) (max(1u, (id + 1) % item_list().size()));
+	return (gitem_id) (max(1ull, (id + 1) % item_list().size()));
 }
 
 void Use_Weapon(entity &ent, const gitem_t &it)
